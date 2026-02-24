@@ -1,2 +1,2 @@
 // shared/theme/theme.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'app_colors.dart';

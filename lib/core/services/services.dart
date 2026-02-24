@@ -1,2 +1,2 @@
 // core/services/services.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'connectivity_provider.dart';
