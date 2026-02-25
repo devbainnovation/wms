@@ -1,2 +1,3 @@
 // shared/utils/utils.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'app_assets.dart';
+export 'app_validators.dart';

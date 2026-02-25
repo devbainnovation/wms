@@ -1,2 +1,3 @@
 // shared/widgets/widgets.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'app_button.dart';
+export 'app_text_field.dart';

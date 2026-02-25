@@ -2,3 +2,4 @@
 export 'dashboard/dashboard.dart';
 export 'alerts/alerts.dart';
 export 'valves/valves.dart';
+export 'auth/auth.dart';

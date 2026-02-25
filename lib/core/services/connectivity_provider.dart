@@ -14,8 +14,10 @@ final networkStatusProvider = StreamProvider<NetworkStatus>((ref) async* {
   yield hasInternet ? NetworkStatus.online : NetworkStatus.offline;
 
   yield* checker.onStatusChange
-      .map((status) => status == InternetStatus.connected
-          ? NetworkStatus.online
-          : NetworkStatus.offline)
+      .map(
+        (status) => status == InternetStatus.connected
+            ? NetworkStatus.online
+            : NetworkStatus.offline,
+      )
       .distinct();
 });
