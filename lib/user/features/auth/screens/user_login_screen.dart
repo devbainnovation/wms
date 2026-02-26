@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/user_forgot_password_screen.dart';
 import 'package:wms/user/features/auth/providers/providers.dart';
+import 'package:wms/user/features/dashboard/screens/user_dashboard_screen.dart';
 
 class UserLoginScreen extends ConsumerStatefulWidget {
   const UserLoginScreen({super.key});
@@ -12,9 +13,19 @@ class UserLoginScreen extends ConsumerStatefulWidget {
 }
 
 class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
+  static const _tempEmail = 'user@gmail.com';
+  static const _tempPassword = '123456';
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.text = _tempEmail;
+    _passwordController.text = _tempPassword;
+  }
 
   @override
   void dispose() {
@@ -29,8 +40,23 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login API will be connected later.')),
+    final enteredEmail = _emailController.text.trim().toLowerCase();
+    final enteredPassword = _passwordController.text.trim();
+    final validTempLogin =
+        enteredEmail == _tempEmail && enteredPassword == _tempPassword;
+
+    if (!validTempLogin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use temp login: user@gmail.com / 123456'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
+      (route) => false,
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:wms/admin/admin.dart';
 import 'package:wms/user/user.dart';
 
@@ -17,6 +18,13 @@ class WmsApp extends StatelessWidget {
         ? const AdminLoginScreen()
         : const UserLoginScreen();
 
-    return MaterialApp(debugShowCheckedModeBanner: false, home: loginScreen);
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        textTheme: GoogleFonts.poppinsTextTheme(),
+        primaryTextTheme: GoogleFonts.poppinsTextTheme(),
+      ),
+      home: loginScreen,
+    );
   }
 }
