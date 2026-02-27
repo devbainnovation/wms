@@ -1,2 +1,5 @@
 // user/features/dashboard/widgets/widgets.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'dashboard_tab_view.dart';
+export 'tank_tab_view.dart';
+export 'profile_tab_view.dart';
+export 'user_drawer.dart';
