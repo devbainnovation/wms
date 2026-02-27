@@ -389,12 +389,30 @@ class _DashboardTabView extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.tune_rounded,
-                  size: 42,
-                  color: AppColors.blue,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isOn
+                        ? AppColors.accentGreen.withValues(alpha: 0.12)
+                        : AppColors.red.withValues(alpha: 0.12),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      AppAssets.valve,
+                      width: 24,
+                      height: 24,
+                      color: isOn ? AppColors.accentGreen : AppColors.red,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.tune_rounded,
+                        size: 24,
+                        color: isOn ? AppColors.accentGreen : AppColors.red,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
