@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/user_forgot_password_screen.dart';
 import 'package:wms/user/features/auth/providers/providers.dart';
@@ -13,9 +15,6 @@ class UserLoginScreen extends ConsumerStatefulWidget {
 }
 
 class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
-  static const _tempEmail = 'user@gmail.com';
-  static const _tempPassword = '123456';
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -23,8 +22,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = _tempEmail;
-    _passwordController.text = _tempPassword;
+    Future<void>.microtask(_loadRememberedLogin);
   }
 
   @override
@@ -34,30 +32,93 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
     super.dispose();
   }
 
-  void _onLoginTap() {
-    final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
+  Future<void> _loadRememberedLogin() async {
+    if (kIsWeb) {
       return;
     }
 
-    final enteredEmail = _emailController.text.trim().toLowerCase();
-    final enteredPassword = _passwordController.text.trim();
-    final validTempLogin =
-        enteredEmail == _tempEmail && enteredPassword == _tempPassword;
-
-    if (!validTempLogin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Use temp login: user@gmail.com / 123456'),
-        ),
-      );
+    final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
+    if (!mounted || remembered == null) {
       return;
     }
+
+    _emailController.text = remembered.username;
+    _passwordController.text = remembered.password;
+    ref.read(userRememberMeProvider.notifier).set(remembered.rememberMe);
+
+    final hasValidSession =
+        remembered.token.isNotEmpty &&
+        remembered.role.isNotEmpty &&
+        remembered.userId.isNotEmpty &&
+        remembered.sessionId.isNotEmpty;
+
+    if (!hasValidSession) {
+      return;
+    }
+
+    ref
+        .read(currentAuthSessionProvider.notifier)
+        .setSession(
+          AuthSession(
+            token: remembered.token,
+            role: remembered.role,
+            userId: remembered.userId,
+            sessionId: remembered.sessionId,
+          ),
+        );
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
       (route) => false,
     );
+  }
+
+  Future<void> _onLoginTap() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      return;
+    }
+
+    final enteredEmail = _emailController.text.trim();
+    final enteredPassword = _passwordController.text.trim();
+    final rememberMe = ref.read(userRememberMeProvider);
+
+    try {
+      String? fcmToken;
+      try {
+        fcmToken = await ref.read(fcmTokenProvider.future);
+      } catch (_) {
+        fcmToken = null;
+      }
+      await ref
+          .read(authLoginControllerProvider.notifier)
+          .login(
+            username: enteredEmail,
+            password: enteredPassword,
+            rememberMe: rememberMe,
+            deviceInfo: 'user-login',
+            fcmToken: fcmToken,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error is AuthApiException
+          ? error.message
+          : 'Login failed. Please try again.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   Future<void> _onForgotPasswordTap() async {
@@ -78,6 +139,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
   Widget build(BuildContext context) {
     final obscurePassword = ref.watch(userObscurePasswordProvider);
     final rememberMe = ref.watch(userRememberMeProvider);
+    final loginState = ref.watch(authLoginControllerProvider);
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width > 900 ? 430.0 : 380.0;
 
@@ -143,11 +205,11 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                     const SizedBox(height: 20),
                     AppTextField(
                       controller: _emailController,
-                      hintText: 'Enter email or mobile number',
-                      labelText: 'Email / Mobile',
-                      keyboardType: TextInputType.emailAddress,
+                      hintText: 'Enter username',
+                      labelText: 'Username',
+                      keyboardType: TextInputType.text,
                       prefixIcon: const Icon(Icons.person_outline_rounded),
-                      validator: AppValidators.emailOrMobile,
+                      validator: AppValidators.username,
                     ),
                     const SizedBox(height: 14),
                     AppTextField(
@@ -217,7 +279,11 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    AppButton(text: 'Login', onPressed: _onLoginTap),
+                    AppButton(
+                      text: 'Login',
+                      isLoading: loginState.isLoading,
+                      onPressed: _onLoginTap,
+                    ),
                   ],
                 ),
               ),

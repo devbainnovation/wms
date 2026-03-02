@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/user_login_screen.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
@@ -62,7 +63,14 @@ class UserDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.logout_rounded),
             title: const Text('Logout'),
-            onTap: () {
+            onTap: () async {
+              final sessionId = ref.read(currentAuthSessionProvider)?.sessionId;
+              await ref
+                  .read(authLogoutControllerProvider.notifier)
+                  .logout(sessionId: sessionId);
+              if (!context.mounted) {
+                return;
+              }
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const UserLoginScreen()),
                 (route) => false,

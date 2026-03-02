@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/auth/providers/providers.dart';
 import 'package:wms/admin/features/auth/screens/admin_forgot_password_screen.dart';
+import 'package:wms/admin/features/dashboard/screens/screens.dart';
+import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
@@ -17,21 +19,75 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_loadRememberedLogin);
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _onLoginTap() {
+  Future<void> _loadRememberedLogin() async {
+    final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
+    if (!mounted || remembered == null) {
+      return;
+    }
+
+    _emailController.text = remembered.username;
+    _passwordController.text = remembered.password;
+    ref.read(adminRememberMeProvider.notifier).set(remembered.rememberMe);
+  }
+
+  Future<void> _onLoginTap() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login API will be connected later.')),
-    );
+    final rememberMe = ref.read(adminRememberMeProvider);
+    final username = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      String? fcmToken;
+      try {
+        fcmToken = await ref.read(fcmTokenProvider.future);
+      } catch (_) {
+        fcmToken = null;
+      }
+      final session = await ref
+          .read(authLoginControllerProvider.notifier)
+          .login(
+            username: username,
+            password: password,
+            rememberMe: rememberMe,
+            deviceInfo: 'admin-login',
+            fcmToken: fcmToken,
+          );
+      ref.read(currentAuthSessionProvider.notifier).setSession(session);
+
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error is AuthApiException
+          ? error.message
+          : 'Login failed. Please try again.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   Future<void> _onForgotPasswordTap() async {
@@ -52,6 +108,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   Widget build(BuildContext context) {
     final obscurePassword = ref.watch(adminObscurePasswordProvider);
     final rememberMe = ref.watch(adminRememberMeProvider);
+    final loginState = ref.watch(authLoginControllerProvider);
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width > 900 ? 460.0 : 390.0;
 
@@ -117,11 +174,11 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                     const SizedBox(height: 22),
                     AppTextField(
                       controller: _emailController,
-                      hintText: 'Enter email or mobile number',
-                      labelText: 'Email / Mobile',
-                      keyboardType: TextInputType.emailAddress,
+                      hintText: 'Enter username',
+                      labelText: 'Username',
+                      keyboardType: TextInputType.text,
                       prefixIcon: const Icon(Icons.person_outline_rounded),
-                      validator: AppValidators.emailOrMobile,
+                      validator: AppValidators.username,
                     ),
                     const SizedBox(height: 14),
                     AppTextField(
@@ -230,7 +287,11 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                       },
                     ),
                     const SizedBox(height: 8),
-                    AppButton(text: 'Login', onPressed: _onLoginTap),
+                    AppButton(
+                      text: 'Login',
+                      isLoading: loginState.isLoading,
+                      onPressed: _onLoginTap,
+                    ),
                   ],
                 ),
               ),

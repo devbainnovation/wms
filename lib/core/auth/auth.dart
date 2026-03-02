@@ -1,2 +1,5 @@
 // core/auth/auth.dart
-// Barrel/entry file. Add exports here as feature files are created.
+export 'models/auth_models.dart';
+export 'providers/auth_providers.dart';
+export 'services/auth_api_service.dart';
+export 'services/auth_local_storage.dart';

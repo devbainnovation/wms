@@ -1,0 +1,140 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/admin/features/devices/services/admin_device_service.dart';
+import 'package:wms/core/core.dart';
+
+final adminDeviceServiceProvider = Provider<AdminDeviceService>((ref) {
+  return AdminDeviceService();
+});
+
+final adminDevicesPageProvider =
+    NotifierProvider<AdminDevicesPageNotifier, int>(
+      AdminDevicesPageNotifier.new,
+    );
+
+class AdminDevicesPageNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void next() => state = state + 1;
+  void previous() => state = state > 0 ? state - 1 : 0;
+  void set(int page) => state = page < 0 ? 0 : page;
+}
+
+final adminDevicesListProvider =
+    FutureProvider.autoDispose<AdminDevicePageResult>((ref) async {
+      final service = ref.read(adminDeviceServiceProvider);
+      final page = ref.watch(adminDevicesPageProvider);
+      final session = ref.read(currentAuthSessionProvider);
+      var token = (session?.token ?? '').trim();
+
+      if (token.isEmpty) {
+        final remembered = await ref
+            .read(authLocalStorageProvider)
+            .loadLoginData();
+        token = (remembered?.token ?? '').trim();
+      }
+
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      return service.getDevices(bearerToken: token, page: page, size: 20);
+    });
+
+final adminRegisterDeviceControllerProvider =
+    NotifierProvider.autoDispose<
+      AdminRegisterDeviceController,
+      AsyncValue<void>
+    >(AdminRegisterDeviceController.new);
+
+class AdminRegisterDeviceController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> register(AdminDeviceRequest request) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminDeviceServiceProvider);
+      final token = await _resolveToken(ref);
+
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      await service.registerDevice(bearerToken: token, request: request);
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminUpdateDeviceControllerProvider =
+    NotifierProvider.autoDispose<AdminUpdateDeviceController, AsyncValue<void>>(
+      AdminUpdateDeviceController.new,
+    );
+
+class AdminUpdateDeviceController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> update({
+    required String id,
+    required AdminDeviceRequest request,
+  }) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminDeviceServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      await service.updateDevice(bearerToken: token, id: id, request: request);
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminDeleteDeviceControllerProvider =
+    NotifierProvider.autoDispose<AdminDeleteDeviceController, AsyncValue<void>>(
+      AdminDeleteDeviceController.new,
+    );
+
+class AdminDeleteDeviceController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> delete(String id) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminDeviceServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      await service.deleteDevice(bearerToken: token, id: id);
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+Future<String> _resolveToken(Ref ref) async {
+  final session = ref.read(currentAuthSessionProvider);
+  var token = (session?.token ?? '').trim();
+  if (token.isNotEmpty) {
+    return token;
+  }
+
+  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
+  token = (remembered?.token ?? '').trim();
+  return token;
+}

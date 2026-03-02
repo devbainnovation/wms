@@ -30,6 +30,17 @@ class AppValidators {
     return null;
   }
 
+  static String? username(String? value) {
+    final input = value?.trim() ?? '';
+    if (input.isEmpty) {
+      return 'Username is required';
+    }
+    if (input.length < 3) {
+      return 'Username must be at least 3 characters';
+    }
+    return null;
+  }
+
   static String? password(String? value) {
     final input = value?.trim() ?? '';
     if (input.isEmpty) {

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wms/admin/admin.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/firebase_options.dart';
+import 'package:wms/shared/shared.dart';
 import 'package:wms/user/user.dart';
 
 Future<void> main() async {
@@ -38,6 +39,35 @@ class WmsApp extends ConsumerWidget {
         textTheme: GoogleFonts.poppinsTextTheme(),
         primaryTextTheme: GoogleFonts.poppinsTextTheme(),
       ),
+      builder: (context, child) {
+        return ValueListenableBuilder<int>(
+          valueListenable: ApiClient.inFlightRequestCount,
+          builder: (context, count, _) {
+            final showLoader = count > 0;
+            return Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                if (showLoader)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 42,
+                          height: 42,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: AppColors.primaryTeal,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
       home: loginScreen,
     );
   }
