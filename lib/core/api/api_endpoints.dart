@@ -5,6 +5,9 @@ class ApiEndpoints {
   static const String authSendOtp = '/api/auth/send-otp';
   static const String authVerifyOtp = '/api/auth/verify-otp';
   static const String adminDevices = '/api/admin/devices';
+  static const String adminCustomers = '/api/admin/customers';
+  static const String adminUnassignedDevices =
+      '/api/admin/devices/unassigned';
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';

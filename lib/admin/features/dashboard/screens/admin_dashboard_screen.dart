@@ -3,20 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/dashboard/providers/providers.dart';
 import 'package:wms/admin/features/dashboard/services/services.dart';
 import 'package:wms/admin/features/auth/screens/admin_login_screen.dart';
+import 'package:wms/admin/features/customers/screens/admin_customers_screen.dart';
 import 'package:wms/admin/features/devices/screens/admin_devices_screen.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
-class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({super.key});
+final adminSelectedMenuProvider =
+    NotifierProvider<AdminSelectedMenuNotifier, int>(
+      AdminSelectedMenuNotifier.new,
+    );
 
+class AdminSelectedMenuNotifier extends Notifier<int> {
   @override
-  ConsumerState<AdminDashboardScreen> createState() =>
-      _AdminDashboardScreenState();
+  int build() => 0;
+
+  void set(int menu) => state = menu;
 }
 
-class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
-  int _selectedMenu = 0;
+class AdminDashboardScreen extends ConsumerWidget {
+  const AdminDashboardScreen({super.key});
 
   static const _menuItems = <({String label, IconData icon})>[
     (label: 'Dashboard', icon: Icons.dashboard_rounded),
@@ -26,7 +31,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedMenu = ref.watch(adminSelectedMenuProvider);
     final logoutState = ref.watch(authLogoutControllerProvider);
     final isMobile = MediaQuery.sizeOf(context).width < 900;
 
@@ -36,18 +42,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ? AppBar(
               backgroundColor: AppColors.white,
               elevation: 0.5,
-              title: Text(_menuItems[_selectedMenu].label),
+              title: Text(_menuItems[selectedMenu].label),
             )
           : null,
       drawer: isMobile
           ? Drawer(
               child: _AdminSidebar(
-                selectedMenu: _selectedMenu,
+                selectedMenu: selectedMenu,
                 onMenuTap: (index) {
-                  setState(() => _selectedMenu = index);
+                  ref.read(adminSelectedMenuProvider.notifier).set(index);
                   Navigator.of(context).pop();
                 },
-                onLogout: _logout,
+                onLogout: () => _logout(context, ref),
                 isLogoutLoading: logoutState.isLoading,
               ),
             )
@@ -56,7 +62,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: _contentPanel(isMobile: true),
+                child: _contentPanel(
+                  isMobile: true,
+                  selectedMenu: selectedMenu,
+                  ref: ref,
+                ),
               ),
             )
           : Row(
@@ -65,9 +75,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 SizedBox(
                   width: 260,
                   child: _AdminSidebar(
-                    selectedMenu: _selectedMenu,
-                    onMenuTap: (index) => setState(() => _selectedMenu = index),
-                    onLogout: _logout,
+                    selectedMenu: selectedMenu,
+                    onMenuTap: (index) =>
+                        ref.read(adminSelectedMenuProvider.notifier).set(index),
+                    onLogout: () => _logout(context, ref),
                     isLogoutLoading: logoutState.isLoading,
                   ),
                 ),
@@ -75,7 +86,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: _contentPanel(isMobile: false),
+                      child: _contentPanel(
+                        isMobile: false,
+                        selectedMenu: selectedMenu,
+                        ref: ref,
+                      ),
                     ),
                   ),
                 ),
@@ -84,7 +99,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _contentPanel({required bool isMobile}) {
+  Widget _contentPanel({
+    required bool isMobile,
+    required int selectedMenu,
+    required WidgetRef ref,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -104,22 +123,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ],
       ),
       child: _AdminContentPanel(
-        selectedMenu: _selectedMenu,
-        onMenuTap: (menuIndex) => setState(() => _selectedMenu = menuIndex),
+        selectedMenu: selectedMenu,
+        onMenuTap: (menuIndex) =>
+            ref.read(adminSelectedMenuProvider.notifier).set(menuIndex),
       ),
     );
   }
 
-  Future<void> _logout() async {
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final navigator = Navigator.of(context);
     final sessionId = ref.read(currentAuthSessionProvider)?.sessionId;
     await ref
         .read(authLogoutControllerProvider.notifier)
         .logout(sessionId: sessionId);
-
-    if (!mounted) {
-      return;
-    }
 
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
@@ -271,6 +287,10 @@ class _AdminContentPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (selectedMenu == 1) {
+      return const AdminCustomersScreen();
+    }
+
     if (selectedMenu == 2) {
       return const AdminDevicesScreen();
     }
@@ -307,27 +327,19 @@ class _AdminContentPanel extends ConsumerWidget {
       );
     }
 
-    final contentByIndex =
-        <int, ({String title, String subtitle, IconData icon})>{
-          1: (
-            title: 'Customers',
-            subtitle:
-                'Customer list and management module will be integrated here.',
-            icon: Icons.groups_rounded,
-          ),
-          2: (
-            title: 'Devices',
-            subtitle:
-                'Device inventory and assignment module will be integrated here.',
-            icon: Icons.memory_rounded,
-          ),
-          3: (
-            title: 'Schedules',
-            subtitle:
-                'Scheduling and automation controls will be integrated here.',
-            icon: Icons.calendar_month_rounded,
-          ),
-        };
+    final contentByIndex = <int, ({String title, String subtitle, IconData icon})>{
+      2: (
+        title: 'Devices',
+        subtitle:
+            'Device inventory and assignment module will be integrated here.',
+        icon: Icons.memory_rounded,
+      ),
+      3: (
+        title: 'Schedules',
+        subtitle: 'Scheduling and automation controls will be integrated here.',
+        icon: Icons.calendar_month_rounded,
+      ),
+    };
 
     final content = contentByIndex[selectedMenu] ?? contentByIndex[1]!;
     return Padding(

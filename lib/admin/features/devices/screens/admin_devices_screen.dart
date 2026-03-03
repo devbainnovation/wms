@@ -6,6 +6,41 @@ import 'package:wms/admin/features/devices/services/admin_device_service.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
+final _deviceUpsertAmcExpiryProvider =
+    NotifierProvider.autoDispose<_DeviceUpsertAmcExpiryNotifier, DateTime?>(
+      _DeviceUpsertAmcExpiryNotifier.new,
+    );
+final _deviceUpsertRechargeExpiryProvider =
+    NotifierProvider.autoDispose<
+      _DeviceUpsertRechargeExpiryNotifier,
+      DateTime?
+    >(_DeviceUpsertRechargeExpiryNotifier.new);
+final _deviceUpsertIsActiveProvider =
+    NotifierProvider.autoDispose<_DeviceUpsertIsActiveNotifier, bool>(
+      _DeviceUpsertIsActiveNotifier.new,
+    );
+
+class _DeviceUpsertAmcExpiryNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void set(DateTime? value) => state = value;
+}
+
+class _DeviceUpsertRechargeExpiryNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void set(DateTime? value) => state = value;
+}
+
+class _DeviceUpsertIsActiveNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void set(bool value) => state = value;
+}
+
 class AdminDevicesScreen extends ConsumerWidget {
   const AdminDevicesScreen({super.key});
 
@@ -517,25 +552,29 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
   final _nameController = TextEditingController();
   final _fwController = TextEditingController();
 
-  DateTime? _amcExpiry;
-  DateTime? _rechargeExpiry;
-  bool _isActive = true;
-
   bool get _isEdit => widget.editItem != null;
 
   @override
   void initState() {
     super.initState();
     final item = widget.editItem;
-    if (item == null) {
-      return;
+    if (item != null) {
+      _macController.text = item.macAddress;
+      _nameController.text = item.displayName;
+      _fwController.text = item.fwVersion;
     }
-    _macController.text = item.macAddress;
-    _nameController.text = item.displayName;
-    _fwController.text = item.fwVersion;
-    _amcExpiry = item.amcExpiry;
-    _rechargeExpiry = item.rechargeExpiry;
-    _isActive = item.isActive;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(_deviceUpsertAmcExpiryProvider.notifier).set(item?.amcExpiry);
+      ref
+          .read(_deviceUpsertRechargeExpiryProvider.notifier)
+          .set(item?.rechargeExpiry);
+      ref
+          .read(_deviceUpsertIsActiveProvider.notifier)
+          .set(item?.isActive ?? true);
+    });
   }
 
   @override
@@ -550,6 +589,9 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
   Widget build(BuildContext context) {
     final registerState = ref.watch(adminRegisterDeviceControllerProvider);
     final updateState = ref.watch(adminUpdateDeviceControllerProvider);
+    final amcExpiry = ref.watch(_deviceUpsertAmcExpiryProvider);
+    final rechargeExpiry = ref.watch(_deviceUpsertRechargeExpiryProvider);
+    final isActive = ref.watch(_deviceUpsertIsActiveProvider);
     final isLoading = registerState.isLoading || updateState.isLoading;
 
     return AlertDialog(
@@ -586,14 +628,17 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
                 const SizedBox(height: 12),
                 AppDatePickerField(
                   label: 'AMC Expiry',
-                  value: _amcExpiry,
-                  onPick: (date) => setState(() => _amcExpiry = date),
+                  value: amcExpiry,
+                  onPick: (date) =>
+                      ref.read(_deviceUpsertAmcExpiryProvider.notifier).set(date),
                 ),
                 const SizedBox(height: 12),
                 AppDatePickerField(
                   label: 'Recharge Expiry',
-                  value: _rechargeExpiry,
-                  onPick: (date) => setState(() => _rechargeExpiry = date),
+                  value: rechargeExpiry,
+                  onPick: (date) => ref
+                      .read(_deviceUpsertRechargeExpiryProvider.notifier)
+                      .set(date),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -607,9 +652,11 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
                     ),
                     const Spacer(),
                     Switch(
-                      value: _isActive,
+                      value: isActive,
                       activeThumbColor: AppColors.accentGreen,
-                      onChanged: (value) => setState(() => _isActive = value),
+                      onChanged: (value) => ref
+                          .read(_deviceUpsertIsActiveProvider.notifier)
+                          .set(value),
                     ),
                   ],
                 ),
@@ -649,11 +696,15 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
     if (!valid) {
       return;
     }
-    if (_amcExpiry == null) {
+    final amcExpiry = ref.read(_deviceUpsertAmcExpiryProvider);
+    final rechargeExpiry = ref.read(_deviceUpsertRechargeExpiryProvider);
+    final isActive = ref.read(_deviceUpsertIsActiveProvider);
+
+    if (amcExpiry == null) {
       _showError('AMC expiry date is required.');
       return;
     }
-    if (_rechargeExpiry == null) {
+    if (rechargeExpiry == null) {
       _showError('Recharge expiry date is required.');
       return;
     }
@@ -662,9 +713,9 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
       macAddress: _macController.text.trim(),
       displayName: _nameController.text.trim(),
       fwVersion: _fwController.text.trim(),
-      amcExpiry: _amcExpiry!,
-      rechargeExpiry: _rechargeExpiry!,
-      isActive: _isActive,
+      amcExpiry: amcExpiry,
+      rechargeExpiry: rechargeExpiry,
+      isActive: isActive,
     );
 
     try {

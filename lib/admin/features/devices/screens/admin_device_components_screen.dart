@@ -5,6 +5,32 @@ import 'package:wms/admin/features/devices/services/admin_device_component_servi
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
+final _componentUpsertTypeProvider =
+    NotifierProvider.autoDispose<
+      _ComponentUpsertTypeNotifier,
+      AdminComponentType
+    >(
+      _ComponentUpsertTypeNotifier.new,
+    );
+final _componentUpsertIsActiveProvider =
+    NotifierProvider.autoDispose<_ComponentUpsertIsActiveNotifier, bool>(
+      _ComponentUpsertIsActiveNotifier.new,
+    );
+
+class _ComponentUpsertTypeNotifier extends Notifier<AdminComponentType> {
+  @override
+  AdminComponentType build() => AdminComponentType.valve;
+
+  void set(AdminComponentType value) => state = value;
+}
+
+class _ComponentUpsertIsActiveNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void set(bool value) => state = value;
+}
+
 class AdminDeviceComponentsScreen extends ConsumerWidget {
   const AdminDeviceComponentsScreen({
     required this.deviceId,
@@ -315,19 +341,25 @@ class _ComponentUpsertDialogState
   final _gpioController = TextEditingController();
   final _nameController = TextEditingController();
 
-  late AdminComponentType _selectedType;
-  bool _isActive = true;
-
   bool get _isEdit => widget.editItem != null;
 
   @override
   void initState() {
     super.initState();
     final item = widget.editItem;
-    _selectedType = item?.type ?? AdminComponentType.valve;
     _gpioController.text = item == null ? '' : item.gpioPin.toString();
     _nameController.text = item?.name ?? '';
-    _isActive = item?.active ?? true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref
+          .read(_componentUpsertTypeProvider.notifier)
+          .set(item?.type ?? AdminComponentType.valve);
+      ref
+          .read(_componentUpsertIsActiveProvider.notifier)
+          .set(item?.active ?? true);
+    });
   }
 
   @override
@@ -341,6 +373,8 @@ class _ComponentUpsertDialogState
   Widget build(BuildContext context) {
     final createState = ref.watch(adminCreateComponentControllerProvider);
     final updateState = ref.watch(adminUpdateComponentControllerProvider);
+    final selectedType = ref.watch(_componentUpsertTypeProvider);
+    final isActive = ref.watch(_componentUpsertIsActiveProvider);
     final isLoading = createState.isLoading || updateState.isLoading;
 
     return AlertDialog(
@@ -355,7 +389,7 @@ class _ComponentUpsertDialogState
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<AdminComponentType>(
-                  initialValue: _selectedType,
+                  initialValue: selectedType,
                   decoration: InputDecoration(
                     labelText: 'Type',
                     filled: true,
@@ -394,7 +428,9 @@ class _ComponentUpsertDialogState
                           if (value == null) {
                             return;
                           }
-                          setState(() => _selectedType = value);
+                          ref
+                              .read(_componentUpsertTypeProvider.notifier)
+                              .set(value);
                         },
                 ),
                 const SizedBox(height: 12),
@@ -424,11 +460,13 @@ class _ComponentUpsertDialogState
                     ),
                     const Spacer(),
                     Switch(
-                      value: _isActive,
+                      value: isActive,
                       activeThumbColor: AppColors.accentGreen,
                       onChanged: isLoading
                           ? null
-                          : (value) => setState(() => _isActive = value),
+                          : (value) => ref
+                              .read(_componentUpsertIsActiveProvider.notifier)
+                              .set(value),
                     ),
                   ],
                 ),
@@ -470,10 +508,10 @@ class _ComponentUpsertDialogState
     }
 
     final request = AdminDeviceComponentRequest(
-      type: _selectedType,
+      type: ref.read(_componentUpsertTypeProvider),
       gpioPin: int.parse(_gpioController.text.trim()),
       name: _nameController.text.trim(),
-      active: _isActive,
+      active: ref.read(_componentUpsertIsActiveProvider),
     );
 
     try {
