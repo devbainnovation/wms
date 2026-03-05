@@ -8,8 +8,13 @@ class AdminCustomerRequest {
     required this.fullName,
     required this.email,
     required this.village,
-    required this.address,
+    required this.addressLine1,
+    required this.district,
+    required this.state,
+    required this.pincode,
     required this.espUnitIds,
+    this.addressLine2,
+    this.taluka,
   });
 
   final String phoneNumber;
@@ -18,10 +23,31 @@ class AdminCustomerRequest {
   final String fullName;
   final String email;
   final String village;
-  final String address;
+  final String addressLine1;
+  final String? addressLine2;
+  final String? taluka;
+  final String district;
+  final String state;
+  final String pincode;
   final List<String> espUnitIds;
 
   Map<String, dynamic> toJson() {
+    final normalizedAddressLine1 = _requiredTrimmed(
+      addressLine1,
+      'Address Line 1',
+    );
+    final normalizedAddressLine2 = (addressLine2 ?? '').trim();
+    final normalizedTaluka = (taluka ?? '').trim();
+    final normalizedDistrict = _requiredTrimmed(district, 'District');
+    final normalizedState = _requiredTrimmed(state, 'State');
+    final normalizedPincode = _requiredTrimmed(pincode, 'Pincode');
+
+    final normalizedEspUnitIds = espUnitIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty && id.toLowerCase() != 'string')
+        .toSet()
+        .toList();
+
     return {
       'phoneNumber': phoneNumber,
       'username': username,
@@ -29,8 +55,81 @@ class AdminCustomerRequest {
       'fullName': fullName,
       'email': email,
       'village': village,
-      'address': address,
-      'espUnitIds': espUnitIds,
+      'addressLine1': normalizedAddressLine1,
+      'addressLine2': normalizedAddressLine2,
+      'taluka': normalizedTaluka,
+      'district': normalizedDistrict,
+      'state': normalizedState,
+      'pincode': normalizedPincode,
+      'espUnitIds': normalizedEspUnitIds,
+    };
+  }
+}
+
+String _requiredTrimmed(String value, String label) {
+  final text = value.trim();
+  if (text.isEmpty) {
+    throw ApiException('$label is required.');
+  }
+  return text;
+}
+
+class AdminCustomerUpdateRequest {
+  const AdminCustomerUpdateRequest({
+    required this.fullName,
+    required this.email,
+    required this.village,
+    required this.addressLine1,
+    required this.district,
+    required this.state,
+    required this.pincode,
+    this.addressLine2,
+    this.taluka,
+  });
+
+  final String fullName;
+  final String email;
+  final String village;
+  final String addressLine1;
+  final String? addressLine2;
+  final String? taluka;
+  final String district;
+  final String state;
+  final String pincode;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fullName': fullName,
+      'email': email,
+      'village': village,
+      'addressLine1': addressLine1.trim(),
+      'addressLine2': (addressLine2 ?? '').trim(),
+      'taluka': (taluka ?? '').trim(),
+      'district': district,
+      'state': state,
+      'pincode': pincode,
+    };
+  }
+}
+
+class AdminCustomerAssignDevicesRequest {
+  const AdminCustomerAssignDevicesRequest({
+    required this.customerId,
+    required this.espUnitIds,
+  });
+
+  final String customerId;
+  final List<String> espUnitIds;
+
+  Map<String, dynamic> toJson() {
+    final normalizedEspUnitIds = espUnitIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty && id.toLowerCase() != 'string')
+        .toSet()
+        .toList();
+    return {
+      'customerId': customerId.trim(),
+      'espUnitIds': normalizedEspUnitIds,
     };
   }
 }
@@ -43,7 +142,12 @@ class AdminCustomerSummary {
     required this.fullName,
     required this.email,
     required this.village,
-    required this.address,
+    required this.addressLine1,
+    required this.addressLine2,
+    required this.taluka,
+    required this.district,
+    required this.state,
+    required this.pincode,
     required this.espUnitIds,
   });
 
@@ -53,41 +157,78 @@ class AdminCustomerSummary {
   final String fullName;
   final String email;
   final String village;
-  final String address;
+  final String addressLine1;
+  final String addressLine2;
+  final String taluka;
+  final String district;
+  final String state;
+  final String pincode;
   final List<String> espUnitIds;
+
+  String get formattedAddress {
+    final parts = <String>[
+      addressLine1,
+      addressLine2,
+      taluka,
+      village,
+      district,
+      state,
+      pincode,
+    ].where((part) => part.trim().isNotEmpty).toList();
+    return parts.join(', ');
+  }
 
   factory AdminCustomerSummary.fromJson(Map<String, dynamic> json) {
     final espUnitsRaw = json['espUnitIds'] ?? json['espIds'] ?? json['devices'];
     final espUnitIds = espUnitsRaw is List
-        ? espUnitsRaw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
+        ? espUnitsRaw
+              .map((e) => e.toString())
+              .where((e) => e.isNotEmpty)
+              .toList()
         : const <String>[];
 
     return AdminCustomerSummary(
-      id: (json['id'] ?? json['customerId'] ?? '').toString(),
-      phoneNumber: (json['phoneNumber'] ?? '').toString(),
-      username: (json['username'] ?? '').toString(),
-      fullName: (json['fullName'] ?? json['name'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      village: (json['village'] ?? '').toString(),
-      address: (json['address'] ?? '').toString(),
+      id: _extractCustomerId(json),
+      phoneNumber: _readStringByKeys(json, const ['phoneNumber', 'phone']),
+      username: _readStringByKeys(json, const ['username', 'userName']),
+      fullName: _readStringByKeys(json, const ['fullName', 'name']),
+      email: _readStringByKeys(json, const ['email', 'mail']),
+      village: _readStringByKeys(json, const ['village', 'city']),
+      addressLine1: _readStringByKeys(
+        json,
+        const ['addressLine1', 'address1', 'address', 'line1'],
+      ),
+      addressLine2: _readStringByKeys(
+        json,
+        const ['addressLine2', 'address2', 'line2'],
+      ),
+      taluka: _readStringByKeys(json, const ['taluka', 'tehsil']),
+      district: _readStringByKeys(
+        json,
+        const ['district', 'districtName'],
+      ),
+      state: _readStringByKeys(json, const ['state', 'stateName']),
+      pincode: _readStringByKeys(
+        json,
+        const ['pincode', 'pinCode', 'postalCode', 'zipCode', 'zip'],
+      ),
       espUnitIds: espUnitIds,
     );
   }
 }
 
 class AdminUnassignedDevice {
-  const AdminUnassignedDevice({
-    required this.id,
-    required this.displayName,
-  });
+  const AdminUnassignedDevice({required this.id, required this.displayName});
 
   final String id;
   final String displayName;
 
   factory AdminUnassignedDevice.fromJson(Map<String, dynamic> json) {
-    final id = (json['id'] ?? json['espId'] ?? json['deviceId'] ?? '').toString();
-    final name = (json['displayName'] ?? json['name'] ?? json['macAddress'] ?? id)
+    final id = (json['id'] ?? json['espId'] ?? json['deviceId'] ?? '')
         .toString();
+    final name =
+        (json['displayName'] ?? json['name'] ?? json['macAddress'] ?? id)
+            .toString();
     return AdminUnassignedDevice(id: id, displayName: name);
   }
 }
@@ -232,6 +373,88 @@ class AdminCustomerService {
     );
   }
 
+  Future<void> updateCustomer({
+    required String bearerToken,
+    required String customerId,
+    required AdminCustomerUpdateRequest request,
+  }) async {
+    final normalizedCustomerId = customerId.trim();
+    if (normalizedCustomerId.isEmpty) {
+      throw const ApiException(
+        'Customer ID is missing. Please refresh customers and try again.',
+      );
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.adminCustomerById(normalizedCustomerId),
+      bearerToken: bearerToken,
+      body: request.toJson(),
+    );
+
+    if (response.isSuccess) {
+      return;
+    }
+
+    throw ApiException(
+      _extractMessage(response.data) ?? 'Unable to update customer.',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<void> deleteCustomer({
+    required String bearerToken,
+    required String customerId,
+  }) async {
+    final normalizedCustomerId = customerId.trim();
+    if (normalizedCustomerId.isEmpty) {
+      throw const ApiException(
+        'Customer ID is missing. Please refresh customers and try again.',
+      );
+    }
+
+    final response = await _apiClient.delete(
+      ApiEndpoints.adminCustomerById(normalizedCustomerId),
+      bearerToken: bearerToken,
+    );
+
+    if (response.isSuccess) {
+      return;
+    }
+
+    throw ApiException(
+      _extractMessage(response.data) ?? 'Unable to delete customer.',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<void> assignDevices({
+    required String bearerToken,
+    required String customerId,
+    required AdminCustomerAssignDevicesRequest request,
+  }) async {
+    final normalizedCustomerId = customerId.trim();
+    if (normalizedCustomerId.isEmpty) {
+      throw const ApiException(
+        'Customer ID is missing. Please refresh customers and try again.',
+      );
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.adminCustomerDevices(normalizedCustomerId),
+      bearerToken: bearerToken,
+      body: request.toJson(),
+    );
+
+    if (response.isSuccess) {
+      return;
+    }
+
+    throw ApiException(
+      _extractMessage(response.data) ?? 'Unable to assign device(s).',
+      statusCode: response.statusCode,
+    );
+  }
+
   String? _extractMessage(dynamic body) {
     if (body is! Map<String, dynamic>) {
       return null;
@@ -243,4 +466,38 @@ class AdminCustomerService {
     final text = msg.toString().trim();
     return text.isEmpty ? null : text;
   }
+}
+
+String _extractCustomerId(Map<String, dynamic> json) {
+  const keys = <String>[
+    'id',
+    'userId',
+    'userID',
+    'user_id',
+    'customerId',
+    'customerID',
+    'customer_id',
+    'uuid',
+    'customerUuid',
+    'customerUUID',
+  ];
+  for (final key in keys) {
+    final value = json[key];
+    final text = (value ?? '').toString().trim();
+    if (text.isNotEmpty) {
+      return text;
+    }
+  }
+  return '';
+}
+
+String _readStringByKeys(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+    final text = (value ?? '').toString().trim();
+    if (text.isNotEmpty && text.toLowerCase() != 'null') {
+      return text;
+    }
+  }
+  return '';
 }

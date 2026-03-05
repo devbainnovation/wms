@@ -3,21 +3,13 @@ import 'package:wms/admin/features/customers/services/admin_customer_service.dar
 import 'package:wms/core/core.dart';
 
 class AdminCustomersQuery {
-  const AdminCustomersQuery({
-    this.page = 0,
-    this.size = 10,
-    this.search = '',
-  });
+  const AdminCustomersQuery({this.page = 0, this.size = 10, this.search = ''});
 
   final int page;
   final int size;
   final String search;
 
-  AdminCustomersQuery copyWith({
-    int? page,
-    int? size,
-    String? search,
-  }) {
+  AdminCustomersQuery copyWith({int? page, int? size, String? search}) {
     return AdminCustomersQuery(
       page: page ?? this.page,
       size: size ?? this.size,
@@ -81,9 +73,10 @@ final adminUnassignedDevicesProvider =
     });
 
 final adminCreateCustomerControllerProvider =
-    NotifierProvider.autoDispose<AdminCreateCustomerController, AsyncValue<void>>(
-      AdminCreateCustomerController.new,
-    );
+    NotifierProvider.autoDispose<
+      AdminCreateCustomerController,
+      AsyncValue<void>
+    >(AdminCreateCustomerController.new);
 
 class AdminCreateCustomerController extends Notifier<AsyncValue<void>> {
   @override
@@ -98,6 +91,104 @@ class AdminCreateCustomerController extends Notifier<AsyncValue<void>> {
         throw const ApiException('Session expired. Please login again.');
       }
       await service.createCustomer(bearerToken: token, request: request);
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminUpdateCustomerControllerProvider =
+    NotifierProvider.autoDispose<
+      AdminUpdateCustomerController,
+      AsyncValue<void>
+    >(AdminUpdateCustomerController.new);
+
+class AdminUpdateCustomerController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> update({
+    required String customerId,
+    required AdminCustomerUpdateRequest request,
+  }) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminCustomerServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      await service.updateCustomer(
+        bearerToken: token,
+        customerId: customerId,
+        request: request,
+      );
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminDeleteCustomerControllerProvider =
+    NotifierProvider.autoDispose<
+      AdminDeleteCustomerController,
+      AsyncValue<void>
+    >(AdminDeleteCustomerController.new);
+
+class AdminDeleteCustomerController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> delete(String customerId) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminCustomerServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      await service.deleteCustomer(bearerToken: token, customerId: customerId);
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminAssignDevicesCustomerControllerProvider =
+    NotifierProvider.autoDispose<
+      AdminAssignDevicesCustomerController,
+      AsyncValue<void>
+    >(AdminAssignDevicesCustomerController.new);
+
+class AdminAssignDevicesCustomerController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> assign({
+    required String customerId,
+    required List<String> espUnitIds,
+  }) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminCustomerServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      await service.assignDevices(
+        bearerToken: token,
+        customerId: customerId,
+        request: AdminCustomerAssignDevicesRequest(
+          customerId: customerId,
+          espUnitIds: espUnitIds,
+        ),
+      );
       state = const AsyncData<void>(null);
     } catch (error, stackTrace) {
       state = AsyncError<void>(error, stackTrace);

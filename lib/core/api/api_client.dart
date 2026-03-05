@@ -262,6 +262,7 @@ class ApiClient {
 
   void _debugLog(String message) {
     if (message.length <= 900) {
+      debugPrint('WMS.API $message');
       developer.log(message, name: 'WMS.API');
       return;
     }
@@ -271,7 +272,9 @@ class ApiClient {
       final end = (i + chunkSize < message.length)
           ? i + chunkSize
           : message.length;
-      developer.log(message.substring(i, end), name: 'WMS.API');
+      final chunk = message.substring(i, end);
+      debugPrint('WMS.API $chunk');
+      developer.log(chunk, name: 'WMS.API');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
 import 'package:wms/core/auth/services/auth_api_service.dart';
@@ -64,6 +65,9 @@ class AuthLoginController extends Notifier<AsyncValue<void>> {
         session: session,
       );
       ref.read(currentAuthSessionProvider.notifier).setSession(session);
+      if (kDebugMode) {
+        debugPrint('LOGIN TOKEN: ${session.token}');
+      }
 
       state = const AsyncData<void>(null);
       return session;

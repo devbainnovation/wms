@@ -6,12 +6,14 @@ class ApiEndpoints {
   static const String authVerifyOtp = '/api/auth/verify-otp';
   static const String adminDevices = '/api/admin/devices';
   static const String adminCustomers = '/api/admin/customers';
-  static const String adminUnassignedDevices =
-      '/api/admin/devices/unassigned';
+  static const String adminUnassignedDevices = '/api/admin/devices/unassigned';
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';
   static String adminDeviceById(String id) => '/api/admin/devices/$id';
+  static String adminCustomerById(String id) => '/api/admin/customers/$id';
+  static String adminCustomerDevices(String id) =>
+      '/api/admin/customers/$id/devices';
   static String adminDeviceComponents(String id) =>
       '/api/admin/devices/$id/components';
   static String adminDeviceComponentById(String id, String compId) =>
