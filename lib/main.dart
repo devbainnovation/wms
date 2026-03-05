@@ -38,6 +38,11 @@ class WmsApp extends ConsumerWidget {
       theme: ThemeData(
         textTheme: GoogleFonts.poppinsTextTheme(),
         primaryTextTheme: GoogleFonts.poppinsTextTheme(),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: AppColors.primaryTeal,
+          selectionHandleColor: AppColors.primaryTeal,
+          selectionColor: AppColors.primaryTeal.withValues(alpha: 0.28),
+        ),
       ),
       builder: (context, child) {
         return ValueListenableBuilder<int>(

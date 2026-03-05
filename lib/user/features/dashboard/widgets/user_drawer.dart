@@ -4,12 +4,16 @@ import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/user_login_screen.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
+import 'package:wms/user/features/dashboard/screens/user_admin_users_screen.dart';
 
 class UserDrawer extends ConsumerWidget {
   const UserDrawer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(currentAuthSessionProvider);
+    final isAdmin = session?.role.toUpperCase() == 'ADMIN';
+
     return Drawer(
       child: Column(
         children: [
@@ -60,6 +64,19 @@ class UserDrawer extends ConsumerWidget {
               Navigator.of(context).pop();
             },
           ),
+          if (isAdmin)
+            ListTile(
+              leading: const Icon(Icons.groups_rounded),
+              title: const Text('View Users'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const UserAdminUsersScreen(),
+                  ),
+                );
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.logout_rounded),
             title: const Text('Logout'),

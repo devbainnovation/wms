@@ -8,12 +8,17 @@ class ApiEndpoints {
   static const String adminCustomers = '/api/admin/customers';
   static const String adminUnassignedDevices = '/api/admin/devices/unassigned';
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
+  static const String customerUsers = '/api/customer/users';
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';
   static String adminDeviceById(String id) => '/api/admin/devices/$id';
   static String adminCustomerById(String id) => '/api/admin/customers/$id';
   static String adminCustomerDevices(String id) =>
       '/api/admin/customers/$id/devices';
+  static String customerUserById(String userId) =>
+      '/api/customer/users/$userId';
+  static String customerUserPermissions(String userId) =>
+      '/api/customer/users/$userId/permissions';
   static String adminDeviceComponents(String id) =>
       '/api/admin/devices/$id/components';
   static String adminDeviceComponentById(String id, String compId) =>
