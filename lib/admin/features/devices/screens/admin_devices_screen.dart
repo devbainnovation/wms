@@ -609,6 +609,19 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
                   controller: _macController,
                   hintText: 'Enter MAC address',
                   labelText: 'MAC Address',
+                  onChanged: (value) {
+                    final uppercaseValue = value.toUpperCase();
+                    if (value == uppercaseValue) {
+                      return;
+                    }
+                    _macController.value = _macController.value.copyWith(
+                      text: uppercaseValue,
+                      selection: TextSelection.collapsed(
+                        offset: uppercaseValue.length,
+                      ),
+                      composing: TextRange.empty,
+                    );
+                  },
                   validator: (v) => _required(v, 'MAC address'),
                 ),
                 const SizedBox(height: 12),
@@ -629,8 +642,9 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
                 AppDatePickerField(
                   label: 'AMC Expiry',
                   value: amcExpiry,
-                  onPick: (date) =>
-                      ref.read(_deviceUpsertAmcExpiryProvider.notifier).set(date),
+                  onPick: (date) => ref
+                      .read(_deviceUpsertAmcExpiryProvider.notifier)
+                      .set(date),
                 ),
                 const SizedBox(height: 12),
                 AppDatePickerField(
@@ -710,7 +724,7 @@ class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
     }
 
     final request = AdminDeviceRequest(
-      macAddress: _macController.text.trim(),
+      macAddress: _macController.text.trim().toUpperCase(),
       displayName: _nameController.text.trim(),
       fwVersion: _fwController.text.trim(),
       amcExpiry: amcExpiry,

@@ -114,11 +114,11 @@ class AdminCustomerUpdateRequest {
 
 class AdminCustomerAssignDevicesRequest {
   const AdminCustomerAssignDevicesRequest({
-    required this.customerId,
+    required this.userId,
     required this.espUnitIds,
   });
 
-  final String customerId;
+  final String userId;
   final List<String> espUnitIds;
 
   Map<String, dynamic> toJson() {
@@ -127,10 +127,7 @@ class AdminCustomerAssignDevicesRequest {
         .where((id) => id.isNotEmpty && id.toLowerCase() != 'string')
         .toSet()
         .toList();
-    return {
-      'customerId': customerId.trim(),
-      'espUnitIds': normalizedEspUnitIds,
-    };
+    return {'userId': userId.trim(), 'espUnitIds': normalizedEspUnitIds};
   }
 }
 
@@ -167,10 +164,10 @@ class AdminCustomerSummary {
 
   String get formattedAddress {
     final parts = <String>[
+      village,
       addressLine1,
       addressLine2,
       taluka,
-      village,
       district,
       state,
       pincode,
@@ -194,24 +191,27 @@ class AdminCustomerSummary {
       fullName: _readStringByKeys(json, const ['fullName', 'name']),
       email: _readStringByKeys(json, const ['email', 'mail']),
       village: _readStringByKeys(json, const ['village', 'city']),
-      addressLine1: _readStringByKeys(
-        json,
-        const ['addressLine1', 'address1', 'address', 'line1'],
-      ),
-      addressLine2: _readStringByKeys(
-        json,
-        const ['addressLine2', 'address2', 'line2'],
-      ),
+      addressLine1: _readStringByKeys(json, const [
+        'addressLine1',
+        'address1',
+        'address',
+        'line1',
+      ]),
+      addressLine2: _readStringByKeys(json, const [
+        'addressLine2',
+        'address2',
+        'line2',
+      ]),
       taluka: _readStringByKeys(json, const ['taluka', 'tehsil']),
-      district: _readStringByKeys(
-        json,
-        const ['district', 'districtName'],
-      ),
+      district: _readStringByKeys(json, const ['district', 'districtName']),
       state: _readStringByKeys(json, const ['state', 'stateName']),
-      pincode: _readStringByKeys(
-        json,
-        const ['pincode', 'pinCode', 'postalCode', 'zipCode', 'zip'],
-      ),
+      pincode: _readStringByKeys(json, const [
+        'pincode',
+        'pinCode',
+        'postalCode',
+        'zipCode',
+        'zip',
+      ]),
       espUnitIds: espUnitIds,
     );
   }
@@ -439,7 +439,7 @@ class AdminCustomerService {
       );
     }
 
-    final response = await _apiClient.put(
+    final response = await _apiClient.post(
       ApiEndpoints.adminCustomerDevices(normalizedCustomerId),
       bearerToken: bearerToken,
       body: request.toJson(),

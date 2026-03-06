@@ -185,7 +185,7 @@ class AdminAssignDevicesCustomerController extends Notifier<AsyncValue<void>> {
         bearerToken: token,
         customerId: customerId,
         request: AdminCustomerAssignDevicesRequest(
-          customerId: customerId,
+          userId: customerId,
           espUnitIds: espUnitIds,
         ),
       );

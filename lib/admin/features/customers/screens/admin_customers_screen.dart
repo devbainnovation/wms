@@ -494,8 +494,9 @@ class _CustomerTile extends StatelessWidget {
         Expanded(
           flex: 2,
           child: Text(
-            item.village.isEmpty ? '-' : item.village,
+            item.formattedAddress.isEmpty ? '-' : item.formattedAddress,
             style: const TextStyle(color: AppColors.darkText),
+            softWrap: true,
           ),
         ),
         Expanded(
@@ -555,7 +556,9 @@ class _CustomerTile extends StatelessWidget {
             _metaChip(
               'Phone: ${item.phoneNumber.isEmpty ? '-' : item.phoneNumber}',
             ),
-            _metaChip('Village: ${item.village.isEmpty ? '-' : item.village}'),
+            _metaChip(
+              'Address: ${item.formattedAddress.isEmpty ? '-' : item.formattedAddress}',
+            ),
             _metaChip(
               item.espUnitIds.isEmpty
                   ? 'Devices: None'

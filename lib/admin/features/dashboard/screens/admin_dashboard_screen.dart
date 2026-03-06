@@ -327,19 +327,21 @@ class _AdminContentPanel extends ConsumerWidget {
       );
     }
 
-    final contentByIndex = <int, ({String title, String subtitle, IconData icon})>{
-      2: (
-        title: 'Devices',
-        subtitle:
-            'Device inventory and assignment module will be integrated here.',
-        icon: Icons.memory_rounded,
-      ),
-      3: (
-        title: 'Schedules',
-        subtitle: 'Scheduling and automation controls will be integrated here.',
-        icon: Icons.calendar_month_rounded,
-      ),
-    };
+    final contentByIndex =
+        <int, ({String title, String subtitle, IconData icon})>{
+          2: (
+            title: 'Devices',
+            subtitle:
+                'Device inventory and assignment module will be integrated here.',
+            icon: Icons.memory_rounded,
+          ),
+          3: (
+            title: 'Schedules',
+            subtitle:
+                'Scheduling and automation controls will be integrated here.',
+            icon: Icons.calendar_month_rounded,
+          ),
+        };
 
     final content = contentByIndex[selectedMenu] ?? contentByIndex[1]!;
     return Padding(
@@ -390,6 +392,7 @@ class _AdminDashboardOverview extends StatelessWidget {
         : width < 1200
         ? 3
         : 4;
+    final cardHeight = width < 700 ? 128.0 : 140.0;
 
     final cards = <_DashboardMetricCardData>[
       _DashboardMetricCardData(
@@ -477,7 +480,7 @@ class _AdminDashboardOverview extends StatelessWidget {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.35,
+              mainAxisExtent: cardHeight,
             ),
             itemBuilder: (context, index) {
               final card = cards[index];
