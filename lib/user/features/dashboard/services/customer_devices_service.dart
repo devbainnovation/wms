@@ -7,7 +7,10 @@ class CustomerDeviceSummary {
     required this.displayName,
     required this.fwVersion,
     required this.lastHeartbeat,
+    required this.amcExpiry,
+    required this.rechargeExpiry,
     required this.createdAt,
+    required this.components,
     required this.isActive,
     required this.isOnline,
   });
@@ -17,7 +20,10 @@ class CustomerDeviceSummary {
   final String displayName;
   final String fwVersion;
   final String lastHeartbeat;
+  final String amcExpiry;
+  final String rechargeExpiry;
   final String createdAt;
+  final List<String> components;
   final bool isActive;
   final bool isOnline;
 
@@ -55,13 +61,51 @@ class CustomerDeviceSummary {
       return false;
     }
 
+    String readFromMap(Map<String, dynamic> map, List<String> keys) {
+      for (final key in keys) {
+        final raw = map[key];
+        if (raw == null) {
+          continue;
+        }
+        final value = raw.toString().trim();
+        if (value.isNotEmpty && value.toLowerCase() != 'null') {
+          return value;
+        }
+      }
+      return '';
+    }
+
+    List<String> readComponents() {
+      final raw = json['components'];
+      if (raw is! List) {
+        return const <String>[];
+      }
+      return raw
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              return readFromMap(item, const [
+                'displayName',
+                'name',
+                'componentName',
+                'id',
+              ]);
+            }
+            return item.toString().trim();
+          })
+          .where((value) => value.isNotEmpty)
+          .toList();
+    }
+
     return CustomerDeviceSummary(
       espId: read(const ['espId', 'id', 'deviceId']),
       macAddress: read(const ['macAddress']),
       displayName: read(const ['displayName', 'name', 'espId']),
       fwVersion: read(const ['fwVersion']),
       lastHeartbeat: read(const ['lastHeartbeat']),
+      amcExpiry: read(const ['amcExpiry']),
+      rechargeExpiry: read(const ['rechargeExpiry']),
       createdAt: read(const ['createdAt']),
+      components: readComponents(),
       isActive: readBool(const ['active', 'isActive']),
       isOnline: readBool(const ['online', 'isOnline']),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
+import 'package:wms/user/features/dashboard/screens/device_details_screen.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
 import 'package:wms/user/features/dashboard/services/weather_service.dart';
 
@@ -19,13 +20,7 @@ class DashboardTabView extends ConsumerWidget {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.lightBlue, AppColors.lightGreen],
-            ),
-          ),
+          color: AppColors.white,
           child: weatherAsync.when(
             data: (weather) => _WeatherCard(
               weather: weather,
@@ -83,7 +78,7 @@ class DashboardTabView extends ConsumerWidget {
                     return Column(
                       children: [
                         for (var i = 0; i < devices.length; i++) ...[
-                          _statusCard(device: devices[i]),
+                          _statusCard(context: context, device: devices[i]),
                           if (i < devices.length - 1)
                             const SizedBox(height: 12),
                         ],
@@ -113,7 +108,10 @@ class DashboardTabView extends ConsumerWidget {
     );
   }
 
-  Widget _statusCard({required CustomerDeviceSummary device}) {
+  Widget _statusCard({
+    required BuildContext context,
+    required CustomerDeviceSummary device,
+  }) {
     final displayName = device.displayName.isEmpty
         ? (device.espId.isEmpty ? 'Device' : device.espId)
         : device.displayName;
@@ -121,189 +119,205 @@ class DashboardTabView extends ConsumerWidget {
     final modeLabel = device.isOnline ? 'Online' : 'Offline';
     final fwText = device.fwVersion.isEmpty ? '-' : device.fwVersion;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.lightGreyText),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Text(
-                    displayName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.signal_cellular_alt_rounded,
-                color: AppColors.blue,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DeviceDetailsScreen(device: device),
+            ),
+          );
+        },
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreyText),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-          const SizedBox(height: 14),
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: device.isActive
-                        ? AppColors.accentGreen.withValues(alpha: 0.12)
-                        : AppColors.red.withValues(alpha: 0.12),
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      AppAssets.devicePower,
-                      width: 24,
-                      height: 24,
-                      color: device.isActive
-                          ? AppColors.accentGreen
-                          : AppColors.red,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.power_settings_new_rounded,
-                        size: 28,
-                        color: device.isActive
-                            ? AppColors.accentGreen
-                            : AppColors.red,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RichText(
-                      text: TextSpan(
+              Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        displayName,
                         style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
                         ),
-                        children: [TextSpan(text: displayName)],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      device.isActive ? 'ON' : 'OFF',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: device.isActive
-                        ? AppColors.accentGreen.withValues(alpha: 0.12)
-                        : AppColors.red.withValues(alpha: 0.12),
                   ),
-                  child: Center(
-                    child: Image.asset(
-                      AppAssets.valve,
-                      width: 24,
-                      height: 24,
-                      color: device.isActive
-                          ? AppColors.accentGreen
-                          : AppColors.red,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.tune_rounded,
-                        size: 24,
+                  const Icon(
+                    Icons.signal_cellular_alt_rounded,
+                    color: AppColors.blue,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
                         color: device.isActive
-                            ? AppColors.accentGreen
-                            : AppColors.red,
+                            ? AppColors.accentGreen.withValues(alpha: 0.12)
+                            : AppColors.red.withValues(alpha: 0.12),
                       ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: device.espId.isEmpty ? '-' : device.espId,
+                      child: Center(
+                        child: Image.asset(
+                          AppAssets.devicePower,
+                          width: 24,
+                          height: 24,
+                          color: device.isActive
+                              ? AppColors.accentGreen
+                              : AppColors.red,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.power_settings_new_rounded,
+                            size: 28,
+                            color: device.isActive
+                                ? AppColors.accentGreen
+                                : AppColors.red,
                           ),
-                          TextSpan(
-                            text: ' ($modeLabel)',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
                             style: const TextStyle(
-                              color: AppColors.greyText,
-                              fontWeight: FontWeight.w400,
+                              fontSize: 16,
+                              color: Colors.black,
                             ),
+                            children: [TextSpan(text: displayName)],
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          device.isActive ? 'ON' : 'OFF',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: device.isActive
+                            ? AppColors.accentGreen.withValues(alpha: 0.12)
+                            : AppColors.red.withValues(alpha: 0.12),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          AppAssets.valve,
+                          width: 24,
+                          height: 24,
+                          color: device.isActive
+                              ? AppColors.accentGreen
+                              : AppColors.red,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.tune_rounded,
+                            size: 24,
+                            color: device.isActive
+                                ? AppColors.accentGreen
+                                : AppColors.red,
+                          ),
+                        ),
                       ),
                     ),
-                    Text(
-                      'FW: $fwText',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: device.espId.isEmpty ? '-' : device.espId,
+                              ),
+                              TextSpan(
+                                text: ' ($modeLabel)',
+                                style: const TextStyle(
+                                  color: AppColors.greyText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          'FW: $fwText',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.sync_rounded, color: AppColors.blue),
+                  const SizedBox(width: 10),
+                  Text(
+                    lastUpdated,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.greyText,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.sync_rounded, color: AppColors.blue),
-              const SizedBox(width: 10),
-              Text(
-                lastUpdated,
-                style: const TextStyle(fontSize: 13, color: AppColors.greyText),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

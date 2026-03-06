@@ -17,82 +17,77 @@ class UserDashboardScreen extends ConsumerWidget {
       const ProfileTabView(),
     ];
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.lightBlue, AppColors.lightGreen],
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        drawer: const UserDrawer(),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          foregroundColor: AppColors.darkText,
-          titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _greetingText(),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkText,
-                ),
-              ),
-              const Text(
-                'John Doe',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.darkText,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.notifications_rounded,
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      drawer: const UserDrawer(),
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        surfaceTintColor: AppColors.white,
+        elevation: 3,
+        shadowColor: AppColors.shadow,
+        scrolledUnderElevation: 3,
+        foregroundColor: AppColors.darkText,
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _greetingText(),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
                 color: AppColors.darkText,
-                size: 30,
+              ),
+            ),
+            const Text(
+              'John Doe',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.darkText,
               ),
             ),
           ],
         ),
-        body: SafeArea(top: false, child: pages[selectedTab]),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selectedTab,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.lightBlue,
-          selectedItemColor: AppColors.accentGreen,
-          unselectedItemColor: AppColors.greyText,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          showUnselectedLabels: true,
-          onTap: (value) {
-            ref.read(userDashboardTabProvider.notifier).setTab(value);
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_rounded),
-              label: 'Dashboard',
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.notifications_rounded,
+              color: AppColors.darkText,
+              size: 30,
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.water_drop_sharp),
-              label: 'Tank',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      body: SafeArea(top: false, child: pages[selectedTab]),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: selectedTab,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.white,
+        elevation: 10,
+        selectedItemColor: AppColors.primaryTeal,
+        unselectedItemColor: AppColors.greyText,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        showUnselectedLabels: true,
+        onTap: (value) {
+          ref.read(userDashboardTabProvider.notifier).setTab(value);
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_rounded),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.water_drop_sharp),
+            label: 'Tank',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
