@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
+import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
 import 'package:wms/user/features/dashboard/services/weather_service.dart';
 
 class DashboardTabView extends ConsumerWidget {
@@ -10,6 +12,7 @@ class DashboardTabView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(currentWeatherProvider);
+    final devicesAsync = ref.watch(customerDevicesListProvider);
 
     return Column(
       children: [
@@ -72,26 +75,35 @@ class DashboardTabView extends ConsumerWidget {
                       'Recharge expires in 15 days   •   AMC expires in 10 days',
                 ),
                 const SizedBox(height: 14),
-                _statusCard(
-                  title: 'Jangar OHT',
-                  deviceLabel: 'Device 1',
-                  isOn: true,
-                  motorTime: 'ON - 3:00 PM Today',
-                  valveName: 'bapasitara',
-                  mode: 'Real Time Mode',
-                  valvesOn: '1 Valves ON',
-                  updatedAt: '3:27:52 PM 26/02/2026',
-                ),
-                const SizedBox(height: 12),
-                _statusCard(
-                  title: 'Jangar SMT',
-                  deviceLabel: 'Device 2',
-                  isOn: false,
-                  motorTime: 'OFF - 3:00 PM Today',
-                  valveName: 'HIGHSCOOL',
-                  mode: 'Real Time Mode',
-                  valvesOn: '1 Valves ON',
-                  updatedAt: '3:28:15 PM 26/02/2026',
+                devicesAsync.when(
+                  data: (devices) {
+                    if (devices.isEmpty) {
+                      return const _DeviceEmptyCard();
+                    }
+                    return Column(
+                      children: [
+                        for (var i = 0; i < devices.length; i++) ...[
+                          _statusCard(device: devices[i]),
+                          if (i < devices.length - 1)
+                            const SizedBox(height: 12),
+                        ],
+                      ],
+                    );
+                  },
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryTeal,
+                      ),
+                    ),
+                  ),
+                  error: (error, _) => _DeviceErrorCard(
+                    message: error is ApiException
+                        ? error.message
+                        : 'Unable to load devices',
+                    onRetry: () => ref.invalidate(customerDevicesListProvider),
+                  ),
                 ),
               ],
             ),
@@ -101,16 +113,14 @@ class DashboardTabView extends ConsumerWidget {
     );
   }
 
-  Widget _statusCard({
-    required String title,
-    required String deviceLabel,
-    required bool isOn,
-    required String motorTime,
-    required String valveName,
-    required String mode,
-    required String valvesOn,
-    required String updatedAt,
-  }) {
+  Widget _statusCard({required CustomerDeviceSummary device}) {
+    final displayName = device.displayName.isEmpty
+        ? (device.espId.isEmpty ? 'Device' : device.espId)
+        : device.displayName;
+    final lastUpdated = _formatDateTime(device.lastHeartbeat, device.createdAt);
+    final modeLabel = device.isOnline ? 'Online' : 'Offline';
+    final fwText = device.fwVersion.isEmpty ? '-' : device.fwVersion;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
@@ -133,7 +143,7 @@ class DashboardTabView extends ConsumerWidget {
               Expanded(
                 child: Center(
                   child: Text(
-                    title,
+                    displayName,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
@@ -161,7 +171,7 @@ class DashboardTabView extends ConsumerWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isOn
+                    color: device.isActive
                         ? AppColors.accentGreen.withValues(alpha: 0.12)
                         : AppColors.red.withValues(alpha: 0.12),
                   ),
@@ -170,11 +180,15 @@ class DashboardTabView extends ConsumerWidget {
                       AppAssets.devicePower,
                       width: 24,
                       height: 24,
-                      color: isOn ? AppColors.accentGreen : AppColors.red,
+                      color: device.isActive
+                          ? AppColors.accentGreen
+                          : AppColors.red,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.power_settings_new_rounded,
                         size: 28,
-                        color: isOn ? AppColors.accentGreen : AppColors.red,
+                        color: device.isActive
+                            ? AppColors.accentGreen
+                            : AppColors.red,
                       ),
                     ),
                   ),
@@ -191,12 +205,12 @@ class DashboardTabView extends ConsumerWidget {
                           fontSize: 16,
                           color: Colors.black,
                         ),
-                        children: [TextSpan(text: deviceLabel)],
+                        children: [TextSpan(text: displayName)],
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      motorTime,
+                      device.isActive ? 'ON' : 'OFF',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
@@ -218,7 +232,7 @@ class DashboardTabView extends ConsumerWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isOn
+                    color: device.isActive
                         ? AppColors.accentGreen.withValues(alpha: 0.12)
                         : AppColors.red.withValues(alpha: 0.12),
                   ),
@@ -227,11 +241,15 @@ class DashboardTabView extends ConsumerWidget {
                       AppAssets.valve,
                       width: 24,
                       height: 24,
-                      color: isOn ? AppColors.accentGreen : AppColors.red,
+                      color: device.isActive
+                          ? AppColors.accentGreen
+                          : AppColors.red,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.tune_rounded,
                         size: 24,
-                        color: isOn ? AppColors.accentGreen : AppColors.red,
+                        color: device.isActive
+                            ? AppColors.accentGreen
+                            : AppColors.red,
                       ),
                     ),
                   ),
@@ -249,9 +267,11 @@ class DashboardTabView extends ConsumerWidget {
                           color: Colors.black,
                         ),
                         children: [
-                          TextSpan(text: valveName),
                           TextSpan(
-                            text: ' ($mode)',
+                            text: device.espId.isEmpty ? '-' : device.espId,
+                          ),
+                          TextSpan(
+                            text: ' ($modeLabel)',
                             style: const TextStyle(
                               color: AppColors.greyText,
                               fontWeight: FontWeight.w400,
@@ -261,7 +281,7 @@ class DashboardTabView extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      valvesOn,
+                      'FW: $fwText',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
@@ -278,11 +298,90 @@ class DashboardTabView extends ConsumerWidget {
               const Icon(Icons.sync_rounded, color: AppColors.blue),
               const SizedBox(width: 10),
               Text(
-                updatedAt,
+                lastUpdated,
                 style: const TextStyle(fontSize: 13, color: AppColors.greyText),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(String primary, String fallback) {
+    final source = primary.isNotEmpty ? primary : fallback;
+    if (source.isEmpty) {
+      return '-';
+    }
+    final parsed = DateTime.tryParse(source);
+    if (parsed == null) {
+      return source;
+    }
+    final local = parsed.toLocal();
+    final hour24 = local.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+    final minute = local.minute.toString().padLeft(2, '0');
+    final second = local.second.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    return '$hour12:$minute:$second $period $day/$month/$year';
+  }
+}
+
+class _DeviceEmptyCard extends StatelessWidget {
+  const _DeviceEmptyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreyText),
+      ),
+      child: const Text(
+        'No devices found.',
+        style: TextStyle(
+          color: AppColors.greyText,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _DeviceErrorCard extends StatelessWidget {
+  const _DeviceErrorCard({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreyText),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(
+              color: AppColors.red,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

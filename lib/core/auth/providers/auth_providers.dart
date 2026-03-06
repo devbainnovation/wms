@@ -89,9 +89,10 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
 
   Future<void> logout({String? sessionId}) async {
     state = const AsyncLoading<void>();
+    final authApi = ref.read(authApiServiceProvider);
+    final storage = ref.read(authLocalStorageProvider);
+    final sessionNotifier = ref.read(currentAuthSessionProvider.notifier);
     try {
-      final authApi = ref.read(authApiServiceProvider);
-      final storage = ref.read(authLocalStorageProvider);
       final remembered = await storage.loadLoginData();
       final rememberMe = await storage.isRememberMeEnabled();
       final activeSessionId = (sessionId ?? remembered?.sessionId ?? '').trim();
@@ -109,10 +110,15 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
       } else {
         await storage.clear();
       }
-      ref.read(currentAuthSessionProvider.notifier).clear();
+      sessionNotifier.clear();
+      if (!ref.mounted) {
+        return;
+      }
       state = const AsyncData<void>(null);
     } catch (error, stackTrace) {
-      state = AsyncError<void>(error, stackTrace);
+      if (ref.mounted) {
+        state = AsyncError<void>(error, stackTrace);
+      }
       rethrow;
     }
   }
