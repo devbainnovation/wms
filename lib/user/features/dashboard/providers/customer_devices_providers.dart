@@ -16,6 +16,48 @@ final customerDevicesListProvider =
       return service.getDevices(bearerToken: token);
     });
 
+final customerManualTriggerControllerProvider =
+    NotifierProvider<CustomerManualTriggerController, AsyncValue<void>>(
+      CustomerManualTriggerController.new,
+    );
+
+class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<ApiResponse> trigger({
+    required String componentId,
+    required String action,
+  }) async {
+    state = const AsyncLoading<void>();
+    try {
+      final token = await _resolveToken(ref);
+      if (!ref.mounted) {
+        throw const ApiException('Manual trigger request was cancelled.');
+      }
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      final service = ref.read(customerDevicesServiceProvider);
+      final response = await service.triggerManualAction(
+        bearerToken: token,
+        componentId: componentId,
+        action: action,
+      );
+      if (!ref.mounted) {
+        throw const ApiException('Manual trigger request was cancelled.');
+      }
+      state = const AsyncData<void>(null);
+      return response;
+    } catch (error, stackTrace) {
+      if (ref.mounted) {
+        state = AsyncError<void>(error, stackTrace);
+      }
+      rethrow;
+    }
+  }
+}
+
 Future<String> _resolveToken(Ref ref) async {
   final session = ref.read(currentAuthSessionProvider);
   var token = (session?.token ?? '').trim();

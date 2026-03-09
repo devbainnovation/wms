@@ -38,29 +38,32 @@ class DashboardTabView extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.lightGreyText),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search location',
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.blue,
+                      size: 28,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 16,
+                    ),
+                    fillColor: AppColors.white,
+                    filled: true,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightGreyText,
                       ),
-                    ],
-                  ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      icon: Icon(
-                        Icons.search_rounded,
-                        color: AppColors.blue,
-                        size: 30,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryTeal,
+                        width: 1.4,
                       ),
-                      hintText: 'Search location',
-                      border: InputBorder.none,
                     ),
                   ),
                 ),
@@ -324,23 +327,7 @@ class DashboardTabView extends ConsumerWidget {
 
   String _formatDateTime(String primary, String fallback) {
     final source = primary.isNotEmpty ? primary : fallback;
-    if (source.isEmpty) {
-      return '-';
-    }
-    final parsed = DateTime.tryParse(source);
-    if (parsed == null) {
-      return source;
-    }
-    final local = parsed.toLocal();
-    final hour24 = local.hour;
-    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-    final period = hour24 >= 12 ? 'PM' : 'AM';
-    final minute = local.minute.toString().padLeft(2, '0');
-    final second = local.second.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final year = local.year.toString();
-    return '$hour12:$minute:$second $period $day/$month/$year';
+    return AppDateTimeFormatter.formatString(source);
   }
 }
 

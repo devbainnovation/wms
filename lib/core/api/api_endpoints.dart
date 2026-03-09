@@ -10,6 +10,7 @@ class ApiEndpoints {
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
   static const String customerUsers = '/api/customer/users';
   static const String customerDevices = '/api/customer/devices';
+  static const String customerManualTriggers = '/api/customer/manual-triggers';
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';
   static String adminDeviceById(String id) => '/api/admin/devices/$id';

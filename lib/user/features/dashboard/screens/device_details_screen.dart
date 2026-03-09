@@ -15,6 +15,8 @@ class DeviceDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         surfaceTintColor: AppColors.white,
+        elevation: 2,
+        shadowColor: const Color(0x26000000),
         title: const Text('Device Details'),
         actions: [
           Padding(
@@ -181,22 +183,6 @@ class DeviceDetailsScreen extends StatelessWidget {
   }
 
   String _formatDateTime(String value) {
-    if (value.trim().isEmpty) {
-      return '-';
-    }
-    final parsed = DateTime.tryParse(value);
-    if (parsed == null) {
-      return value;
-    }
-    final local = parsed.toLocal();
-    final hour24 = local.hour;
-    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-    final period = hour24 >= 12 ? 'PM' : 'AM';
-    final minute = local.minute.toString().padLeft(2, '0');
-    final second = local.second.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final year = local.year.toString();
-    return '$hour12:$minute:$second $period $day/$month/$year';
+    return AppDateTimeFormatter.formatString(value);
   }
 }

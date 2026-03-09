@@ -46,7 +46,11 @@ class TankTabView extends ConsumerWidget {
                     size: 28,
                   ),
                   hintText: 'Search tank',
+                  filled: false,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
                 ),
               ),
             ),
@@ -310,14 +314,7 @@ class _TankLevelCard extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dt) {
-    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final m = dt.minute.toString().padLeft(2, '0');
-    final s = dt.second.toString().padLeft(2, '0');
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    final d = dt.day.toString().padLeft(2, '0');
-    final mo = dt.month.toString().padLeft(2, '0');
-    final y = dt.year.toString();
-    return '$h:$m:$s $ampm $d/$mo/$y';
+    return AppDateTimeFormatter.formatDateTime(dt);
   }
 }
 

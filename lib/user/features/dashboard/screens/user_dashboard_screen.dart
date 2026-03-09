@@ -70,6 +70,8 @@ class UserDashboardScreen extends ConsumerWidget {
         unselectedItemColor: AppColors.greyText,
         selectedFontSize: 12,
         unselectedFontSize: 12,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
         showUnselectedLabels: true,
         onTap: (value) {
           ref.read(userDashboardTabProvider.notifier).setTab(value);

@@ -1,5 +1,15 @@
 import 'package:wms/core/api/api.dart';
 
+class CustomerDeviceComponent {
+  const CustomerDeviceComponent({
+    required this.componentId,
+    required this.displayName,
+  });
+
+  final String componentId;
+  final String displayName;
+}
+
 class CustomerDeviceSummary {
   const CustomerDeviceSummary({
     required this.espId,
@@ -11,6 +21,7 @@ class CustomerDeviceSummary {
     required this.rechargeExpiry,
     required this.createdAt,
     required this.components,
+    required this.componentDetails,
     required this.isActive,
     required this.isOnline,
   });
@@ -24,6 +35,7 @@ class CustomerDeviceSummary {
   final String rechargeExpiry;
   final String createdAt;
   final List<String> components;
+  final List<CustomerDeviceComponent> componentDetails;
   final bool isActive;
   final bool isOnline;
 
@@ -75,26 +87,44 @@ class CustomerDeviceSummary {
       return '';
     }
 
-    List<String> readComponents() {
+    List<CustomerDeviceComponent> readComponents() {
       final raw = json['components'];
       if (raw is! List) {
-        return const <String>[];
+        return const <CustomerDeviceComponent>[];
       }
       return raw
-          .map((item) {
+          .map<CustomerDeviceComponent?>((item) {
             if (item is Map<String, dynamic>) {
-              return readFromMap(item, const [
+              final name = readFromMap(item, const [
                 'displayName',
                 'name',
                 'componentName',
+              ]);
+              final id = readFromMap(item, const [
+                'componentId',
+                'compId',
                 'id',
               ]);
+              final resolvedName = name.isNotEmpty ? name : id;
+              if (resolvedName.isEmpty) {
+                return null;
+              }
+              return CustomerDeviceComponent(
+                componentId: id,
+                displayName: resolvedName,
+              );
             }
-            return item.toString().trim();
+            final text = item.toString().trim();
+            if (text.isEmpty) {
+              return null;
+            }
+            return CustomerDeviceComponent(componentId: '', displayName: text);
           })
-          .where((value) => value.isNotEmpty)
+          .whereType<CustomerDeviceComponent>()
           .toList();
     }
+
+    final componentDetails = readComponents();
 
     return CustomerDeviceSummary(
       espId: read(const ['espId', 'id', 'deviceId']),
@@ -105,7 +135,11 @@ class CustomerDeviceSummary {
       amcExpiry: read(const ['amcExpiry']),
       rechargeExpiry: read(const ['rechargeExpiry']),
       createdAt: read(const ['createdAt']),
-      components: readComponents(),
+      components: componentDetails
+          .map((item) => item.displayName)
+          .where((value) => value.trim().isNotEmpty)
+          .toList(),
+      componentDetails: componentDetails,
       isActive: readBool(const ['active', 'isActive']),
       isOnline: readBool(const ['online', 'isOnline']),
     );
@@ -153,6 +187,40 @@ class CustomerDevicesService {
     }
 
     return const <CustomerDeviceSummary>[];
+  }
+
+  Future<ApiResponse> triggerManualAction({
+    required String bearerToken,
+    required String componentId,
+    required String action,
+  }) async {
+    final normalizedComponentId = componentId.trim();
+    if (normalizedComponentId.isEmpty) {
+      throw const ApiException('Component ID is missing.');
+    }
+
+    final normalizedAction = action.trim().toUpperCase();
+    if (normalizedAction != 'ON' && normalizedAction != 'OFF') {
+      throw const ApiException('Action must be ON or OFF.');
+    }
+
+    final response = await _apiClient.post(
+      ApiEndpoints.customerManualTriggers,
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{
+        'componentId': normalizedComponentId,
+        'action': normalizedAction,
+      },
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to trigger manual action.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
   }
 
   String? _extractMessage(dynamic body) {
