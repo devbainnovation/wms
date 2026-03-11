@@ -233,6 +233,111 @@ class AdminUnassignedDevice {
   }
 }
 
+class AdminCustomerDeviceComponent {
+  const AdminCustomerDeviceComponent({
+    required this.componentId,
+    required this.type,
+    required this.gpioPin,
+    required this.name,
+    required this.currentState,
+    required this.active,
+    this.stateChangedAt,
+  });
+
+  final int componentId;
+  final String type;
+  final int gpioPin;
+  final String name;
+  final String currentState;
+  final bool active;
+  final DateTime? stateChangedAt;
+
+  factory AdminCustomerDeviceComponent.fromJson(Map<String, dynamic> json) {
+    return AdminCustomerDeviceComponent(
+      componentId: (json['componentId'] as num?)?.toInt() ?? 0,
+      type: (json['type'] ?? '').toString().trim(),
+      gpioPin: (json['gpioPin'] as num?)?.toInt() ?? 0,
+      name: (json['name'] ?? '').toString().trim(),
+      currentState: (json['currentState'] ?? '').toString().trim(),
+      active: (json['active'] ?? json['isActive'] ?? false) == true,
+      stateChangedAt: _tryParseDateTime(json['stateChangedAt']),
+    );
+  }
+}
+
+class AdminCustomerAssignedDevice {
+  const AdminCustomerAssignedDevice({
+    required this.espId,
+    required this.macAddress,
+    required this.displayName,
+    required this.fwVersion,
+    required this.components,
+    required this.active,
+    required this.online,
+    this.lastHeartbeat,
+    this.amcExpiry,
+    this.rechargeExpiry,
+    this.createdAt,
+  });
+
+  final String espId;
+  final String macAddress;
+  final String displayName;
+  final String fwVersion;
+  final DateTime? lastHeartbeat;
+  final DateTime? amcExpiry;
+  final DateTime? rechargeExpiry;
+  final DateTime? createdAt;
+  final List<AdminCustomerDeviceComponent> components;
+  final bool active;
+  final bool online;
+
+  factory AdminCustomerAssignedDevice.fromJson(Map<String, dynamic> json) {
+    final componentsRaw = json['components'];
+    final components = componentsRaw is List
+        ? componentsRaw
+              .whereType<Map<String, dynamic>>()
+              .map(AdminCustomerDeviceComponent.fromJson)
+              .toList()
+        : const <AdminCustomerDeviceComponent>[];
+
+    return AdminCustomerAssignedDevice(
+      espId: (json['espId'] ?? json['id'] ?? '').toString().trim(),
+      macAddress: (json['macAddress'] ?? '').toString().trim(),
+      displayName: (json['displayName'] ?? json['name'] ?? '')
+          .toString()
+          .trim(),
+      fwVersion: (json['fwVersion'] ?? '').toString().trim(),
+      lastHeartbeat: _tryParseDateTime(json['lastHeartbeat']),
+      amcExpiry: _tryParseDateTime(json['amcExpiry']),
+      rechargeExpiry: _tryParseDateTime(json['rechargeExpiry']),
+      createdAt: _tryParseDateTime(json['createdAt']),
+      components: components,
+      active: (json['active'] ?? json['isActive'] ?? false) == true,
+      online: (json['online'] ?? false) == true,
+    );
+  }
+}
+
+class AdminCustomerAssignedDevicePageResult {
+  const AdminCustomerAssignedDevicePageResult({
+    required this.items,
+    required this.page,
+    required this.size,
+    required this.totalPages,
+    required this.totalElements,
+  });
+
+  final List<AdminCustomerAssignedDevice> items;
+  final int page;
+  final int size;
+  final int totalPages;
+  final int totalElements;
+
+  bool get hasPrevious => page > 0;
+  bool get hasNext => page + 1 < totalPages;
+}
+
 class AdminCustomerPageResult {
   const AdminCustomerPageResult({
     required this.items,
@@ -353,6 +458,67 @@ class AdminCustomerService {
     return const <AdminUnassignedDevice>[];
   }
 
+  Future<AdminCustomerAssignedDevicePageResult> getCustomerDevices({
+    required String bearerToken,
+    required String customerId,
+    required int page,
+    int size = 10,
+  }) async {
+    final normalizedCustomerId = customerId.trim();
+    if (normalizedCustomerId.isEmpty) {
+      throw const ApiException(
+        'Customer ID is missing. Please refresh customers and try again.',
+      );
+    }
+
+    final response = await _apiClient.get(
+      ApiEndpoints.adminCustomerDevices(normalizedCustomerId),
+      bearerToken: bearerToken,
+      queryParameters: {'page': page, 'size': size},
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch assigned devices.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      return AdminCustomerAssignedDevicePageResult(
+        items: const [],
+        page: page,
+        size: size,
+        totalPages: 1,
+        totalElements: 0,
+      );
+    }
+
+    final content = data['content'];
+    final items = content is List
+        ? content
+              .whereType<Map<String, dynamic>>()
+              .map(AdminCustomerAssignedDevice.fromJson)
+              .toList()
+        : const <AdminCustomerAssignedDevice>[];
+
+    final totalPages = (data['totalPages'] as num?)?.toInt() ?? 1;
+    final totalElements =
+        (data['totalElements'] as num?)?.toInt() ?? items.length;
+    final currentPage = (data['number'] as num?)?.toInt() ?? page;
+    final currentSize = (data['size'] as num?)?.toInt() ?? size;
+
+    return AdminCustomerAssignedDevicePageResult(
+      items: items,
+      page: currentPage,
+      size: currentSize,
+      totalPages: totalPages < 1 ? 1 : totalPages,
+      totalElements: totalElements,
+    );
+  }
+
   Future<void> createCustomer({
     required String bearerToken,
     required AdminCustomerRequest request,
@@ -455,6 +621,36 @@ class AdminCustomerService {
     );
   }
 
+  Future<String> unassignDevice({
+    required String bearerToken,
+    required String espId,
+  }) async {
+    final normalizedEspId = espId.trim();
+    if (normalizedEspId.isEmpty) {
+      throw const ApiException('Device ID is missing. Please try again.');
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.adminDeviceUnassign(normalizedEspId),
+      bearerToken: bearerToken,
+    );
+
+    if (response.isSuccess) {
+      if (response.data is String) {
+        final message = response.data.toString().trim();
+        if (message.isNotEmpty) {
+          return message;
+        }
+      }
+      return _extractMessage(response.data) ?? 'Device unassigned successfully';
+    }
+
+    throw ApiException(
+      _extractMessage(response.data) ?? 'Unable to unassign device.',
+      statusCode: response.statusCode,
+    );
+  }
+
   String? _extractMessage(dynamic body) {
     if (body is! Map<String, dynamic>) {
       return null;
@@ -500,4 +696,15 @@ String _readStringByKeys(Map<String, dynamic> json, List<String> keys) {
     }
   }
   return '';
+}
+
+DateTime? _tryParseDateTime(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  final raw = value.toString().trim();
+  if (raw.isEmpty || raw.toLowerCase() == 'null') {
+    return null;
+  }
+  return DateTime.tryParse(raw);
 }

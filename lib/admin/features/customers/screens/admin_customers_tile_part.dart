@@ -72,7 +72,7 @@ class _CustomerTile extends StatelessWidget {
         Expanded(
           flex: 3,
           child: Text(
-            item.espUnitIds.isEmpty ? 'No devices' : item.espUnitIds.join(', '),
+            item.espUnitIds.isEmpty ? '' : item.espUnitIds.join(', '),
             style: const TextStyle(color: AppColors.greyText),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

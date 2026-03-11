@@ -18,6 +18,20 @@ class AdminCustomersQuery {
   }
 }
 
+class AdminCustomerDevicesQuery {
+  const AdminCustomerDevicesQuery({this.page = 0, this.size = 10});
+
+  final int page;
+  final int size;
+
+  AdminCustomerDevicesQuery copyWith({int? page, int? size}) {
+    return AdminCustomerDevicesQuery(
+      page: page ?? this.page,
+      size: size ?? this.size,
+    );
+  }
+}
+
 final adminCustomerServiceProvider = Provider<AdminCustomerService>((ref) {
   return AdminCustomerService();
 });
@@ -42,6 +56,28 @@ class AdminCustomersQueryNotifier extends Notifier<AdminCustomersQuery> {
     final normalized = text.trim();
     state = state.copyWith(search: normalized, page: 0);
   }
+}
+
+final adminCustomerDevicesQueryProvider = NotifierProvider.autoDispose
+    .family<
+      AdminCustomerDevicesQueryNotifier,
+      AdminCustomerDevicesQuery,
+      String
+    >(AdminCustomerDevicesQueryNotifier.new);
+
+class AdminCustomerDevicesQueryNotifier
+    extends Notifier<AdminCustomerDevicesQuery> {
+  AdminCustomerDevicesQueryNotifier(this.userId);
+
+  final String userId;
+
+  @override
+  AdminCustomerDevicesQuery build() => const AdminCustomerDevicesQuery();
+
+  void next() => state = state.copyWith(page: state.page + 1);
+
+  void previous() =>
+      state = state.copyWith(page: state.page > 0 ? state.page - 1 : 0);
 }
 
 final adminCustomersListProvider =
@@ -70,6 +106,22 @@ final adminUnassignedDevicesProvider =
         throw const ApiException('Session expired. Please login again.');
       }
       return service.getUnassignedDevices(bearerToken: token);
+    });
+
+final adminCustomerAssignedDevicesProvider = FutureProvider.autoDispose
+    .family<AdminCustomerAssignedDevicePageResult, String>((ref, userId) async {
+      final service = ref.read(adminCustomerServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      final query = ref.watch(adminCustomerDevicesQueryProvider(userId));
+      return service.getCustomerDevices(
+        bearerToken: token,
+        customerId: userId,
+        page: query.page,
+        size: query.size,
+      );
     });
 
 final adminCreateCustomerControllerProvider =
@@ -190,6 +242,37 @@ class AdminAssignDevicesCustomerController extends Notifier<AsyncValue<void>> {
         ),
       );
       state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminUnassignCustomerDeviceControllerProvider =
+    NotifierProvider.autoDispose<
+      AdminUnassignCustomerDeviceController,
+      AsyncValue<void>
+    >(AdminUnassignCustomerDeviceController.new);
+
+class AdminUnassignCustomerDeviceController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<String> unassign({required String espId}) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminCustomerServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      final message = await service.unassignDevice(
+        bearerToken: token,
+        espId: espId,
+      );
+      state = const AsyncData<void>(null);
+      return message;
     } catch (error, stackTrace) {
       state = AsyncError<void>(error, stackTrace);
       rethrow;

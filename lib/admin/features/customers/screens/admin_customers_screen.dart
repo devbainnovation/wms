@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/admin/features/customers/screens/admin_customer_devices_screen.dart';
 import 'package:wms/admin/features/customers/providers/admin_customers_providers.dart';
 import 'package:wms/admin/features/customers/services/admin_customer_service.dart';
 import 'package:wms/core/core.dart';
@@ -249,27 +250,13 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                             item: result.items[index],
                             isMobile: isMobile,
                             onAssignDevice: () async {
-                              final assigned = await showDialog<bool>(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (_) => _AssignDevicesDialog(
-                                  customer: result.items[index],
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => AdminCustomerDevicesScreen(
+                                    customer: result.items[index],
+                                  ),
                                 ),
                               );
-                              if (assigned == true) {
-                                ref.invalidate(adminCustomersListProvider);
-                                ref.invalidate(adminUnassignedDevicesProvider);
-                                if (!context.mounted) {
-                                  return;
-                                }
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Device assignment updated successfully.',
-                                    ),
-                                  ),
-                                );
-                              }
                             },
                             onEdit: () async {
                               final updated = await showDialog<bool>(
