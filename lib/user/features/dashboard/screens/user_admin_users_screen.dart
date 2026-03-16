@@ -5,6 +5,123 @@ import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
 import 'package:wms/user/features/dashboard/services/user_admin_users_service.dart';
 
+const _countryDialCodes = <_CountryDialCode>[
+  _CountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),
+];
+
+final _userPermissionsDraftProvider = NotifierProvider.autoDispose<
+    _UserPermissionsDraftNotifier, _UserPermissionsDraftState>(
+  _UserPermissionsDraftNotifier.new,
+);
+
+final _addUserFormUiProvider =
+    NotifierProvider.autoDispose<_AddUserFormUiNotifier, _AddUserFormUiState>(
+      _AddUserFormUiNotifier.new,
+    );
+
+class _UserPermissionsDraftState {
+  const _UserPermissionsDraftState({
+    required this.permissions,
+    this.isHydrated = false,
+  });
+
+  final UserAdminUserPermissions permissions;
+  final bool isHydrated;
+
+  _UserPermissionsDraftState copyWith({
+    UserAdminUserPermissions? permissions,
+    bool? isHydrated,
+  }) {
+    return _UserPermissionsDraftState(
+      permissions: permissions ?? this.permissions,
+      isHydrated: isHydrated ?? this.isHydrated,
+    );
+  }
+}
+
+class _UserPermissionsDraftNotifier extends Notifier<_UserPermissionsDraftState> {
+  @override
+  _UserPermissionsDraftState build() {
+    return const _UserPermissionsDraftState(
+      permissions: UserAdminUserPermissions(
+        canViewDashboard: true,
+        canControlValves: true,
+        canCreateSchedules: true,
+        canUpdateSchedules: true,
+        canDeleteSchedules: true,
+        canCreateTriggers: true,
+        canManageNotifs: true,
+      ),
+    );
+  }
+
+  void seed(UserAdminUserPermissions permissions) {
+    state = _UserPermissionsDraftState(permissions: permissions);
+  }
+
+  void hydrate(UserAdminUserPermissions permissions) {
+    if (state.isHydrated) {
+      return;
+    }
+    state = state.copyWith(permissions: permissions, isHydrated: true);
+  }
+
+  void update(UserAdminUserPermissions permissions) {
+    state = state.copyWith(permissions: permissions, isHydrated: true);
+  }
+}
+
+class _AddUserFormUiState {
+  const _AddUserFormUiState({
+    required this.selectedCountry,
+    this.obscurePassword = true,
+    this.permissions = const UserAdminUserPermissions(
+      canViewDashboard: true,
+      canControlValves: true,
+      canCreateSchedules: true,
+      canUpdateSchedules: true,
+      canDeleteSchedules: true,
+      canCreateTriggers: true,
+      canManageNotifs: true,
+    ),
+  });
+
+  final _CountryDialCode selectedCountry;
+  final bool obscurePassword;
+  final UserAdminUserPermissions permissions;
+
+  _AddUserFormUiState copyWith({
+    _CountryDialCode? selectedCountry,
+    bool? obscurePassword,
+    UserAdminUserPermissions? permissions,
+  }) {
+    return _AddUserFormUiState(
+      selectedCountry: selectedCountry ?? this.selectedCountry,
+      obscurePassword: obscurePassword ?? this.obscurePassword,
+      permissions: permissions ?? this.permissions,
+    );
+  }
+}
+
+class _AddUserFormUiNotifier extends Notifier<_AddUserFormUiState> {
+  @override
+  _AddUserFormUiState build() {
+    return _AddUserFormUiState(selectedCountry: _countryDialCodes.first);
+  }
+
+  void setCountry(_CountryDialCode country) {
+    state = state.copyWith(selectedCountry: country);
+  }
+
+  void toggleObscurePassword() {
+    state = state.copyWith(obscurePassword: !state.obscurePassword);
+  }
+
+  void updatePermissions(UserAdminUserPermissions permissions) {
+    state = state.copyWith(permissions: permissions);
+  }
+}
+
 class UserAdminUsersScreen extends ConsumerWidget {
   const UserAdminUsersScreen({super.key});
 
@@ -186,19 +303,12 @@ class _UserDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
-  late bool _canViewDashboard;
-  late bool _canControlValves;
-  late bool _canCreateSchedules;
-  late bool _canUpdateSchedules;
-  late bool _canDeleteSchedules;
-  late bool _canCreateTriggers;
-  late bool _canManageNotifs;
-  bool _syncDone = false;
-
   @override
   void initState() {
     super.initState();
-    _setPermissions(widget.seedUser.permissions);
+    ref
+        .read(_userPermissionsDraftProvider.notifier)
+        .seed(widget.seedUser.permissions);
   }
 
   @override
@@ -207,15 +317,17 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
       userAdminUserDetailsProvider(widget.seedUser.userId),
     );
     final saveState = ref.watch(userAdminUpdatePermissionsControllerProvider);
+    final permissionsState = ref.watch(_userPermissionsDraftProvider);
     final user = detailsAsync.asData?.value ?? widget.seedUser;
 
-    if (!_syncDone && detailsAsync.hasValue) {
+    if (detailsAsync.hasValue && !permissionsState.isHydrated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _syncDone == true) {
+        if (!mounted) {
           return;
         }
-        _syncDone = true;
-        _setPermissions(detailsAsync.value!.permissions);
+        ref
+            .read(_userPermissionsDraftProvider.notifier)
+            .hydrate(detailsAsync.value!.permissions);
       });
     }
 
@@ -254,7 +366,11 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
             ],
           ),
         ),
-        data: (_) => _detailsContent(user, saveState.isLoading),
+        data: (_) => _detailsContent(
+          user,
+          permissionsState.permissions,
+          saveState.isLoading,
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -282,7 +398,11 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
     );
   }
 
-  Widget _detailsContent(UserAdminUserSummary user, bool isSaving) {
+  Widget _detailsContent(
+    UserAdminUserSummary user,
+    UserAdminUserPermissions permissions,
+    bool isSaving,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -325,52 +445,80 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
                 const SizedBox(height: 8),
                 _permissionTile(
                   title: 'Can View Dashboard',
-                  value: _canViewDashboard,
+                  value: permissions.canViewDashboard,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canViewDashboard = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canViewDashboard: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Control Valves',
-                  value: _canControlValves,
+                  value: permissions.canControlValves,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canControlValves = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canControlValves: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Create Schedules',
-                  value: _canCreateSchedules,
+                  value: permissions.canCreateSchedules,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canCreateSchedules = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canCreateSchedules: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Update Schedules',
-                  value: _canUpdateSchedules,
+                  value: permissions.canUpdateSchedules,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canUpdateSchedules = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canUpdateSchedules: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Delete Schedules',
-                  value: _canDeleteSchedules,
+                  value: permissions.canDeleteSchedules,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canDeleteSchedules = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canDeleteSchedules: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Create Triggers',
-                  value: _canCreateTriggers,
+                  value: permissions.canCreateTriggers,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canCreateTriggers = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canCreateTriggers: v ?? true,
+                    ),
+                  ),
                 ),
                 _permissionTile(
                   title: 'Can Manage Notifs',
-                  value: _canManageNotifs,
+                  value: permissions.canManageNotifs,
                   enabled: !isSaving,
-                  onChanged: (v) =>
-                      setState(() => _canManageNotifs = v ?? true),
+                  onChanged: (v) => _updatePermissions(
+                    _copyPermissions(
+                      permissions,
+                      canManageNotifs: v ?? true,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -435,26 +583,12 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
     );
   }
 
-  void _setPermissions(UserAdminUserPermissions permissions) {
-    _canViewDashboard = permissions.canViewDashboard;
-    _canControlValves = permissions.canControlValves;
-    _canCreateSchedules = permissions.canCreateSchedules;
-    _canUpdateSchedules = permissions.canUpdateSchedules;
-    _canDeleteSchedules = permissions.canDeleteSchedules;
-    _canCreateTriggers = permissions.canCreateTriggers;
-    _canManageNotifs = permissions.canManageNotifs;
+  void _updatePermissions(UserAdminUserPermissions permissions) {
+    ref.read(_userPermissionsDraftProvider.notifier).update(permissions);
   }
 
   Future<void> _save(String userId) async {
-    final request = UserAdminUserPermissions(
-      canViewDashboard: _canViewDashboard,
-      canControlValves: _canControlValves,
-      canCreateSchedules: _canCreateSchedules,
-      canUpdateSchedules: _canUpdateSchedules,
-      canDeleteSchedules: _canDeleteSchedules,
-      canCreateTriggers: _canCreateTriggers,
-      canManageNotifs: _canManageNotifs,
-    );
+    final request = ref.read(_userPermissionsDraftProvider).permissions;
     try {
       await ref
           .read(userAdminUpdatePermissionsControllerProvider.notifier)
@@ -548,10 +682,6 @@ class _AddUserDialog extends ConsumerStatefulWidget {
 }
 
 class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
-  static const _countryDialCodes = <_CountryDialCode>[
-    _CountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),
-  ];
-
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -565,18 +695,6 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
   final _districtController = TextEditingController();
   final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
-
-  _CountryDialCode _selectedCountry = _countryDialCodes.first;
-  bool _obscurePassword = true;
-
-  bool _canViewDashboard = true;
-  bool _canControlValves = true;
-  bool _canCreateSchedules = true;
-  bool _canUpdateSchedules = true;
-  bool _canDeleteSchedules = true;
-  bool _canCreateTriggers = true;
-  bool _canManageNotifs = true;
-
   @override
   void dispose() {
     _phoneController.dispose();
@@ -597,6 +715,8 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
   @override
   Widget build(BuildContext context) {
     final createState = ref.watch(userAdminCreateUserControllerProvider);
+    final uiState = ref.watch(_addUserFormUiProvider);
+    final permissions = uiState.permissions;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -619,7 +739,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                     SizedBox(
                       width: 180,
                       child: DropdownButtonFormField<_CountryDialCode>(
-                        initialValue: _selectedCountry,
+                        initialValue: uiState.selectedCountry,
                         decoration: InputDecoration(
                           labelText: 'Country',
                           filled: true,
@@ -656,10 +776,13 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                             .toList(),
                         onChanged: createState.isLoading
                             ? null
-                            : (value) => setState(
-                                () => _selectedCountry =
-                                    value ?? _countryDialCodes.first,
-                              ),
+                            : (value) {
+                                ref
+                                    .read(_addUserFormUiProvider.notifier)
+                                    .setCountry(
+                                      value ?? _countryDialCodes.first,
+                                    );
+                              },
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -686,15 +809,17 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                   controller: _passwordController,
                   hintText: 'Enter password',
                   labelText: 'Password',
-                  obscureText: _obscurePassword,
+                  obscureText: uiState.obscurePassword,
                   suffixIcon: IconButton(
                     onPressed: createState.isLoading
                         ? null
-                        : () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
+                        : () {
+                            ref
+                                .read(_addUserFormUiProvider.notifier)
+                                .toggleObscurePassword();
+                          },
                     icon: Icon(
-                      _obscurePassword
+                      uiState.obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
                     ),
@@ -787,45 +912,73 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                       const SizedBox(height: 8),
                       _permissionTile(
                         title: 'Can View Dashboard',
-                        value: _canViewDashboard,
-                        onChanged: (v) =>
-                            setState(() => _canViewDashboard = v ?? true),
+                        value: permissions.canViewDashboard,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canViewDashboard: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Control Valves',
-                        value: _canControlValves,
-                        onChanged: (v) =>
-                            setState(() => _canControlValves = v ?? true),
+                        value: permissions.canControlValves,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canControlValves: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Create Schedules',
-                        value: _canCreateSchedules,
-                        onChanged: (v) =>
-                            setState(() => _canCreateSchedules = v ?? true),
+                        value: permissions.canCreateSchedules,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canCreateSchedules: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Update Schedules',
-                        value: _canUpdateSchedules,
-                        onChanged: (v) =>
-                            setState(() => _canUpdateSchedules = v ?? true),
+                        value: permissions.canUpdateSchedules,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canUpdateSchedules: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Delete Schedules',
-                        value: _canDeleteSchedules,
-                        onChanged: (v) =>
-                            setState(() => _canDeleteSchedules = v ?? true),
+                        value: permissions.canDeleteSchedules,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canDeleteSchedules: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Create Triggers',
-                        value: _canCreateTriggers,
-                        onChanged: (v) =>
-                            setState(() => _canCreateTriggers = v ?? true),
+                        value: permissions.canCreateTriggers,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canCreateTriggers: v ?? true,
+                          ),
+                        ),
                       ),
                       _permissionTile(
                         title: 'Can Manage Notifs',
-                        value: _canManageNotifs,
-                        onChanged: (v) =>
-                            setState(() => _canManageNotifs = v ?? true),
+                        value: permissions.canManageNotifs,
+                        onChanged: (v) => _updateDraftPermissions(
+                          _copyPermissions(
+                            permissions,
+                            canManageNotifs: v ?? true,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -894,15 +1047,20 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
     );
   }
 
+  void _updateDraftPermissions(UserAdminUserPermissions permissions) {
+    ref.read(_addUserFormUiProvider.notifier).updatePermissions(permissions);
+  }
+
   Future<void> _submit() async {
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) {
       return;
     }
 
+    final uiState = ref.read(_addUserFormUiProvider);
     final phone = _phoneController.text.trim();
     final request = UserAdminUserCreateRequest(
-      phoneNumber: '${_selectedCountry.dialCode}$phone',
+      phoneNumber: '${uiState.selectedCountry.dialCode}$phone',
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
       fullName: _fullNameController.text.trim(),
@@ -915,15 +1073,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
       state: _stateController.text.trim(),
       pincode: _pincodeController.text.trim(),
       role: 'USER',
-      permissions: UserAdminUserPermissions(
-        canViewDashboard: _canViewDashboard,
-        canControlValves: _canControlValves,
-        canCreateSchedules: _canCreateSchedules,
-        canUpdateSchedules: _canUpdateSchedules,
-        canDeleteSchedules: _canDeleteSchedules,
-        canCreateTriggers: _canCreateTriggers,
-        canManageNotifs: _canManageNotifs,
-      ),
+      permissions: uiState.permissions,
     );
 
     try {
@@ -979,4 +1129,25 @@ class _CountryDialCode {
   final String isoCode;
   final String name;
   final String dialCode;
+}
+
+UserAdminUserPermissions _copyPermissions(
+  UserAdminUserPermissions value, {
+  bool? canViewDashboard,
+  bool? canControlValves,
+  bool? canCreateSchedules,
+  bool? canUpdateSchedules,
+  bool? canDeleteSchedules,
+  bool? canCreateTriggers,
+  bool? canManageNotifs,
+}) {
+  return UserAdminUserPermissions(
+    canViewDashboard: canViewDashboard ?? value.canViewDashboard,
+    canControlValves: canControlValves ?? value.canControlValves,
+    canCreateSchedules: canCreateSchedules ?? value.canCreateSchedules,
+    canUpdateSchedules: canUpdateSchedules ?? value.canUpdateSchedules,
+    canDeleteSchedules: canDeleteSchedules ?? value.canDeleteSchedules,
+    canCreateTriggers: canCreateTriggers ?? value.canCreateTriggers,
+    canManageNotifs: canManageNotifs ?? value.canManageNotifs,
+  );
 }

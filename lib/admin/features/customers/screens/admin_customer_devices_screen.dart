@@ -7,28 +7,70 @@ import 'package:wms/admin/features/devices/services/admin_device_component_servi
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
-class AdminCustomerDevicesScreen extends ConsumerStatefulWidget {
+final _adminCustomerDevicesUiProvider = NotifierProvider.autoDispose<
+    _AdminCustomerDevicesUiNotifier, _AdminCustomerDevicesUiState>(
+  _AdminCustomerDevicesUiNotifier.new,
+);
+
+class _AdminCustomerDevicesUiState {
+  const _AdminCustomerDevicesUiState({
+    this.expandedDeviceIds = const <String>{},
+    this.componentSchedules =
+        const <String, Map<int, List<AppScheduleTimeRange>>>{},
+  });
+
+  final Set<String> expandedDeviceIds;
+  final Map<String, Map<int, List<AppScheduleTimeRange>>> componentSchedules;
+
+  _AdminCustomerDevicesUiState copyWith({
+    Set<String>? expandedDeviceIds,
+    Map<String, Map<int, List<AppScheduleTimeRange>>>? componentSchedules,
+  }) {
+    return _AdminCustomerDevicesUiState(
+      expandedDeviceIds: expandedDeviceIds ?? this.expandedDeviceIds,
+      componentSchedules: componentSchedules ?? this.componentSchedules,
+    );
+  }
+}
+
+class _AdminCustomerDevicesUiNotifier extends Notifier<_AdminCustomerDevicesUiState> {
+  @override
+  _AdminCustomerDevicesUiState build() {
+    return const _AdminCustomerDevicesUiState();
+  }
+
+  void toggleExpanded(String deviceId) {
+    final nextExpanded = Set<String>.from(state.expandedDeviceIds);
+    if (!nextExpanded.add(deviceId)) {
+      nextExpanded.remove(deviceId);
+    }
+    state = state.copyWith(expandedDeviceIds: nextExpanded);
+  }
+
+  void saveSchedules(
+    String componentKey,
+    Map<int, List<AppScheduleTimeRange>> schedules,
+  ) {
+    state = state.copyWith(
+      componentSchedules: {
+        ...state.componentSchedules,
+        componentKey: schedules,
+      },
+    );
+  }
+}
+
+class AdminCustomerDevicesScreen extends ConsumerWidget {
   const AdminCustomerDevicesScreen({required this.customer, super.key});
 
   final AdminCustomerSummary customer;
 
   @override
-  ConsumerState<AdminCustomerDevicesScreen> createState() =>
-      _AdminCustomerDevicesScreenState();
-}
-
-class _AdminCustomerDevicesScreenState
-    extends ConsumerState<AdminCustomerDevicesScreen> {
-  final Set<String> _expandedDeviceIds = <String>{};
-  final Map<String, Map<int, List<AppScheduleTimeRange>>> _componentSchedules =
-      <String, Map<int, List<AppScheduleTimeRange>>>{};
-
-  @override
-  Widget build(BuildContext context) {
-    final customer = widget.customer;
+  Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(
       adminCustomerAssignedDevicesProvider(customer.id),
     );
+    final uiState = ref.watch(_adminCustomerDevicesUiProvider);
     final unassignState = ref.watch(
       adminUnassignCustomerDeviceControllerProvider,
     );
@@ -76,7 +118,8 @@ class _AdminCustomerDevicesScreenState
                           backgroundColor: AppColors.primaryTeal,
                           foregroundColor: AppColors.white,
                         ),
-                        onPressed: () => _openAssignDeviceDialog(customer),
+                        onPressed: () =>
+                            _openAssignDeviceDialog(context, ref, customer),
                         icon: const Icon(Icons.add_link_rounded),
                         label: const Text('Assign Device'),
                       ),
@@ -92,7 +135,8 @@ class _AdminCustomerDevicesScreenState
                         backgroundColor: AppColors.primaryTeal,
                         foregroundColor: AppColors.white,
                       ),
-                      onPressed: () => _openAssignDeviceDialog(customer),
+                      onPressed: () =>
+                          _openAssignDeviceDialog(context, ref, customer),
                       icon: const Icon(Icons.add_link_rounded),
                       label: const Text('Assign Device'),
                     ),
@@ -156,29 +200,39 @@ class _AdminCustomerDevicesScreenState
                                   item: item,
                                   isMobile: isMobile,
                                   isUnassigning: isUnassigning,
-                                  expanded: _expandedDeviceIds.contains(
+                                  expanded: uiState.expandedDeviceIds.contains(
                                     item.espId,
                                   ),
                                   onToggleComponents: () {
-                                    setState(() {
-                                      if (!_expandedDeviceIds.add(item.espId)) {
-                                        _expandedDeviceIds.remove(item.espId);
-                                      }
-                                    });
+                                    ref
+                                        .read(
+                                          _adminCustomerDevicesUiProvider
+                                              .notifier,
+                                        )
+                                        .toggleExpanded(item.espId);
                                   },
                                   onUnassign: () => _confirmUnassign(
+                                    context: context,
+                                    ref: ref,
                                     customerId: customer.id,
                                     espId: item.espId,
                                     deviceName: item.displayName,
                                   ),
                                   onEditComponent: (component) =>
                                       _openEditComponentDialog(
+                                        context: context,
+                                        ref: ref,
                                         customerId: customer.id,
                                         deviceId: item.espId,
                                         component: component,
                                       ),
                                   onOpenSchedules: (component) =>
-                                      _openScheduleDialog(component),
+                                      _openScheduleDialog(
+                                        context: context,
+                                        ref: ref,
+                                        customerId: customer.id,
+                                        component: component,
+                                      ),
                                 );
                               },
                             ),
@@ -223,14 +277,18 @@ class _AdminCustomerDevicesScreenState
     );
   }
 
-  Future<void> _openAssignDeviceDialog(AdminCustomerSummary customer) async {
+  Future<void> _openAssignDeviceDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AdminCustomerSummary customer,
+  ) async {
     final assigned = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => _AssignCustomerDevicesDialog(customer: customer),
     );
 
-    if (assigned != true || !mounted) {
+    if (assigned != true || !context.mounted) {
       return;
     }
 
@@ -243,6 +301,8 @@ class _AdminCustomerDevicesScreenState
   }
 
   Future<void> _confirmUnassign({
+    required BuildContext context,
+    required WidgetRef ref,
     required String customerId,
     required String espId,
     required String deviceName,
@@ -269,7 +329,7 @@ class _AdminCustomerDevicesScreenState
       ),
     );
 
-    if (confirmed != true || !mounted) {
+    if (confirmed != true || !context.mounted) {
       return;
     }
 
@@ -280,14 +340,14 @@ class _AdminCustomerDevicesScreenState
       ref.invalidate(adminCustomerAssignedDevicesProvider(customerId));
       ref.invalidate(adminUnassignedDevicesProvider);
       ref.invalidate(adminCustomersListProvider);
-      if (!mounted) {
+      if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     } catch (error) {
-      if (!mounted) {
+      if (!context.mounted) {
         return;
       }
       final message = error is ApiException
@@ -300,6 +360,8 @@ class _AdminCustomerDevicesScreenState
   }
 
   Future<void> _openEditComponentDialog({
+    required BuildContext context,
+    required WidgetRef ref,
     required String customerId,
     required String deviceId,
     required AdminCustomerDeviceComponent component,
@@ -313,7 +375,7 @@ class _AdminCustomerDevicesScreenState
       ),
     );
 
-    if (updated != true || !mounted) {
+    if (updated != true || !context.mounted) {
       return;
     }
 
@@ -324,11 +386,15 @@ class _AdminCustomerDevicesScreenState
   }
 
   Future<void> _openScheduleDialog(
-    AdminCustomerDeviceComponent component,
-  ) async {
+    {
+    required BuildContext context,
+    required WidgetRef ref,
+    required String customerId,
+    required AdminCustomerDeviceComponent component,
+  }) async {
     final componentKey = _componentScheduleKey(component);
     final saved =
-        _componentSchedules[componentKey] ??
+        ref.read(_adminCustomerDevicesUiProvider).componentSchedules[componentKey] ??
         const <int, List<AppScheduleTimeRange>>{};
 
     final schedules = await showDialog<Map<int, List<AppScheduleTimeRange>>>(
@@ -341,13 +407,13 @@ class _AdminCustomerDevicesScreenState
       ),
     );
 
-    if (schedules == null || !mounted) {
+    if (schedules == null || !context.mounted) {
       return;
     }
 
-    setState(() {
-      _componentSchedules[componentKey] = schedules;
-    });
+    ref
+        .read(_adminCustomerDevicesUiProvider.notifier)
+        .saveSchedules(componentKey, schedules);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

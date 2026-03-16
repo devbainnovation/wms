@@ -45,96 +45,110 @@ class AppScheduleEditorDialog extends StatefulWidget {
 }
 
 class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
-  late Set<int> _selectedDays;
-  late Map<int, List<AppScheduleTimeRange>> _daySchedules;
+  late final ValueNotifier<_ScheduleEditorState> _stateNotifier;
 
   @override
   void initState() {
     super.initState();
-    _selectedDays = widget.initialSchedules.keys.toSet();
-    _daySchedules = _cloneSchedules(widget.initialSchedules);
+    _stateNotifier = ValueNotifier<_ScheduleEditorState>(
+      _ScheduleEditorState(
+        selectedDays: widget.initialSchedules.keys.toSet(),
+        daySchedules: _cloneSchedules(widget.initialSchedules),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _stateNotifier.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final allSelected = _selectedDays.length == 7;
+    return ValueListenableBuilder<_ScheduleEditorState>(
+      valueListenable: _stateNotifier,
+      builder: (context, state, _) {
+        final allSelected = state.selectedDays.length == 7;
 
-    return AlertDialog(
-      backgroundColor: AppColors.white,
-      title: Text(
-        widget.title,
-        style: const TextStyle(
-          color: AppColors.darkText,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      content: SizedBox(
-        width: 680,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _dayButton(
-                      label: 'All',
-                      selected: allSelected,
-                      onTap: _toggleAllDays,
-                      isAll: true,
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          title: Text(
+            widget.title,
+            style: const TextStyle(
+              color: AppColors.darkText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: SizedBox(
+            width: 680,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _dayButton(
+                          label: 'All',
+                          selected: allSelected,
+                          onTap: _toggleAllDays,
+                          isAll: true,
+                        ),
+                        const SizedBox(width: 8),
+                        for (var day = 0; day < 7; day++) ...[
+                          _dayButton(
+                            label: AppScheduleEditorDialog.dayShortLabels[day],
+                            selected: state.selectedDays.contains(day),
+                            onTap: () => _toggleDay(day),
+                          ),
+                          if (day < 6) const SizedBox(width: 8),
+                        ],
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    for (var day = 0; day < 7; day++) ...[
-                      _dayButton(
-                        label: AppScheduleEditorDialog.dayShortLabels[day],
-                        selected: _selectedDays.contains(day),
-                        onTap: () => _toggleDay(day),
-                      ),
-                      if (day < 6) const SizedBox(width: 8),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              if (_selectedDays.isEmpty)
-                const Text(
-                  'Select days to create schedules.',
-                  style: TextStyle(
-                    color: AppColors.greyText,
-                    fontWeight: FontWeight.w600,
                   ),
-                )
-              else
-                Column(
-                  children: [
-                    for (final day in _selectedDays.toList()..sort()) ...[
-                      _dayScheduleView(context, day),
-                      const SizedBox(height: 10),
-                    ],
-                  ],
-                ),
-            ],
+                  const SizedBox(height: 14),
+                  if (state.selectedDays.isEmpty)
+                    const Text(
+                      'Select days to create schedules.',
+                      style: TextStyle(
+                        color: AppColors.greyText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  else
+                    Column(
+                      children: [
+                        for (final day in state.selectedDays.toList()..sort()) ...[
+                          _dayScheduleView(context, state, day),
+                          const SizedBox(height: 10),
+                        ],
+                      ],
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).pop<Map<int, List<AppScheduleTimeRange>>>(null),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryTeal,
-            foregroundColor: AppColors.white,
-          ),
-          onPressed: _submit,
-          child: const Text('Save'),
-        ),
-      ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).pop<Map<int, List<AppScheduleTimeRange>>>(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryTeal,
+                foregroundColor: AppColors.white,
+              ),
+              onPressed: _submit,
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -173,8 +187,12 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
     );
   }
 
-  Widget _dayScheduleView(BuildContext context, int day) {
-    final ranges = _daySchedules[day] ?? const <AppScheduleTimeRange>[];
+  Widget _dayScheduleView(
+    BuildContext context,
+    _ScheduleEditorState state,
+    int day,
+  ) {
+    final ranges = state.daySchedules[day] ?? const <AppScheduleTimeRange>[];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -240,25 +258,34 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
   }
 
   void _toggleAllDays() {
-    setState(() {
-      if (_selectedDays.length == 7) {
-        _selectedDays = <int>{};
-        _daySchedules = <int, List<AppScheduleTimeRange>>{};
-      } else {
-        _selectedDays = Set<int>.from(List<int>.generate(7, (i) => i));
-      }
-    });
+    final state = _stateNotifier.value;
+    if (state.selectedDays.length == 7) {
+      _stateNotifier.value = const _ScheduleEditorState();
+      return;
+    }
+    _stateNotifier.value = state.copyWith(
+      selectedDays: Set<int>.from(List<int>.generate(7, (i) => i)),
+    );
   }
 
   void _toggleDay(int day) {
-    setState(() {
-      if (_selectedDays.contains(day)) {
-        _selectedDays.remove(day);
-        _daySchedules.remove(day);
-      } else {
-        _selectedDays.add(day);
-      }
-    });
+    final state = _stateNotifier.value;
+    final nextSelectedDays = Set<int>.from(state.selectedDays);
+    final nextSchedules = Map<int, List<AppScheduleTimeRange>>.from(
+      state.daySchedules,
+    );
+
+    if (nextSelectedDays.contains(day)) {
+      nextSelectedDays.remove(day);
+      nextSchedules.remove(day);
+    } else {
+      nextSelectedDays.add(day);
+    }
+
+    _stateNotifier.value = state.copyWith(
+      selectedDays: nextSelectedDays,
+      daySchedules: nextSchedules,
+    );
   }
 
   Future<void> _editDayRanges(int day) async {
@@ -268,7 +295,8 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
       builder: (_) => _DayTimeDialog(
         dayLabel: AppScheduleEditorDialog.dayFullLabels[day],
         initialRanges: List<AppScheduleTimeRange>.from(
-          _daySchedules[day] ?? const <AppScheduleTimeRange>[],
+          _stateNotifier.value.daySchedules[day] ??
+              const <AppScheduleTimeRange>[],
         ),
         maxSlots: AppScheduleEditorDialog.maxSlotsPerDay,
       ),
@@ -278,21 +306,30 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
       return;
     }
 
-    setState(() {
-      if (updated.isEmpty) {
-        _daySchedules.remove(day);
-        _selectedDays.remove(day);
-      } else {
-        _selectedDays.add(day);
-        _daySchedules[day] = updated;
-      }
-    });
+    final state = _stateNotifier.value;
+    final nextSelectedDays = Set<int>.from(state.selectedDays);
+    final nextSchedules = Map<int, List<AppScheduleTimeRange>>.from(
+      state.daySchedules,
+    );
+    if (updated.isEmpty) {
+      nextSchedules.remove(day);
+      nextSelectedDays.remove(day);
+    } else {
+      nextSelectedDays.add(day);
+      nextSchedules[day] = updated;
+    }
+    _stateNotifier.value = state.copyWith(
+      selectedDays: nextSelectedDays,
+      daySchedules: nextSchedules,
+    );
   }
 
   void _submit() {
-    if (_selectedDays.length == 7) {
+    final state = _stateNotifier.value;
+    if (state.selectedDays.length == 7) {
       for (var day = 0; day < 7; day++) {
-        final ranges = _daySchedules[day] ?? const <AppScheduleTimeRange>[];
+        final ranges =
+            state.daySchedules[day] ?? const <AppScheduleTimeRange>[];
         if (ranges.isEmpty) {
           _showError(
             'If all days are selected, every day must have at least one timer.',
@@ -302,8 +339,9 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
       }
     }
 
-    for (final day in _selectedDays) {
-      final ranges = _daySchedules[day] ?? const <AppScheduleTimeRange>[];
+    for (final day in state.selectedDays) {
+      final ranges =
+          state.daySchedules[day] ?? const <AppScheduleTimeRange>[];
       final validationError = validateTimeRanges(
         ranges,
         dayLabel: AppScheduleEditorDialog.dayFullLabels[day],
@@ -317,7 +355,9 @@ class _AppScheduleEditorDialogState extends State<AppScheduleEditorDialog> {
 
     Navigator.of(
       context,
-    ).pop<Map<int, List<AppScheduleTimeRange>>>(_cloneSchedules(_daySchedules));
+    ).pop<Map<int, List<AppScheduleTimeRange>>>(
+      _cloneSchedules(state.daySchedules),
+    );
   }
 
   void _showError(String message) {
@@ -343,144 +383,159 @@ class _DayTimeDialog extends StatefulWidget {
 }
 
 class _DayTimeDialogState extends State<_DayTimeDialog> {
-  late List<AppScheduleTimeRange> _ranges;
+  late final ValueNotifier<List<AppScheduleTimeRange>> _rangesNotifier;
 
   @override
   void initState() {
     super.initState();
-    _ranges = List<AppScheduleTimeRange>.from(widget.initialRanges);
+    _rangesNotifier = ValueNotifier<List<AppScheduleTimeRange>>(
+      List<AppScheduleTimeRange>.from(widget.initialRanges),
+    );
+  }
+
+  @override
+  void dispose() {
+    _rangesNotifier.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.white,
-      title: Text(
-        '${widget.dayLabel} Timers',
-        style: const TextStyle(
-          color: AppColors.darkText,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      content: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    for (var i = 0; i < _ranges.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _slotButton(
-                                label: _ranges[i].start.format(context),
-                                onTap: () => _pickAndSetTime(i, true),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              '-',
-                              style: TextStyle(color: AppColors.darkText),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _slotButton(
-                                label: _ranges[i].end.format(context),
-                                onTap: () => _pickAndSetTime(i, false),
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'Delete slot',
-                              onPressed: () {
-                                setState(() {
-                                  _ranges.removeAt(i);
-                                });
-                              },
-                              icon: const Icon(
-                                Icons.delete_rounded,
-                                color: AppColors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+    return ValueListenableBuilder<List<AppScheduleTimeRange>>(
+      valueListenable: _rangesNotifier,
+      builder: (context, ranges, _) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          title: Text(
+            '${widget.dayLabel} Timers',
+            style: const TextStyle(
+              color: AppColors.darkText,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _ranges.length >= widget.maxSlots
-                    ? null
-                    : () {
-                        setState(() {
-                          _ranges = [
-                            ..._ranges,
-                            const AppScheduleTimeRange(
-                              start: TimeOfDay(hour: 8, minute: 0),
-                              end: TimeOfDay(hour: 9, minute: 0),
-                            ),
-                          ];
-                        });
-                      },
-                icon: const Icon(Icons.add_rounded),
-                label: Text(
-                  _ranges.length >= widget.maxSlots
-                      ? 'Max ${widget.maxSlots} Slots'
-                      : 'Add Time',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () =>
-              Navigator.of(context).pop<List<AppScheduleTimeRange>>(null),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryTeal,
-            foregroundColor: AppColors.white,
           ),
-          onPressed: () {
-            final validationError = validateTimeRanges(
-              _ranges,
-              requireAtLeastOne: true,
-            );
-            if (validationError != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(validationError)));
-              return;
-            }
-            if (_ranges.length > widget.maxSlots) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Maximum ${widget.maxSlots} time slots allowed per day.',
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < ranges.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _slotButton(
+                                    label: ranges[i].start.format(context),
+                                    onTap: () => _pickAndSetTime(i, true),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  '-',
+                                  style: TextStyle(color: AppColors.darkText),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _slotButton(
+                                    label: ranges[i].end.format(context),
+                                    onTap: () => _pickAndSetTime(i, false),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Delete slot',
+                                  onPressed: () => _removeRange(i),
+                                  icon: const Icon(
+                                    Icons.delete_rounded,
+                                    color: AppColors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              );
-              return;
-            }
-            Navigator.of(context).pop<List<AppScheduleTimeRange>>(
-              List<AppScheduleTimeRange>.from(_ranges),
-            );
-          },
-          child: const Text('Save'),
-        ),
-      ],
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: ranges.length >= widget.maxSlots
+                        ? null
+                        : _addRange,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(
+                      ranges.length >= widget.maxSlots
+                          ? 'Max ${widget.maxSlots} Slots'
+                          : 'Add Time',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop<List<AppScheduleTimeRange>>(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryTeal,
+                foregroundColor: AppColors.white,
+              ),
+              onPressed: () {
+                final validationError = validateTimeRanges(
+                  ranges,
+                  requireAtLeastOne: true,
+                );
+                if (validationError != null) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(validationError)));
+                  return;
+                }
+                if (ranges.length > widget.maxSlots) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Maximum ${widget.maxSlots} time slots allowed per day.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.of(context).pop<List<AppScheduleTimeRange>>(
+                  List<AppScheduleTimeRange>.from(ranges),
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  void _removeRange(int index) {
+    final nextRanges = List<AppScheduleTimeRange>.from(_rangesNotifier.value)
+      ..removeAt(index);
+    _rangesNotifier.value = nextRanges;
+  }
+
+  void _addRange() {
+    _rangesNotifier.value = [
+      ..._rangesNotifier.value,
+      const AppScheduleTimeRange(
+        start: TimeOfDay(hour: 8, minute: 0),
+        end: TimeOfDay(hour: 9, minute: 0),
+      ),
+    ];
   }
 
   Widget _slotButton({required String label, required VoidCallback onTap}) {
@@ -501,7 +556,8 @@ class _DayTimeDialogState extends State<_DayTimeDialog> {
   }
 
   Future<void> _pickAndSetTime(int index, bool isStart) async {
-    final initial = isStart ? _ranges[index].start : _ranges[index].end;
+    final ranges = _rangesNotifier.value;
+    final initial = isStart ? ranges[index].start : ranges[index].end;
     final picked = await showTimePicker(
       context: context,
       initialTime: initial,
@@ -526,12 +582,32 @@ class _DayTimeDialogState extends State<_DayTimeDialog> {
       return;
     }
 
-    setState(() {
-      final current = _ranges[index];
-      _ranges[index] = isStart
-          ? AppScheduleTimeRange(start: picked, end: current.end)
-          : AppScheduleTimeRange(start: current.start, end: picked);
-    });
+    final nextRanges = List<AppScheduleTimeRange>.from(ranges);
+    final current = nextRanges[index];
+    nextRanges[index] = isStart
+        ? AppScheduleTimeRange(start: picked, end: current.end)
+        : AppScheduleTimeRange(start: current.start, end: picked);
+    _rangesNotifier.value = nextRanges;
+  }
+}
+
+class _ScheduleEditorState {
+  const _ScheduleEditorState({
+    this.selectedDays = const <int>{},
+    this.daySchedules = const <int, List<AppScheduleTimeRange>>{},
+  });
+
+  final Set<int> selectedDays;
+  final Map<int, List<AppScheduleTimeRange>> daySchedules;
+
+  _ScheduleEditorState copyWith({
+    Set<int>? selectedDays,
+    Map<int, List<AppScheduleTimeRange>>? daySchedules,
+  }) {
+    return _ScheduleEditorState(
+      selectedDays: selectedDays ?? this.selectedDays,
+      daySchedules: daySchedules ?? this.daySchedules,
+    );
   }
 }
 

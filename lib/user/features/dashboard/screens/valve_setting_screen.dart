@@ -714,12 +714,17 @@ class _ValveSettingArgs {
 
   factory _ValveSettingArgs.fromDevice(CustomerDeviceSummary device) {
     final details = device.componentDetails.isNotEmpty
-        ? List<CustomerDeviceComponent>.from(device.componentDetails)
+        ? device.componentDetails
+              .where(
+                (component) => component.type.trim().toUpperCase() == 'VALVE',
+              )
+              .toList()
         : device.components
               .map(
                 (name) => CustomerDeviceComponent(
                   componentId: '',
                   displayName: name,
+                  type: 'VALVE',
                 ),
               )
               .toList();
@@ -744,7 +749,8 @@ class _ValveSettingArgs {
           final left = entry.value;
           final right = other.components[idx];
           return left.componentId == right.componentId &&
-              left.displayName == right.displayName;
+              left.displayName == right.displayName &&
+              left.type == right.type;
         });
     return other.deviceId == deviceId && sameComponents;
   }
@@ -753,7 +759,9 @@ class _ValveSettingArgs {
   int get hashCode => Object.hash(
     deviceId,
     Object.hashAll(
-      components.map((item) => '${item.componentId}|${item.displayName}'),
+      components.map(
+        (item) => '${item.componentId}|${item.displayName}|${item.type}',
+      ),
     ),
   );
 }

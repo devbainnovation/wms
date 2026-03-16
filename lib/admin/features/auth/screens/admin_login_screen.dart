@@ -43,6 +43,10 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   }
 
   Future<void> _onLoginTap() async {
+    if (ref.read(authLoginControllerProvider).isLoading) {
+      return;
+    }
+
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
@@ -109,6 +113,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     final obscurePassword = ref.watch(adminObscurePasswordProvider);
     final rememberMe = ref.watch(adminRememberMeProvider);
     final loginState = ref.watch(authLoginControllerProvider);
+    final isBusy = loginState.isLoading;
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width > 900 ? 460.0 : 390.0;
 
@@ -289,8 +294,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                     const SizedBox(height: 8),
                     AppButton(
                       text: 'Login',
-                      isLoading: loginState.isLoading,
-                      onPressed: _onLoginTap,
+                      isLoading: isBusy,
+                      onPressed: isBusy ? null : _onLoginTap,
                     ),
                   ],
                 ),

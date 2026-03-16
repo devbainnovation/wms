@@ -4,10 +4,12 @@ class CustomerDeviceComponent {
   const CustomerDeviceComponent({
     required this.componentId,
     required this.displayName,
+    required this.type,
   });
 
   final String componentId;
   final String displayName;
+  final String type;
 }
 
 class CustomerDeviceSummary {
@@ -112,13 +114,18 @@ class CustomerDeviceSummary {
               return CustomerDeviceComponent(
                 componentId: id,
                 displayName: resolvedName,
+                type: readFromMap(item, const ['type']),
               );
             }
             final text = item.toString().trim();
             if (text.isEmpty) {
               return null;
             }
-            return CustomerDeviceComponent(componentId: '', displayName: text);
+            return CustomerDeviceComponent(
+              componentId: '',
+              displayName: text,
+              type: '',
+            );
           })
           .whereType<CustomerDeviceComponent>()
           .toList();
