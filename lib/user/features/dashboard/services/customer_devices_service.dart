@@ -12,6 +12,107 @@ class CustomerDeviceComponent {
   final String type;
 }
 
+class CustomerScheduleTime {
+  const CustomerScheduleTime({
+    required this.hour,
+    required this.minute,
+    this.second = 0,
+    this.nano = 0,
+  });
+
+  final int hour;
+  final int minute;
+  final int second;
+  final int nano;
+
+  factory CustomerScheduleTime.fromJson(Map<String, dynamic> json) {
+    return CustomerScheduleTime(
+      hour: (json['hour'] as num?)?.toInt() ?? 0,
+      minute: (json['minute'] as num?)?.toInt() ?? 0,
+      second: (json['second'] as num?)?.toInt() ?? 0,
+      nano: (json['nano'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'hour': hour,
+      'minute': minute,
+      'second': second,
+      'nano': nano,
+    };
+  }
+}
+
+class CustomerComponentScheduleRequest {
+  const CustomerComponentScheduleRequest({
+    required this.days,
+    required this.startTime,
+    required this.endTime,
+    required this.durationMins,
+    required this.enabled,
+  });
+
+  final List<int> days;
+  final CustomerScheduleTime startTime;
+  final CustomerScheduleTime endTime;
+  final int durationMins;
+  final bool enabled;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'days': days,
+      'startTime': startTime.toJson(),
+      'endTime': endTime.toJson(),
+      'durationMins': durationMins,
+      'enabled': enabled,
+    };
+  }
+}
+
+class CustomerComponentSchedule {
+  const CustomerComponentSchedule({
+    required this.scheduleId,
+    required this.days,
+    required this.startTime,
+    required this.endTime,
+    required this.durationMins,
+    required this.enabled,
+  });
+
+  final String scheduleId;
+  final List<int> days;
+  final CustomerScheduleTime startTime;
+  final CustomerScheduleTime endTime;
+  final int durationMins;
+  final bool enabled;
+
+  factory CustomerComponentSchedule.fromJson(Map<String, dynamic> json) {
+    final rawDays = json['days'];
+    final days = rawDays is List
+        ? rawDays
+              .map((item) => _normalizeScheduleDay((item as num?)?.toInt()))
+              .whereType<int>()
+              .toList()
+        : const <int>[];
+
+    return CustomerComponentSchedule(
+      scheduleId: (json['id'] ?? json['scheduleId'] ?? '').toString().trim(),
+      days: days,
+      startTime: CustomerScheduleTime.fromJson(
+        (json['startTime'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{},
+      ),
+      endTime: CustomerScheduleTime.fromJson(
+        (json['endTime'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{},
+      ),
+      durationMins: (json['durationMins'] as num?)?.toInt() ?? 0,
+      enabled: json['enabled'] != false,
+    );
+  }
+}
+
 class CustomerDeviceSummary {
   const CustomerDeviceSummary({
     required this.espId,
@@ -230,6 +331,75 @@ class CustomerDevicesService {
     return response;
   }
 
+  Future<List<CustomerComponentSchedule>> getComponentSchedules({
+    required String bearerToken,
+    required String componentId,
+  }) async {
+    final normalizedComponentId = componentId.trim();
+    if (normalizedComponentId.isEmpty) {
+      return const <CustomerComponentSchedule>[];
+    }
+
+    final response = await _apiClient.get(
+      ApiEndpoints.customerComponentSchedules(normalizedComponentId),
+      bearerToken: bearerToken,
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch schedules.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    final rawList = switch (data) {
+      List<dynamic>() => data,
+      Map<String, dynamic>() =>
+        data['content'] is List
+            ? data['content'] as List<dynamic>
+            : data['data'] is List
+            ? data['data'] as List<dynamic>
+            : data['items'] is List
+            ? data['items'] as List<dynamic>
+            : const <dynamic>[],
+      _ => const <dynamic>[],
+    };
+
+    return rawList
+        .whereType<Map<String, dynamic>>()
+        .map(CustomerComponentSchedule.fromJson)
+        .toList();
+  }
+
+  Future<ApiResponse> createSchedule({
+    required String bearerToken,
+    required String componentId,
+    required CustomerComponentScheduleRequest request,
+  }) async {
+    final normalizedComponentId = componentId.trim();
+    if (normalizedComponentId.isEmpty) {
+      throw const ApiException('Component ID is missing.');
+    }
+
+    final response = await _apiClient.post(
+      ApiEndpoints.customerSchedules,
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
+      body: request.toJson(),
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to save schedule.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
+  }
+
   String? _extractMessage(dynamic body) {
     if (body is! Map<String, dynamic>) {
       return null;
@@ -245,4 +415,17 @@ class CustomerDevicesService {
     final message = rawMessage.toString().trim();
     return message.isEmpty ? null : message;
   }
+}
+
+int? _normalizeScheduleDay(int? day) {
+  if (day == null) {
+    return null;
+  }
+  if (day == 0) {
+    return 7;
+  }
+  if (day >= 1 && day <= 7) {
+    return day;
+  }
+  return null;
 }

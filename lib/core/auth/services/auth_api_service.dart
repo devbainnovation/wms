@@ -25,6 +25,7 @@ class AuthApiService {
       final response = await _apiClient.post(
         ApiEndpoints.authLogin,
         body: payload,
+        showGlobalLoader: false,
       );
 
       if (response.statusCode == 200) {
@@ -65,6 +66,7 @@ class AuthApiService {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.authLogout(sessionId),
+        reportUnauthorized: false,
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return;

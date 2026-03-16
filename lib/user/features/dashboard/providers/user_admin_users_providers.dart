@@ -86,6 +86,12 @@ final userAdminUpdatePermissionsControllerProvider =
       AsyncValue<void>
     >(UserAdminUpdatePermissionsController.new);
 
+final userAdminUpdateUserControllerProvider =
+    NotifierProvider.autoDispose<
+      UserAdminUpdateUserController,
+      AsyncValue<void>
+    >(UserAdminUpdateUserController.new);
+
 class UserAdminUpdatePermissionsController extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncData<void>(null);
@@ -114,14 +120,35 @@ class UserAdminUpdatePermissionsController extends Notifier<AsyncValue<void>> {
   }
 }
 
+class UserAdminUpdateUserController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> update({
+    required String userId,
+    required UserAdminUserUpdateRequest request,
+  }) async {
+    state = const AsyncLoading<void>();
+    try {
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      final service = ref.read(userAdminUsersServiceProvider);
+      await service.updateUser(
+        bearerToken: token,
+        userId: userId,
+        request: request,
+      );
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
 Future<String> _resolveToken(Ref ref) async {
   final session = ref.read(currentAuthSessionProvider);
-  var token = (session?.token ?? '').trim();
-  if (token.isNotEmpty) {
-    return token;
-  }
-
-  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-  token = (remembered?.token ?? '').trim();
-  return token;
+  return (session?.token ?? '').trim();
 }

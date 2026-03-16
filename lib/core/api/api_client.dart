@@ -14,6 +14,10 @@ class ApiClient {
       _ownsClient = client == null;
 
   static final ValueNotifier<int> inFlightRequestCount = ValueNotifier<int>(0);
+  static final ValueNotifier<int> unauthorizedEventCount = ValueNotifier<int>(
+    0,
+  );
+  static int _unauthorizedSuppressionDepth = 0;
 
   final String baseUrl;
   final http.Client _client;
@@ -25,6 +29,7 @@ class ApiClient {
     Map<String, String>? headers,
     String? bearerToken,
     bool showGlobalLoader = true,
+    bool reportUnauthorized = true,
   }) {
     return _request(
       method: 'GET',
@@ -33,6 +38,7 @@ class ApiClient {
       headers: headers,
       bearerToken: bearerToken,
       showGlobalLoader: showGlobalLoader,
+      reportUnauthorized: reportUnauthorized,
     );
   }
 
@@ -43,6 +49,7 @@ class ApiClient {
     Map<String, String>? headers,
     String? bearerToken,
     bool showGlobalLoader = true,
+    bool reportUnauthorized = true,
   }) {
     return _request(
       method: 'POST',
@@ -52,6 +59,7 @@ class ApiClient {
       headers: headers,
       bearerToken: bearerToken,
       showGlobalLoader: showGlobalLoader,
+      reportUnauthorized: reportUnauthorized,
     );
   }
 
@@ -62,6 +70,7 @@ class ApiClient {
     Map<String, String>? headers,
     String? bearerToken,
     bool showGlobalLoader = true,
+    bool reportUnauthorized = true,
   }) {
     return _request(
       method: 'PUT',
@@ -71,6 +80,7 @@ class ApiClient {
       headers: headers,
       bearerToken: bearerToken,
       showGlobalLoader: showGlobalLoader,
+      reportUnauthorized: reportUnauthorized,
     );
   }
 
@@ -81,6 +91,7 @@ class ApiClient {
     Map<String, String>? headers,
     String? bearerToken,
     bool showGlobalLoader = true,
+    bool reportUnauthorized = true,
   }) {
     return _request(
       method: 'DELETE',
@@ -90,6 +101,7 @@ class ApiClient {
       headers: headers,
       bearerToken: bearerToken,
       showGlobalLoader: showGlobalLoader,
+      reportUnauthorized: reportUnauthorized,
     );
   }
 
@@ -107,6 +119,7 @@ class ApiClient {
     Map<String, String>? headers,
     String? bearerToken,
     required bool showGlobalLoader,
+    required bool reportUnauthorized,
   }) async {
     final uri = _buildUri(endpoint, queryParameters);
     final request = http.Request(method, uri);
@@ -151,6 +164,10 @@ class ApiClient {
         headers: response.headers,
         body: decodedBody,
       );
+
+      if (reportUnauthorized && response.statusCode == 401) {
+        _notifyUnauthorized();
+      }
 
       return ApiResponse(
         statusCode: response.statusCode,
@@ -285,5 +302,21 @@ class ApiClient {
   void _decLoading() {
     final next = inFlightRequestCount.value - 1;
     inFlightRequestCount.value = next < 0 ? 0 : next;
+  }
+
+  void _notifyUnauthorized() {
+    if (_unauthorizedSuppressionDepth > 0) {
+      return;
+    }
+    unauthorizedEventCount.value = unauthorizedEventCount.value + 1;
+  }
+
+  static void beginUnauthorizedSuppression() {
+    _unauthorizedSuppressionDepth = _unauthorizedSuppressionDepth + 1;
+  }
+
+  static void endUnauthorizedSuppression() {
+    final next = _unauthorizedSuppressionDepth - 1;
+    _unauthorizedSuppressionDepth = next < 0 ? 0 : next;
   }
 }

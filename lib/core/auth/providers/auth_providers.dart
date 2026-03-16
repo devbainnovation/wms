@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/api/api_client.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
 import 'package:wms/core/auth/services/auth_api_service.dart';
 import 'package:wms/core/auth/services/auth_local_storage.dart';
@@ -92,10 +93,23 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
     final authApi = ref.read(authApiServiceProvider);
     final storage = ref.read(authLocalStorageProvider);
     final sessionNotifier = ref.read(currentAuthSessionProvider.notifier);
+    ApiClient.beginUnauthorizedSuppression();
     try {
       final remembered = await storage.loadLoginData();
       final rememberMe = await storage.isRememberMeEnabled();
       final activeSessionId = (sessionId ?? remembered?.sessionId ?? '').trim();
+
+      // Remove persisted session state before redirecting to login so the
+      // login screen cannot restore a stale session during logout teardown.
+      if (rememberMe) {
+        await storage.clearSessionDataOnly();
+      } else {
+        await storage.clear();
+      }
+
+      // Clear in-memory state after persisted cleanup so listeners can safely
+      // redirect to the login screen without bouncing back into the dashboard.
+      sessionNotifier.clear();
 
       if (activeSessionId.isNotEmpty) {
         try {
@@ -104,13 +118,6 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
           // Continue local cleanup even if server-side session invalidation fails.
         }
       }
-
-      if (rememberMe) {
-        await storage.clearSessionDataOnly();
-      } else {
-        await storage.clear();
-      }
-      sessionNotifier.clear();
       if (!ref.mounted) {
         return;
       }
@@ -120,6 +127,8 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
         state = AsyncError<void>(error, stackTrace);
       }
       rethrow;
+    } finally {
+      ApiClient.endUnauthorizedSuppression();
     }
   }
 }

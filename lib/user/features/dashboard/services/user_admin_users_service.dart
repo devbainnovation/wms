@@ -115,6 +115,44 @@ class UserAdminUserCreateRequest {
   }
 }
 
+class UserAdminUserUpdateRequest {
+  const UserAdminUserUpdateRequest({
+    required this.fullName,
+    required this.email,
+    required this.village,
+    required this.addressLine1,
+    required this.addressLine2,
+    required this.taluka,
+    required this.district,
+    required this.state,
+    required this.pincode,
+  });
+
+  final String fullName;
+  final String email;
+  final String village;
+  final String addressLine1;
+  final String addressLine2;
+  final String taluka;
+  final String district;
+  final String state;
+  final String pincode;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fullName': fullName.trim(),
+      'email': email.trim(),
+      'village': village.trim(),
+      'addressLine1': addressLine1.trim(),
+      'addressLine2': addressLine2.trim(),
+      'taluka': taluka.trim(),
+      'district': district.trim(),
+      'state': state.trim(),
+      'pincode': pincode.trim(),
+    };
+  }
+}
+
 class UserAdminUserSummary {
   const UserAdminUserSummary({
     required this.userId,
@@ -294,6 +332,32 @@ class UserAdminUsersService {
       return UserAdminUserSummary.fromJson(data);
     }
     throw const ApiException('Invalid user details response.');
+  }
+
+  Future<void> updateUser({
+    required String bearerToken,
+    required String userId,
+    required UserAdminUserUpdateRequest request,
+  }) async {
+    final normalizedId = userId.trim();
+    if (normalizedId.isEmpty) {
+      throw const ApiException('User ID is missing.');
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.customerUserById(normalizedId),
+      bearerToken: bearerToken,
+      body: request.toJson(),
+    );
+
+    if (response.isSuccess) {
+      return;
+    }
+
+    throw ApiException(
+      _extractMessage(response.data) ?? 'Unable to update user details.',
+      statusCode: response.statusCode,
+    );
   }
 
   Future<void> updateUserPermissions({

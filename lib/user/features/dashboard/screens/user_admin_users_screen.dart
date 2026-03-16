@@ -9,10 +9,11 @@ const _countryDialCodes = <_CountryDialCode>[
   _CountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),
 ];
 
-final _userPermissionsDraftProvider = NotifierProvider.autoDispose<
-    _UserPermissionsDraftNotifier, _UserPermissionsDraftState>(
-  _UserPermissionsDraftNotifier.new,
-);
+final _userPermissionsDraftProvider =
+    NotifierProvider.autoDispose<
+      _UserPermissionsDraftNotifier,
+      _UserPermissionsDraftState
+    >(_UserPermissionsDraftNotifier.new);
 
 final _addUserFormUiProvider =
     NotifierProvider.autoDispose<_AddUserFormUiNotifier, _AddUserFormUiState>(
@@ -39,7 +40,8 @@ class _UserPermissionsDraftState {
   }
 }
 
-class _UserPermissionsDraftNotifier extends Notifier<_UserPermissionsDraftState> {
+class _UserPermissionsDraftNotifier
+    extends Notifier<_UserPermissionsDraftState> {
   @override
   _UserPermissionsDraftState build() {
     return const _UserPermissionsDraftState(
@@ -303,12 +305,51 @@ class _UserDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
+  final _detailsFormKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _villageController = TextEditingController();
+  final _addressLine1Controller = TextEditingController();
+  final _addressLine2Controller = TextEditingController();
+  final _talukaController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _pincodeController = TextEditingController();
+  bool _detailsHydrated = false;
+
   @override
   void initState() {
     super.initState();
-    ref
-        .read(_userPermissionsDraftProvider.notifier)
-        .seed(widget.seedUser.permissions);
+    Future<void>(() async {
+      _seedDetailsForm(widget.seedUser);
+      ref
+          .read(_userPermissionsDraftProvider.notifier)
+          .seed(widget.seedUser.permissions);
+      final user = await ref.read(
+        userAdminUserDetailsProvider(widget.seedUser.userId).future,
+      );
+      if (!mounted) {
+        return;
+      }
+      _seedDetailsForm(user);
+      ref
+          .read(_userPermissionsDraftProvider.notifier)
+          .hydrate(user.permissions);
+    });
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _villageController.dispose();
+    _addressLine1Controller.dispose();
+    _addressLine2Controller.dispose();
+    _talukaController.dispose();
+    _districtController.dispose();
+    _stateController.dispose();
+    _pincodeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -316,214 +357,326 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
     final detailsAsync = ref.watch(
       userAdminUserDetailsProvider(widget.seedUser.userId),
     );
-    final saveState = ref.watch(userAdminUpdatePermissionsControllerProvider);
+    final updateUserState = ref.watch(userAdminUpdateUserControllerProvider);
+    final updatePermissionsState = ref.watch(
+      userAdminUpdatePermissionsControllerProvider,
+    );
     final permissionsState = ref.watch(_userPermissionsDraftProvider);
     final user = detailsAsync.asData?.value ?? widget.seedUser;
 
-    if (detailsAsync.hasValue && !permissionsState.isHydrated) {
+    if (detailsAsync.hasValue && !_detailsHydrated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
         }
-        ref
-            .read(_userPermissionsDraftProvider.notifier)
-            .hydrate(detailsAsync.value!.permissions);
+        _seedDetailsForm(detailsAsync.value!);
       });
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
         backgroundColor: AppColors.white,
-        foregroundColor: AppColors.darkText,
-        elevation: 0,
-        title: const Text('User Details'),
-      ),
-      body: detailsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryTeal),
-        ),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                error is ApiException
-                    ? error.message
-                    : 'Unable to load user details.',
-                style: const TextStyle(
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: AppColors.white,
+          foregroundColor: AppColors.darkText,
+          elevation: 0,
+          title: const Text('User Details'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(70),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F5F7),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.lightGreyText),
+                ),
+                child: TabBar(
+                  padding: const EdgeInsets.all(4),
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: AppColors.darkText,
+                  unselectedLabelColor: AppColors.greyText,
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabs: const [
+                    Tab(text: 'User Details'),
+                    Tab(text: 'Permissions'),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => ref.invalidate(
-                  userAdminUserDetailsProvider(widget.seedUser.userId),
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
+            ),
           ),
         ),
-        data: (_) => _detailsContent(
-          user,
-          permissionsState.permissions,
-          saveState.isLoading,
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryTeal,
-              foregroundColor: AppColors.white,
+        body: detailsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryTeal),
+          ),
+          error: (error, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  error is ApiException
+                      ? error.message
+                      : 'Unable to load user details.',
+                  style: const TextStyle(
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(
+                    userAdminUserDetailsProvider(widget.seedUser.userId),
+                  ),
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
-            onPressed: saveState.isLoading ? null : () => _save(user.userId),
-            child: saveState.isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.white,
-                    ),
-                  )
-                : const Text('Update Permissions'),
+          ),
+          data: (_) => TabBarView(
+            children: [
+              _detailsTab(user, updateUserState.isLoading),
+              _permissionsTab(
+                user.userId,
+                permissionsState.permissions,
+                updatePermissionsState.isLoading,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _detailsContent(
-    UserAdminUserSummary user,
+  Widget _detailsTab(UserAdminUserSummary user, bool isSaving) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(14),
+      child: Form(
+        key: _detailsFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _readOnlyField('Mobile Number', user.phoneNumber),
+            _readOnlyField('Username', user.username),
+            _readOnlyField('Role', user.role),
+            AppTextField(
+              controller: _fullNameController,
+              hintText: 'Enter full name',
+              labelText: 'Full Name',
+              validator: (v) => _required(v, 'Full name'),
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _emailController,
+              hintText: 'Enter email',
+              labelText: 'Email',
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) {
+                final requiredMsg = _required(v, 'Email');
+                if (requiredMsg != null) {
+                  return requiredMsg;
+                }
+                return AppValidators.email(v);
+              },
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _villageController,
+              hintText: 'Enter village',
+              labelText: 'Village',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _addressLine1Controller,
+              hintText: 'Enter address line 1',
+              labelText: 'Address Line 1',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _addressLine2Controller,
+              hintText: 'Enter address line 2',
+              labelText: 'Address Line 2',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _talukaController,
+              hintText: 'Enter taluka',
+              labelText: 'Taluka',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _districtController,
+              hintText: 'Enter district',
+              labelText: 'District',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _stateController,
+              hintText: 'Enter state',
+              labelText: 'State',
+            ),
+            const SizedBox(height: 10),
+            AppTextField(
+              controller: _pincodeController,
+              hintText: 'Enter pincode',
+              labelText: 'Pincode',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryTeal,
+                  foregroundColor: AppColors.white,
+                ),
+                onPressed: isSaving
+                    ? null
+                    : () => _saveUserDetails(user.userId),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.white,
+                        ),
+                      )
+                    : const Text('Update User Details'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _permissionsTab(
+    String userId,
     UserAdminUserPermissions permissions,
     bool isSaving,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _readOnlyField(
-            'Name',
-            user.fullName.isEmpty ? user.username : user.fullName,
-          ),
-          _readOnlyField('Mobile Number', user.phoneNumber),
-          _readOnlyField('Username', user.username),
-          _readOnlyField('Email', user.email),
-          _readOnlyField('Village', user.village),
-          _readOnlyField('Address Line 1', user.addressLine1),
-          _readOnlyField('Address Line 2', user.addressLine2),
-          _readOnlyField('Taluka', user.taluka),
-          _readOnlyField('District', user.district),
-          _readOnlyField('State', user.state),
-          _readOnlyField('Pincode', user.pincode),
-          _readOnlyField('Role', user.role),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.lightGreyText),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.lightGreyText),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Permissions',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.darkText,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Permissions',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _permissionTile(
-                  title: 'Can View Dashboard',
-                  value: permissions.canViewDashboard,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canViewDashboard: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Control Valves',
-                  value: permissions.canControlValves,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canControlValves: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Create Schedules',
-                  value: permissions.canCreateSchedules,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canCreateSchedules: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Update Schedules',
-                  value: permissions.canUpdateSchedules,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canUpdateSchedules: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Delete Schedules',
-                  value: permissions.canDeleteSchedules,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canDeleteSchedules: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Create Triggers',
-                  value: permissions.canCreateTriggers,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canCreateTriggers: v ?? true,
-                    ),
-                  ),
-                ),
-                _permissionTile(
-                  title: 'Can Manage Notifs',
-                  value: permissions.canManageNotifs,
-                  enabled: !isSaving,
-                  onChanged: (v) => _updatePermissions(
-                    _copyPermissions(
-                      permissions,
-                      canManageNotifs: v ?? true,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 8),
+            _permissionTile(
+              title: 'Can View Dashboard',
+              value: permissions.canViewDashboard,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canViewDashboard: v ?? true),
+              ),
             ),
-          ),
-        ],
+            _permissionTile(
+              title: 'Can Control Valves',
+              value: permissions.canControlValves,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canControlValves: v ?? true),
+              ),
+            ),
+            _permissionTile(
+              title: 'Can Create Schedules',
+              value: permissions.canCreateSchedules,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canCreateSchedules: v ?? true),
+              ),
+            ),
+            _permissionTile(
+              title: 'Can Update Schedules',
+              value: permissions.canUpdateSchedules,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canUpdateSchedules: v ?? true),
+              ),
+            ),
+            _permissionTile(
+              title: 'Can Delete Schedules',
+              value: permissions.canDeleteSchedules,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canDeleteSchedules: v ?? true),
+              ),
+            ),
+            _permissionTile(
+              title: 'Can Create Triggers',
+              value: permissions.canCreateTriggers,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canCreateTriggers: v ?? true),
+              ),
+            ),
+            _permissionTile(
+              title: 'Can Manage Notifs',
+              value: permissions.canManageNotifs,
+              enabled: !isSaving,
+              onChanged: (v) => _updatePermissions(
+                _copyPermissions(permissions, canManageNotifs: v ?? true),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryTeal,
+                  foregroundColor: AppColors.white,
+                ),
+                onPressed: isSaving ? null : () => _savePermissions(userId),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.white,
+                        ),
+                      )
+                    : const Text('Update Permissions'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -587,7 +740,7 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
     ref.read(_userPermissionsDraftProvider.notifier).update(permissions);
   }
 
-  Future<void> _save(String userId) async {
+  Future<void> _savePermissions(String userId) async {
     final request = ref.read(_userPermissionsDraftProvider).permissions;
     try {
       await ref
@@ -612,6 +765,69 @@ class _UserDetailsScreenState extends ConsumerState<_UserDetailsScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  Future<void> _saveUserDetails(String userId) async {
+    final valid = _detailsFormKey.currentState?.validate() ?? false;
+    if (!valid) {
+      return;
+    }
+
+    final request = UserAdminUserUpdateRequest(
+      fullName: _fullNameController.text.trim(),
+      email: _emailController.text.trim(),
+      village: _villageController.text.trim(),
+      addressLine1: _addressLine1Controller.text.trim(),
+      addressLine2: _addressLine2Controller.text.trim(),
+      taluka: _talukaController.text.trim(),
+      district: _districtController.text.trim(),
+      state: _stateController.text.trim(),
+      pincode: _pincodeController.text.trim(),
+    );
+
+    try {
+      await ref
+          .read(userAdminUpdateUserControllerProvider.notifier)
+          .update(userId: userId, request: request);
+      ref.invalidate(userAdminUsersListProvider);
+      ref.invalidate(userAdminUserDetailsProvider(userId));
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User details updated successfully.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error is ApiException
+          ? error.message
+          : 'Unable to update user details.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  void _seedDetailsForm(UserAdminUserSummary user) {
+    _fullNameController.text = user.fullName;
+    _emailController.text = user.email;
+    _villageController.text = user.village;
+    _addressLine1Controller.text = user.addressLine1;
+    _addressLine2Controller.text = user.addressLine2;
+    _talukaController.text = user.taluka;
+    _districtController.text = user.district;
+    _stateController.text = user.state;
+    _pincodeController.text = user.pincode;
+    _detailsHydrated = true;
+  }
+
+  String? _required(String? value, String label) {
+    if ((value ?? '').trim().isEmpty) {
+      return '$label is required';
+    }
+    return null;
   }
 }
 

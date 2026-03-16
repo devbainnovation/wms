@@ -6,15 +6,18 @@ final customerDevicesServiceProvider = Provider<CustomerDevicesService>((ref) {
   return CustomerDevicesService();
 });
 
-final customerDevicesListProvider =
-    FutureProvider.autoDispose<List<CustomerDeviceSummary>>((ref) async {
-      final token = await _resolveToken(ref);
-      if (token.isEmpty) {
-        throw const ApiException('Session expired. Please login again.');
-      }
-      final service = ref.read(customerDevicesServiceProvider);
-      return service.getDevices(bearerToken: token);
-    });
+final customerDevicesListProvider = FutureProvider<List<CustomerDeviceSummary>>(
+  retry: (_, _) => null,
+  (ref) async {
+    ref.watch(currentAuthSessionProvider);
+    final token = await _resolveToken(ref);
+    if (token.isEmpty) {
+      throw const ApiException('Session expired. Please login again.');
+    }
+    final service = ref.read(customerDevicesServiceProvider);
+    return service.getDevices(bearerToken: token);
+  },
+);
 
 final customerManualTriggerControllerProvider =
     NotifierProvider<CustomerManualTriggerController, AsyncValue<void>>(
@@ -60,12 +63,5 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
 
 Future<String> _resolveToken(Ref ref) async {
   final session = ref.read(currentAuthSessionProvider);
-  var token = (session?.token ?? '').trim();
-  if (token.isNotEmpty) {
-    return token;
-  }
-
-  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-  token = (remembered?.token ?? '').trim();
-  return token;
+  return (session?.token ?? '').trim();
 }

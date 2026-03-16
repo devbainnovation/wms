@@ -10,6 +10,11 @@ class UserDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTab = ref.watch(userDashboardTabProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final displayName =
+        profileAsync.asData?.value.fullName.trim().isNotEmpty == true
+        ? profileAsync.asData!.value.fullName.trim()
+        : 'John Doe';
 
     final pages = <Widget>[
       const DashboardTabView(),
@@ -39,10 +44,10 @@ class UserDashboardScreen extends ConsumerWidget {
                 color: AppColors.darkText,
               ),
             ),
-            const Text(
-              'John Doe',
-              style: TextStyle(
-                fontSize: 20,
+            Text(
+              displayName,
+              style: const TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: AppColors.darkText,
               ),

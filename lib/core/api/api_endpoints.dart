@@ -11,6 +11,9 @@ class ApiEndpoints {
   static const String customerUsers = '/api/customer/users';
   static const String customerDevices = '/api/customer/devices';
   static const String customerManualTriggers = '/api/customer/manual-triggers';
+  static const String customerSchedules = '/api/customer/schedules';
+  static const String userProfile = '/api/user/profile';
+  static const String userProfilePassword = '/api/user/profile/password';
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';
   static String adminDeviceById(String id) => '/api/admin/devices/$id';
@@ -27,4 +30,6 @@ class ApiEndpoints {
       '/api/admin/devices/$id/components';
   static String adminDeviceComponentById(String id, String compId) =>
       '/api/admin/devices/$id/components/$compId';
+  static String customerComponentSchedules(String componentId) =>
+      '/api/customer/components/$componentId/schedules';
 }

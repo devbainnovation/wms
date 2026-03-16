@@ -9,18 +9,122 @@ import 'package:wms/firebase_options.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/user.dart';
 
+final _appLaunchProvider = FutureProvider<_AppLaunchState>((ref) async {
+  if (kIsWeb) {
+    return const _AppLaunchState.web();
+  }
+
+  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
+  if (remembered == null) {
+    return const _AppLaunchState.userLogin();
+  }
+
+  final hasValidSession =
+      remembered.token.isNotEmpty &&
+      remembered.role.isNotEmpty &&
+      remembered.userId.isNotEmpty &&
+      remembered.sessionId.isNotEmpty;
+
+  if (!hasValidSession) {
+    return const _AppLaunchState.userLogin();
+  }
+
+  return _AppLaunchState.userDashboard(
+    AuthSession(
+      token: remembered.token,
+      role: remembered.role,
+      userId: remembered.userId,
+      sessionId: remembered.sessionId,
+    ),
+  );
+});
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: WmsApp()));
 }
 
-class WmsApp extends ConsumerWidget {
+class WmsApp extends ConsumerStatefulWidget {
   const WmsApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WmsApp> createState() => _WmsAppState();
+}
+
+class _WmsAppState extends ConsumerState<WmsApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  bool _isHandlingUnauthorized = false;
+  bool _isRedirectingToLogin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ApiClient.unauthorizedEventCount.addListener(_handleUnauthorizedEvent);
+  }
+
+  @override
+  void dispose() {
+    ApiClient.unauthorizedEventCount.removeListener(_handleUnauthorizedEvent);
+    super.dispose();
+  }
+
+  Future<void> _handleUnauthorizedEvent() async {
+    if (_isHandlingUnauthorized || !mounted) {
+      return;
+    }
+
+    final currentSession = ref.read(currentAuthSessionProvider);
+    if (currentSession == null) {
+      return;
+    }
+
+    _isHandlingUnauthorized = true;
+    try {
+      final storage = ref.read(authLocalStorageProvider);
+      final rememberMe = await storage.isRememberMeEnabled();
+      if (rememberMe) {
+        await storage.clearSessionDataOnly();
+      } else {
+        await storage.clear();
+      }
+
+      ref.read(currentAuthSessionProvider.notifier).clear();
+      if (!mounted) {
+        return;
+      }
+
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(content: Text('Session expired. Please login again.')),
+      );
+    } finally {
+      _isHandlingUnauthorized = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.watch(pushNotificationInitProvider);
+    ref.listen<AuthSession?>(currentAuthSessionProvider, (previous, next) {
+      if (next != null) {
+        _isRedirectingToLogin = false;
+        return;
+      }
+
+      if (previous == null || _isRedirectingToLogin) {
+        return;
+      }
+
+      _isRedirectingToLogin = true;
+      _navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) =>
+              kIsWeb ? const AdminLoginScreen() : const UserLoginScreen(),
+        ),
+        (route) => false,
+      );
+    });
     ref.listen(fcmTokenProvider, (_, next) {
       next.whenData((token) {
         if (token != null && token.isNotEmpty) {
@@ -29,12 +133,11 @@ class WmsApp extends ConsumerWidget {
       });
     });
 
-    final loginScreen = kIsWeb
-        ? const AdminLoginScreen()
-        : const UserLoginScreen();
-
     return MaterialApp(
+      navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const _AppScrollBehavior(),
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.lightBackground,
         colorScheme: ColorScheme.fromSeed(
@@ -167,7 +270,122 @@ class WmsApp extends ConsumerWidget {
           },
         );
       },
-      home: loginScreen,
+      home: const _AppLaunchGate(),
     );
   }
+}
+
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+}
+
+class _AppLaunchGate extends ConsumerStatefulWidget {
+  const _AppLaunchGate();
+
+  @override
+  ConsumerState<_AppLaunchGate> createState() => _AppLaunchGateState();
+}
+
+class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
+  bool _didRestoreLaunchSession = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final launchAsync = ref.watch(_appLaunchProvider);
+    final currentSession = ref.watch(currentAuthSessionProvider);
+
+    return launchAsync.when(
+      loading: () => const _SplashScreen(),
+      error: (_, _) =>
+          kIsWeb ? const AdminLoginScreen() : const UserLoginScreen(),
+      data: (state) {
+        if (!_didRestoreLaunchSession && state.session != null) {
+          final session = state.session!;
+          _didRestoreLaunchSession = true;
+          final isSameSession =
+              currentSession?.token == session.token &&
+              currentSession?.role == session.role &&
+              currentSession?.userId == session.userId &&
+              currentSession?.sessionId == session.sessionId;
+
+          if (!isSameSession) {
+            Future<void>(() {
+              ref.read(currentAuthSessionProvider.notifier).setSession(session);
+            });
+            return const _SplashScreen();
+          }
+        }
+
+        if (currentSession != null) {
+          return const UserDashboardScreen();
+        }
+
+        return switch (state.target) {
+          _AppLaunchTarget.webAdmin => const AdminLoginScreen(),
+          _AppLaunchTarget.userLogin => const UserLoginScreen(),
+          _AppLaunchTarget.userDashboard => const UserLoginScreen(),
+        };
+      },
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.lightBlue, AppColors.lightGreen],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                AppAssets.logo,
+                height: 120,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.water_drop_rounded,
+                  size: 72,
+                  color: AppColors.primaryTeal,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const CircularProgressIndicator(color: AppColors.primaryTeal),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _AppLaunchTarget { webAdmin, userLogin, userDashboard }
+
+class _AppLaunchState {
+  const _AppLaunchState._({required this.target, this.session});
+
+  const _AppLaunchState.web() : this._(target: _AppLaunchTarget.webAdmin);
+
+  const _AppLaunchState.userLogin()
+    : this._(target: _AppLaunchTarget.userLogin);
+
+  const _AppLaunchState.userDashboard(AuthSession session)
+    : this._(target: _AppLaunchTarget.userDashboard, session: session);
+
+  final _AppLaunchTarget target;
+  final AuthSession? session;
 }
