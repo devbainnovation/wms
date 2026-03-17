@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wms/admin/admin.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/firebase_options.dart';
+import 'package:wms/routing/routing.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/user.dart';
 
@@ -37,10 +38,14 @@ final _appLaunchProvider = FutureProvider<_AppLaunchState>((ref) async {
   );
 
   if (kIsWeb) {
-    final isAdmin = remembered.role.trim().toUpperCase() == 'ADMIN';
-    return isAdmin
-        ? _AppLaunchState.adminDashboard(session)
-        : const _AppLaunchState.web();
+    final hasActiveWebSession = await _validateStoredWebSession(
+      session: session,
+      storage: ref.read(authLocalStorageProvider),
+    );
+    if (!hasActiveWebSession) {
+      return const _AppLaunchState.web();
+    }
+    return _AppLaunchState.adminDashboard(session);
   }
 
   return _AppLaunchState.userDashboard(session);
@@ -50,6 +55,38 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: WmsApp()));
+}
+
+Future<bool> _validateStoredWebSession({
+  required AuthSession session,
+  required AuthLocalStorage storage,
+}) async {
+  final client = ApiClient();
+  try {
+    final response = await client.get(
+      ApiEndpoints.adminSystemDashboard,
+      bearerToken: session.token,
+      showGlobalLoader: false,
+      reportUnauthorized: false,
+    );
+
+    if (response.isSuccess) {
+      return true;
+    }
+  } catch (_) {
+    // Treat startup validation failures as an invalid session so web does not
+    // open directly into the dashboard with a broken token.
+  } finally {
+    client.dispose();
+  }
+
+  final rememberMe = await storage.isRememberMeEnabled();
+  if (rememberMe) {
+    await storage.clearSessionDataOnly();
+  } else {
+    await storage.clear();
+  }
+  return false;
 }
 
 class WmsApp extends ConsumerStatefulWidget {
@@ -63,17 +100,21 @@ class _WmsAppState extends ConsumerState<WmsApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _isHandlingUnauthorized = false;
-  bool _isRedirectingToLogin = false;
+  late final AppRouterDelegate _routerDelegate;
+  final AppRouteInformationParser _routeInformationParser =
+      AppRouteInformationParser();
 
   @override
   void initState() {
     super.initState();
     ApiClient.unauthorizedEventCount.addListener(_handleUnauthorizedEvent);
+    _routerDelegate = AppRouterDelegate(ref);
   }
 
   @override
   void dispose() {
     ApiClient.unauthorizedEventCount.removeListener(_handleUnauthorizedEvent);
+    _routerDelegate.dispose();
     super.dispose();
   }
 
@@ -113,24 +154,11 @@ class _WmsAppState extends ConsumerState<WmsApp> {
   @override
   Widget build(BuildContext context) {
     ref.watch(pushNotificationInitProvider);
+    ref.listen<AppRouteState>(appRouteProvider, (previous, next) {
+      _routerDelegate.refresh();
+    });
     ref.listen<AuthSession?>(currentAuthSessionProvider, (previous, next) {
-      if (next != null) {
-        _isRedirectingToLogin = false;
-        return;
-      }
-
-      if (previous == null || _isRedirectingToLogin) {
-        return;
-      }
-
-      _isRedirectingToLogin = true;
-      _navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) =>
-              kIsWeb ? const AdminLoginScreen() : const UserLoginScreen(),
-        ),
-        (route) => false,
-      );
+      _routerDelegate.refresh();
     });
     ref.listen(fcmTokenProvider, (_, next) {
       next.whenData((token) {
@@ -139,6 +167,148 @@ class _WmsAppState extends ConsumerState<WmsApp> {
         }
       });
     });
+
+    if (kIsWeb) {
+      return MaterialApp.router(
+        scaffoldMessengerKey: _scaffoldMessengerKey,
+        debugShowCheckedModeBanner: false,
+        scrollBehavior: const _AppScrollBehavior(),
+        theme: ThemeData(
+          scaffoldBackgroundColor: AppColors.lightBackground,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primaryTeal,
+            primary: AppColors.primaryTeal,
+            secondary: AppColors.accentGreen,
+            surface: AppColors.white,
+            onPrimary: AppColors.white,
+            onSurface: AppColors.darkText,
+            brightness: Brightness.light,
+          ),
+          textTheme: GoogleFonts.poppinsTextTheme(),
+          primaryTextTheme: GoogleFonts.poppinsTextTheme(),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: AppColors.white,
+            foregroundColor: AppColors.darkText,
+            surfaceTintColor: AppColors.white,
+            elevation: 2,
+            scrolledUnderElevation: 2,
+            shadowColor: Color(0x26000000),
+            titleTextStyle: TextStyle(
+              color: AppColors.darkText,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          cardTheme: CardThemeData(
+            color: AppColors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: const BorderSide(color: AppColors.lightGreyText),
+            ),
+          ),
+          dividerColor: AppColors.lightGreyText,
+          iconTheme: const IconThemeData(color: AppColors.darkText),
+          textSelectionTheme: TextSelectionThemeData(
+            cursorColor: AppColors.primaryTeal,
+            selectionHandleColor: AppColors.primaryTeal,
+            selectionColor: AppColors.primaryTeal.withValues(alpha: 0.28),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: AppColors.white,
+            hintStyle: const TextStyle(color: AppColors.greyText),
+            labelStyle: const TextStyle(color: AppColors.greyText),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.lightGreyText),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: AppColors.primaryTeal,
+                width: 1.4,
+              ),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.lightGreyText),
+            ),
+          ),
+          chipTheme: ChipThemeData(
+            backgroundColor: AppColors.white,
+            selectedColor: AppColors.lightTeal,
+            disabledColor: AppColors.lightGreyText,
+            labelStyle: const TextStyle(
+              color: AppColors.darkText,
+              fontWeight: FontWeight.w600,
+            ),
+            secondaryLabelStyle: const TextStyle(
+              color: AppColors.primaryTeal,
+              fontWeight: FontWeight.w600,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+              side: const BorderSide(color: AppColors.lightGreyText),
+            ),
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.darkText,
+              side: const BorderSide(color: AppColors.lightGreyText),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          snackBarTheme: const SnackBarThemeData(
+            backgroundColor: Color(0xFF1F2937),
+            contentTextStyle: TextStyle(color: AppColors.white),
+          ),
+        ),
+        routerDelegate: _routerDelegate,
+        routeInformationParser: _routeInformationParser,
+        builder: (context, child) {
+          return ValueListenableBuilder<int>(
+            valueListenable: ApiClient.inFlightRequestCount,
+            builder: (context, count, _) {
+              final showLoader = count > 0;
+              return Stack(
+                children: [
+                  child ?? const SizedBox.shrink(),
+                  if (showLoader)
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 42,
+                            height: 42,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: AppColors.primaryTeal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
 
     return MaterialApp(
       navigatorKey: _navigatorKey,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/customers/services/admin_customer_service.dart';
 import 'package:wms/core/core.dart';
+import 'package:wms/routing/routing.dart';
 
 class AdminCustomersQuery {
   const AdminCustomersQuery({this.page = 0, this.size = 10, this.search = ''});
@@ -43,18 +44,63 @@ final adminCustomersQueryProvider =
 
 class AdminCustomersQueryNotifier extends Notifier<AdminCustomersQuery> {
   @override
-  AdminCustomersQuery build() => const AdminCustomersQuery();
+  AdminCustomersQuery build() {
+    final route = ref.watch(appRouteProvider);
+    if (route.section != AppRouteSection.customers) {
+      return const AdminCustomersQuery();
+    }
 
-  void next() => state = state.copyWith(page: state.page + 1);
+    final params = route.queryParameters;
+    final page = int.tryParse(params['page'] ?? '') ?? 0;
+    final size = int.tryParse(params['size'] ?? '') ?? 10;
+    final search = (params['search'] ?? '').trim();
 
-  void previous() =>
-      state = state.copyWith(page: state.page > 0 ? state.page - 1 : 0);
+    return AdminCustomersQuery(
+      page: page < 0 ? 0 : page,
+      size: size < 1 ? 10 : size,
+      search: search,
+    );
+  }
 
-  void resetPage() => state = state.copyWith(page: 0);
+  void next() {
+    state = state.copyWith(page: state.page + 1);
+    _syncRoute();
+  }
+
+  void previous() {
+    state = state.copyWith(page: state.page > 0 ? state.page - 1 : 0);
+    _syncRoute();
+  }
+
+  void resetPage() {
+    state = state.copyWith(page: 0);
+    _syncRoute();
+  }
 
   void setSearch(String text) {
     final normalized = text.trim();
     state = state.copyWith(search: normalized, page: 0);
+    _syncRoute();
+  }
+
+  void _syncRoute() {
+    final queryParameters = <String, String>{};
+    if (state.page > 0) {
+      queryParameters['page'] = state.page.toString();
+    }
+    if (state.size != 10) {
+      queryParameters['size'] = state.size.toString();
+    }
+    if (state.search.isNotEmpty) {
+      queryParameters['search'] = state.search;
+    }
+
+    ref
+        .read(appRouteProvider.notifier)
+        .goToSection(
+          AppRouteSection.customers,
+          queryParameters: queryParameters,
+        );
   }
 }
 

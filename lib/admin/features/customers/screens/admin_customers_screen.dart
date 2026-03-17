@@ -120,6 +120,13 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     final query = ref.watch(adminCustomersQueryProvider);
     final isMobile = MediaQuery.sizeOf(context).width < 900;
 
+    if (_searchController.text != query.search) {
+      _searchController.value = TextEditingValue(
+        text: query.search,
+        selection: TextSelection.collapsed(offset: query.search.length),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.all(isMobile ? 12 : 24),
       child: Column(

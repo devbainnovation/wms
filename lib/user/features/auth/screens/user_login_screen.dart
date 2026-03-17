@@ -88,12 +88,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
     final rememberMe = ref.read(userRememberMeProvider);
 
     try {
-      String? fcmToken;
-      try {
-        fcmToken = await ref.read(fcmTokenProvider.future);
-      } catch (_) {
-        fcmToken = null;
-      }
       await ref
           .read(authLoginControllerProvider.notifier)
           .login(
@@ -101,17 +95,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
             password: enteredPassword,
             rememberMe: rememberMe,
             deviceInfo: 'user-login',
-            fcmToken: fcmToken,
           );
-
-      if (!mounted) {
-        return;
-      }
-
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
-        (route) => false,
-      );
     } catch (error) {
       if (!mounted) {
         return;

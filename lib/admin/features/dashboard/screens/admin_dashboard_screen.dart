@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/dashboard/providers/providers.dart';
 import 'package:wms/admin/features/dashboard/services/services.dart';
 import 'package:wms/admin/features/dashboard/widgets/widgets.dart';
-import 'package:wms/admin/features/auth/screens/admin_login_screen.dart';
 import 'package:wms/admin/features/customers/screens/admin_customers_screen.dart';
 import 'package:wms/admin/features/devices/screens/admin_devices_screen.dart';
 import 'package:wms/core/core.dart';
+import 'package:wms/routing/routing.dart';
 import 'package:wms/shared/shared.dart';
 
 final adminSelectedMenuProvider =
@@ -16,9 +16,31 @@ final adminSelectedMenuProvider =
 
 class AdminSelectedMenuNotifier extends Notifier<int> {
   @override
-  int build() => 0;
+  int build() {
+    final route = ref.watch(appRouteProvider);
+    return switch (route.section) {
+      AppRouteSection.dashboard => 0,
+      AppRouteSection.customers => 1,
+      AppRouteSection.devices => 2,
+      AppRouteSection.schedules => 3,
+      AppRouteSection.profile => 4,
+    };
+  }
 
-  void set(int menu) => state = menu;
+  void set(int menu) {
+    final section = switch (menu) {
+      1 => AppRouteSection.customers,
+      2 => AppRouteSection.devices,
+      3 => AppRouteSection.schedules,
+      4 => AppRouteSection.profile,
+      _ => AppRouteSection.dashboard,
+    };
+    ref.read(appRouteProvider.notifier).goToSection(section);
+  }
+
+  void reset() {
+    ref.read(appRouteProvider.notifier).goToSection(AppRouteSection.dashboard);
+  }
 }
 
 class AdminDashboardScreen extends ConsumerWidget {
@@ -44,7 +66,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           ? AppBar(
               backgroundColor: AppColors.white,
               elevation: 0.5,
-              title: Text(_menuItems[selectedMenu].label),
+              title: Text(AdminDashboardScreen._menuItems[selectedMenu].label),
             )
           : null,
       drawer: isMobile
@@ -133,16 +155,11 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    final navigator = Navigator.of(context);
     final sessionId = ref.read(currentAuthSessionProvider)?.sessionId;
+    ref.read(adminSelectedMenuProvider.notifier).reset();
     await ref
         .read(authLogoutControllerProvider.notifier)
         .logout(sessionId: sessionId);
-
-    navigator.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-      (route) => false,
-    );
   }
 }
 
@@ -158,14 +175,6 @@ class _AdminSidebar extends StatelessWidget {
   final ValueChanged<int> onMenuTap;
   final Future<void> Function() onLogout;
   final bool isLogoutLoading;
-
-  static const _menuItems = <({String label, IconData icon})>[
-    (label: 'Dashboard', icon: Icons.dashboard_rounded),
-    (label: 'Customers', icon: Icons.groups_rounded),
-    (label: 'Devices', icon: Icons.memory_rounded),
-    (label: 'Schedules', icon: Icons.calendar_month_rounded),
-    (label: 'Profile', icon: Icons.person_rounded),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +219,8 @@ class _AdminSidebar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              for (final indexed in _menuItems.indexed) ...[
+              for (final indexed
+                  in AdminDashboardScreen._menuItems.indexed) ...[
                 _SidebarMenuTile(
                   icon: indexed.$2.icon,
                   label: indexed.$2.label,

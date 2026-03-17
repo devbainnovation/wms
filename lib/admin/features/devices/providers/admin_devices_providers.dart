@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/devices/services/admin_device_service.dart';
 import 'package:wms/core/core.dart';
+import 'package:wms/routing/routing.dart';
 
 final adminDeviceServiceProvider = Provider<AdminDeviceService>((ref) {
   return AdminDeviceService();
@@ -13,11 +14,41 @@ final adminDevicesPageProvider =
 
 class AdminDevicesPageNotifier extends Notifier<int> {
   @override
-  int build() => 0;
+  int build() {
+    final route = ref.watch(appRouteProvider);
+    if (route.section != AppRouteSection.devices) {
+      return 0;
+    }
 
-  void next() => state = state + 1;
-  void previous() => state = state > 0 ? state - 1 : 0;
-  void set(int page) => state = page < 0 ? 0 : page;
+    final page = int.tryParse(route.queryParameters['page'] ?? '') ?? 0;
+    return page < 0 ? 0 : page;
+  }
+
+  void next() {
+    state = state + 1;
+    _syncRoute();
+  }
+
+  void previous() {
+    state = state > 0 ? state - 1 : 0;
+    _syncRoute();
+  }
+
+  void set(int page) {
+    state = page < 0 ? 0 : page;
+    _syncRoute();
+  }
+
+  void _syncRoute() {
+    final queryParameters = <String, String>{};
+    if (state > 0) {
+      queryParameters['page'] = state.toString();
+    }
+
+    ref
+        .read(appRouteProvider.notifier)
+        .goToSection(AppRouteSection.devices, queryParameters: queryParameters);
+  }
 }
 
 final adminDevicesListProvider =

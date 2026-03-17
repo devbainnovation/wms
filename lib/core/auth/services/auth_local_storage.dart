@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
+import 'auth_web_storage_stub.dart'
+    if (dart.library.html) 'auth_web_storage.dart';
 
 class AuthLocalStorage {
   const AuthLocalStorage({FlutterSecureStorage? secureStorage})
@@ -10,9 +12,11 @@ class AuthLocalStorage {
           const FlutterSecureStorage(
             aOptions: AndroidOptions(encryptedSharedPreferences: true),
             iOptions: IOSOptions(),
-          );
+          ),
+      _webStorage = const AuthWebStorage();
 
   final FlutterSecureStorage _secureStorage;
+  final AuthWebStorage _webStorage;
 
   static const _rememberMeKey = 'auth.remember_me';
   static const _usernameKey = 'auth.username';
@@ -33,17 +37,32 @@ class AuthLocalStorage {
     if (!rememberMe) {
       await clear();
       await prefs.setBool(_rememberMeKey, false);
+      if (kIsWeb) {
+        await Future.wait([
+          _webStorage.write(_tokenKey, session.token),
+          _webStorage.write(_roleKey, session.role),
+          _webStorage.write(_userIdKey, session.userId),
+          _webStorage.write(_sessionIdKey, session.sessionId),
+        ]);
+        return;
+      }
       return;
     }
 
     await prefs.setBool(_rememberMeKey, true);
     if (kIsWeb) {
-      await prefs.setString(_usernameKey, username);
-      await prefs.setString(_passwordKey, password);
-      await prefs.setString(_tokenKey, session.token);
-      await prefs.setString(_roleKey, session.role);
-      await prefs.setString(_userIdKey, session.userId);
-      await prefs.setString(_sessionIdKey, session.sessionId);
+      await Future.wait([
+        prefs.setString(_usernameKey, username),
+        prefs.setString(_passwordKey, password),
+        prefs.setString(_tokenKey, session.token),
+        prefs.setString(_roleKey, session.role),
+        prefs.setString(_userIdKey, session.userId),
+        prefs.setString(_sessionIdKey, session.sessionId),
+        _webStorage.write(_tokenKey, session.token),
+        _webStorage.write(_roleKey, session.role),
+        _webStorage.write(_userIdKey, session.userId),
+        _webStorage.write(_sessionIdKey, session.sessionId),
+      ]);
       return;
     }
 
@@ -60,20 +79,43 @@ class AuthLocalStorage {
   Future<RememberedAuthData?> loadLoginData() async {
     final prefs = await SharedPreferences.getInstance();
     final remember = prefs.getBool(_rememberMeKey) ?? false;
-    if (!remember) {
-      return null;
-    }
 
     if (kIsWeb) {
+      final webToken =
+          await _webStorage.read(_tokenKey) ?? prefs.getString(_tokenKey) ?? '';
+      final webRole =
+          await _webStorage.read(_roleKey) ?? prefs.getString(_roleKey) ?? '';
+      final webUserId =
+          await _webStorage.read(_userIdKey) ??
+          prefs.getString(_userIdKey) ??
+          '';
+      final webSessionId =
+          await _webStorage.read(_sessionIdKey) ??
+          prefs.getString(_sessionIdKey) ??
+          '';
+
+      final hasSession =
+          webToken.isNotEmpty &&
+          webRole.isNotEmpty &&
+          webUserId.isNotEmpty &&
+          webSessionId.isNotEmpty;
+      if (!remember && !hasSession) {
+        return null;
+      }
+
       return RememberedAuthData(
-        username: prefs.getString(_usernameKey) ?? '',
-        password: prefs.getString(_passwordKey) ?? '',
-        token: prefs.getString(_tokenKey) ?? '',
-        role: prefs.getString(_roleKey) ?? '',
-        userId: prefs.getString(_userIdKey) ?? '',
-        sessionId: prefs.getString(_sessionIdKey) ?? '',
-        rememberMe: true,
+        username: remember ? (prefs.getString(_usernameKey) ?? '') : '',
+        password: remember ? (prefs.getString(_passwordKey) ?? '') : '',
+        token: webToken,
+        role: webRole,
+        userId: webUserId,
+        sessionId: webSessionId,
+        rememberMe: remember,
       );
+    }
+
+    if (!remember) {
+      return null;
     }
 
     final values = await Future.wait<String?>([
@@ -117,6 +159,13 @@ class AuthLocalStorage {
         _secureStorage.delete(key: _userIdKey),
         _secureStorage.delete(key: _sessionIdKey),
       ]);
+    } else {
+      tasks.addAll([
+        _webStorage.delete(_tokenKey),
+        _webStorage.delete(_roleKey),
+        _webStorage.delete(_userIdKey),
+        _webStorage.delete(_sessionIdKey),
+      ]);
     }
 
     await Future.wait(tasks);
@@ -141,6 +190,13 @@ class AuthLocalStorage {
         _secureStorage.delete(key: _roleKey),
         _secureStorage.delete(key: _userIdKey),
         _secureStorage.delete(key: _sessionIdKey),
+      ]);
+    } else {
+      tasks.addAll([
+        _webStorage.delete(_tokenKey),
+        _webStorage.delete(_roleKey),
+        _webStorage.delete(_userIdKey),
+        _webStorage.delete(_sessionIdKey),
       ]);
     }
     await Future.wait(tasks);

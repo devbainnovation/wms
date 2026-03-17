@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/auth/providers/providers.dart';
 import 'package:wms/admin/features/auth/screens/admin_forgot_password_screen.dart';
-import 'package:wms/admin/features/dashboard/screens/screens.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
@@ -57,30 +56,14 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     final password = _passwordController.text.trim();
 
     try {
-      String? fcmToken;
-      try {
-        fcmToken = await ref.read(fcmTokenProvider.future);
-      } catch (_) {
-        fcmToken = null;
-      }
-      final session = await ref
+      await ref
           .read(authLoginControllerProvider.notifier)
           .login(
             username: username,
             password: password,
             rememberMe: rememberMe,
             deviceInfo: 'admin-login',
-            fcmToken: fcmToken,
           );
-      ref.read(currentAuthSessionProvider.notifier).setSession(session);
-
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-        (route) => false,
-      );
     } catch (error) {
       if (!mounted) {
         return;
