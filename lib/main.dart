@@ -10,13 +10,11 @@ import 'package:wms/shared/shared.dart';
 import 'package:wms/user/user.dart';
 
 final _appLaunchProvider = FutureProvider<_AppLaunchState>((ref) async {
-  if (kIsWeb) {
-    return const _AppLaunchState.web();
-  }
-
   final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
   if (remembered == null) {
-    return const _AppLaunchState.userLogin();
+    return kIsWeb
+        ? const _AppLaunchState.web()
+        : const _AppLaunchState.userLogin();
   }
 
   final hasValidSession =
@@ -26,17 +24,26 @@ final _appLaunchProvider = FutureProvider<_AppLaunchState>((ref) async {
       remembered.sessionId.isNotEmpty;
 
   if (!hasValidSession) {
-    return const _AppLaunchState.userLogin();
+    return kIsWeb
+        ? const _AppLaunchState.web()
+        : const _AppLaunchState.userLogin();
   }
 
-  return _AppLaunchState.userDashboard(
-    AuthSession(
-      token: remembered.token,
-      role: remembered.role,
-      userId: remembered.userId,
-      sessionId: remembered.sessionId,
-    ),
+  final session = AuthSession(
+    token: remembered.token,
+    role: remembered.role,
+    userId: remembered.userId,
+    sessionId: remembered.sessionId,
   );
+
+  if (kIsWeb) {
+    final isAdmin = remembered.role.trim().toUpperCase() == 'ADMIN';
+    return isAdmin
+        ? _AppLaunchState.adminDashboard(session)
+        : const _AppLaunchState.web();
+  }
+
+  return _AppLaunchState.userDashboard(session);
 });
 
 Future<void> main() async {
@@ -322,6 +329,10 @@ class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
         }
 
         if (currentSession != null) {
+          final normalizedRole = currentSession.role.trim().toUpperCase();
+          if (kIsWeb || normalizedRole == 'ADMIN') {
+            return const AdminDashboardScreen();
+          }
           return const UserDashboardScreen();
         }
 
@@ -329,6 +340,7 @@ class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
           _AppLaunchTarget.webAdmin => const AdminLoginScreen(),
           _AppLaunchTarget.userLogin => const UserLoginScreen(),
           _AppLaunchTarget.userDashboard => const UserLoginScreen(),
+          _AppLaunchTarget.adminDashboard => const AdminLoginScreen(),
         };
       },
     );
@@ -373,7 +385,7 @@ class _SplashScreen extends StatelessWidget {
   }
 }
 
-enum _AppLaunchTarget { webAdmin, userLogin, userDashboard }
+enum _AppLaunchTarget { webAdmin, userLogin, userDashboard, adminDashboard }
 
 class _AppLaunchState {
   const _AppLaunchState._({required this.target, this.session});
@@ -385,6 +397,9 @@ class _AppLaunchState {
 
   const _AppLaunchState.userDashboard(AuthSession session)
     : this._(target: _AppLaunchTarget.userDashboard, session: session);
+
+  const _AppLaunchState.adminDashboard(AuthSession session)
+    : this._(target: _AppLaunchTarget.adminDashboard, session: session);
 
   final _AppLaunchTarget target;
   final AuthSession? session;

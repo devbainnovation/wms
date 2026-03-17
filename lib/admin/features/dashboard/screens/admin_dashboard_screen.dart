@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/dashboard/providers/providers.dart';
 import 'package:wms/admin/features/dashboard/services/services.dart';
+import 'package:wms/admin/features/dashboard/widgets/widgets.dart';
 import 'package:wms/admin/features/auth/screens/admin_login_screen.dart';
 import 'package:wms/admin/features/customers/screens/admin_customers_screen.dart';
 import 'package:wms/admin/features/devices/screens/admin_devices_screen.dart';
@@ -28,6 +29,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     (label: 'Customers', icon: Icons.groups_rounded),
     (label: 'Devices', icon: Icons.memory_rounded),
     (label: 'Schedules', icon: Icons.calendar_month_rounded),
+    (label: 'Profile', icon: Icons.person_rounded),
   ];
 
   @override
@@ -162,6 +164,7 @@ class _AdminSidebar extends StatelessWidget {
     (label: 'Customers', icon: Icons.groups_rounded),
     (label: 'Devices', icon: Icons.memory_rounded),
     (label: 'Schedules', icon: Icons.calendar_month_rounded),
+    (label: 'Profile', icon: Icons.person_rounded),
   ];
 
   @override
@@ -325,6 +328,10 @@ class _AdminContentPanel extends ConsumerWidget {
           ),
         ),
       );
+    }
+
+    if (selectedMenu == 4) {
+      return const AdminProfileView();
     }
 
     final contentByIndex =
