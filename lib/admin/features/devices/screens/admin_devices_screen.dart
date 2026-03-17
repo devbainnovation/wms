@@ -47,7 +47,11 @@ class AdminDevicesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(adminDevicesListProvider);
+    final showUnassignedOnly = ref.watch(
+      adminDevicesShowUnassignedOnlyProvider,
+    );
     final isMobile = MediaQuery.sizeOf(context).width < 900;
+    final screenTitle = showUnassignedOnly ? 'Unassigned Devices' : 'Devices';
 
     return Padding(
       padding: EdgeInsets.all(isMobile ? 12 : 24),
@@ -60,8 +64,8 @@ class AdminDevicesScreen extends ConsumerWidget {
                   runSpacing: 12,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text(
-                      'Devices',
+                    Text(
+                      screenTitle,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
@@ -98,8 +102,8 @@ class AdminDevicesScreen extends ConsumerWidget {
                 )
               : Row(
                   children: [
-                    const Text(
-                      'Devices',
+                    Text(
+                      screenTitle,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,

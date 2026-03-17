@@ -21,6 +21,31 @@ class AdminDashboardSummary {
   final int totalInactiveCustomers;
   final int totalUnassignedCustomers;
 
+  AdminDashboardSummary copyWith({
+    int? totalDevices,
+    int? totalActiveDevices,
+    int? totalInactiveDevices,
+    int? totalUnassignedDevices,
+    int? totalCustomers,
+    int? totalActiveCustomers,
+    int? totalInactiveCustomers,
+    int? totalUnassignedCustomers,
+  }) {
+    return AdminDashboardSummary(
+      totalDevices: totalDevices ?? this.totalDevices,
+      totalActiveDevices: totalActiveDevices ?? this.totalActiveDevices,
+      totalInactiveDevices: totalInactiveDevices ?? this.totalInactiveDevices,
+      totalUnassignedDevices:
+          totalUnassignedDevices ?? this.totalUnassignedDevices,
+      totalCustomers: totalCustomers ?? this.totalCustomers,
+      totalActiveCustomers: totalActiveCustomers ?? this.totalActiveCustomers,
+      totalInactiveCustomers:
+          totalInactiveCustomers ?? this.totalInactiveCustomers,
+      totalUnassignedCustomers:
+          totalUnassignedCustomers ?? this.totalUnassignedCustomers,
+    );
+  }
+
   factory AdminDashboardSummary.fromJson(Map<String, dynamic> json) {
     int asInt(String key) => (json[key] as num?)?.toInt() ?? 0;
 
@@ -46,24 +71,51 @@ class AdminDashboardService {
   Future<AdminDashboardSummary> getSummary({
     required String bearerToken,
   }) async {
-    final response = await _apiClient.get(
-      ApiEndpoints.adminSystemDashboard,
-      bearerToken: bearerToken,
-      showGlobalLoader: false,
-    );
+    final responses = await Future.wait([
+      _apiClient.get(
+        ApiEndpoints.adminSystemDashboard,
+        bearerToken: bearerToken,
+        showGlobalLoader: false,
+      ),
+      _apiClient.get(
+        ApiEndpoints.adminUnassignedDevices,
+        bearerToken: bearerToken,
+        showGlobalLoader: false,
+      ),
+    ]);
 
-    if (!response.isSuccess) {
+    final summaryResponse = responses[0];
+    if (!summaryResponse.isSuccess) {
       throw ApiException(
         'Unable to fetch dashboard summary.',
-        statusCode: response.statusCode,
+        statusCode: summaryResponse.statusCode,
       );
     }
 
-    final data = response.data;
+    final data = summaryResponse.data;
     if (data is! Map<String, dynamic>) {
       throw const ApiException('Invalid dashboard summary response.');
     }
 
-    return AdminDashboardSummary.fromJson(data);
+    final unassignedResponse = responses[1];
+    var totalUnassignedDevices = 0;
+    if (unassignedResponse.isSuccess) {
+      final unassignedData = unassignedResponse.data;
+      if (unassignedData is List) {
+        totalUnassignedDevices = unassignedData.length;
+      } else if (unassignedData is Map<String, dynamic>) {
+        final content =
+            unassignedData['content'] ??
+            unassignedData['items'] ??
+            unassignedData['data'];
+        if (content is List) {
+          totalUnassignedDevices = content.length;
+        }
+      }
+    }
+
+    return AdminDashboardSummary.fromJson(
+      data,
+    ).copyWith(totalUnassignedDevices: totalUnassignedDevices);
   }
 }

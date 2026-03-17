@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/admin/features/customers/providers/admin_customers_providers.dart';
 import 'package:wms/admin/features/dashboard/providers/providers.dart';
 import 'package:wms/admin/features/dashboard/services/services.dart';
 import 'package:wms/admin/features/dashboard/widgets/widgets.dart';
@@ -392,7 +393,7 @@ class _AdminContentPanel extends ConsumerWidget {
   }
 }
 
-class _AdminDashboardOverview extends StatelessWidget {
+class _AdminDashboardOverview extends ConsumerWidget {
   const _AdminDashboardOverview({
     required this.summary,
     required this.onMenuTap,
@@ -402,7 +403,7 @@ class _AdminDashboardOverview extends StatelessWidget {
   final ValueChanged<int> onMenuTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = width < 700
         ? 2
@@ -503,7 +504,18 @@ class _AdminDashboardOverview extends StatelessWidget {
               final card = cards[index];
               return _DashboardMetricCard(
                 data: card,
-                onTap: () => onMenuTap(card.targetMenu),
+                onTap: () async {
+                  if (card.label == 'Unassigned Devices') {
+                    ref.invalidate(adminUnassignedDevicesProvider);
+                    await ref.read(adminUnassignedDevicesProvider.future);
+                    ref.read(appRouteProvider.notifier).goToSection(
+                      AppRouteSection.devices,
+                      queryParameters: const {'filter': 'unassigned'},
+                    );
+                    return;
+                  }
+                  onMenuTap(card.targetMenu);
+                },
               );
             },
           ),

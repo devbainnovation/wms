@@ -12,6 +12,15 @@ final adminDevicesPageProvider =
       AdminDevicesPageNotifier.new,
     );
 
+final adminDevicesShowUnassignedOnlyProvider =
+    Provider.autoDispose<bool>((ref) {
+      final route = ref.watch(appRouteProvider);
+      if (route.section != AppRouteSection.devices) {
+        return false;
+      }
+      return route.queryParameters['filter'] == 'unassigned';
+    });
+
 class AdminDevicesPageNotifier extends Notifier<int> {
   @override
   int build() {
@@ -55,6 +64,9 @@ final adminDevicesListProvider =
     FutureProvider.autoDispose<AdminDevicePageResult>((ref) async {
       final service = ref.read(adminDeviceServiceProvider);
       final page = ref.watch(adminDevicesPageProvider);
+      final showUnassignedOnly = ref.watch(
+        adminDevicesShowUnassignedOnlyProvider,
+      );
       final session = ref.read(currentAuthSessionProvider);
       var token = (session?.token ?? '').trim();
 
@@ -67,6 +79,10 @@ final adminDevicesListProvider =
 
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
+      }
+
+      if (showUnassignedOnly) {
+        return service.getUnassignedDevices(bearerToken: token);
       }
 
       return service.getDevices(bearerToken: token, page: page, size: 20);

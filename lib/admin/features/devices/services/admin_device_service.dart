@@ -167,6 +167,47 @@ class AdminDeviceService {
     );
   }
 
+  Future<AdminDevicePageResult> getUnassignedDevices({
+    required String bearerToken,
+  }) async {
+    final response = await _apiClient.get(
+      ApiEndpoints.adminUnassignedDevices,
+      bearerToken: bearerToken,
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        'Unable to fetch unassigned devices.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    final items = switch (data) {
+      List<dynamic>() => data
+          .whereType<Map<String, dynamic>>()
+          .map(AdminDeviceSummary.fromJson)
+          .toList(),
+      Map<String, dynamic>() => ((data['content'] ?? data['items'] ?? data['data'])
+              is List
+          ? ((data['content'] ?? data['items'] ?? data['data']) as List)
+              .whereType<Map<String, dynamic>>()
+              .map(AdminDeviceSummary.fromJson)
+              .toList()
+          : const <AdminDeviceSummary>[]),
+      _ => const <AdminDeviceSummary>[],
+    };
+
+    return AdminDevicePageResult(
+      items: items,
+      page: 0,
+      size: items.length,
+      totalPages: 1,
+      totalElements: items.length,
+    );
+  }
+
   Future<void> registerDevice({
     required String bearerToken,
     required AdminDeviceRequest request,
