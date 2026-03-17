@@ -31,7 +31,7 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     return MediaQuery(
-      data: mediaQuery.copyWith(textScaleFactor: 1.0),
+      data: mediaQuery.copyWith(textScaler: TextScaler.noScaling),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,

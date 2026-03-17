@@ -499,8 +499,7 @@ class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
         }
 
         if (currentSession != null) {
-          final normalizedRole = currentSession.role.trim().toUpperCase();
-          if (kIsWeb || normalizedRole == 'ADMIN') {
+          if (kIsWeb) {
             return const AdminDashboardScreen();
           }
           return const UserDashboardScreen();
