@@ -12,6 +12,7 @@ class ApiEndpoints {
   static const String customerDevices = '/api/customer/devices';
   static const String customerManualTriggers = '/api/customer/manual-triggers';
   static const String customerSchedules = '/api/customer/schedules';
+  static const String appSchedules = '/api/app/schedules';
   static const String userProfile = '/api/user/profile';
   static const String userProfilePassword = '/api/user/profile/password';
 
@@ -32,4 +33,5 @@ class ApiEndpoints {
       '/api/admin/devices/$id/components/$compId';
   static String customerComponentSchedules(String componentId) =>
       '/api/customer/components/$componentId/schedules';
+  static String appScheduleById(String id) => '/api/app/schedules/$id';
 }

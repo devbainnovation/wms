@@ -25,6 +25,31 @@ class CustomerScheduleTime {
   final int second;
   final int nano;
 
+  factory CustomerScheduleTime.fromValue(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return CustomerScheduleTime.fromJson(value);
+    }
+    if (value is String) {
+      return CustomerScheduleTime.fromFormattedString(value);
+    }
+    return const CustomerScheduleTime(hour: 0, minute: 0);
+  }
+
+  factory CustomerScheduleTime.fromFormattedString(String value) {
+    final match = RegExp(
+      r'^\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*$',
+    ).firstMatch(value);
+    if (match == null) {
+      return const CustomerScheduleTime(hour: 0, minute: 0);
+    }
+
+    return CustomerScheduleTime(
+      hour: int.tryParse(match.group(1) ?? '') ?? 0,
+      minute: int.tryParse(match.group(2) ?? '') ?? 0,
+      second: int.tryParse(match.group(3) ?? '') ?? 0,
+    );
+  }
+
   factory CustomerScheduleTime.fromJson(Map<String, dynamic> json) {
     return CustomerScheduleTime(
       hour: (json['hour'] as num?)?.toInt() ?? 0,
@@ -41,6 +66,12 @@ class CustomerScheduleTime {
       'second': second,
       'nano': nano,
     };
+  }
+
+  String toFormattedString() {
+    final normalizedHour = hour.clamp(0, 23);
+    final normalizedMinute = minute.clamp(0, 59);
+    return '${normalizedHour.toString().padLeft(2, '0')}:${normalizedMinute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -60,6 +91,16 @@ class CustomerComponentScheduleRequest {
   final bool enabled;
 
   Map<String, dynamic> toJson() {
+    return {
+      'days': days,
+      'startTime': startTime.toFormattedString(),
+      'endTime': endTime.toFormattedString(),
+      'durationMins': durationMins,
+      'isEnabled': enabled,
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson() {
     return {
       'days': days,
       'startTime': startTime.toJson(),
@@ -99,16 +140,10 @@ class CustomerComponentSchedule {
     return CustomerComponentSchedule(
       scheduleId: (json['id'] ?? json['scheduleId'] ?? '').toString().trim(),
       days: days,
-      startTime: CustomerScheduleTime.fromJson(
-        (json['startTime'] as Map?)?.cast<String, dynamic>() ??
-            const <String, dynamic>{},
-      ),
-      endTime: CustomerScheduleTime.fromJson(
-        (json['endTime'] as Map?)?.cast<String, dynamic>() ??
-            const <String, dynamic>{},
-      ),
+      startTime: CustomerScheduleTime.fromValue(json['startTime']),
+      endTime: CustomerScheduleTime.fromValue(json['endTime']),
       durationMins: (json['durationMins'] as num?)?.toInt() ?? 0,
-      enabled: json['enabled'] != false,
+      enabled: (json['isEnabled'] ?? json['enabled']) != false,
     );
   }
 }
@@ -341,8 +376,9 @@ class CustomerDevicesService {
     }
 
     final response = await _apiClient.get(
-      ApiEndpoints.customerComponentSchedules(normalizedComponentId),
+      ApiEndpoints.appSchedules,
       bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
       showGlobalLoader: false,
     );
 
@@ -384,7 +420,7 @@ class CustomerDevicesService {
     }
 
     final response = await _apiClient.post(
-      ApiEndpoints.customerSchedules,
+      ApiEndpoints.appSchedules,
       bearerToken: bearerToken,
       queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
       body: request.toJson(),
@@ -393,6 +429,68 @@ class CustomerDevicesService {
     if (!response.isSuccess) {
       throw ApiException(
         _extractMessage(response.data) ?? 'Unable to save schedule.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
+  }
+
+  Future<ApiResponse> updateSchedule({
+    required String bearerToken,
+    required String componentId,
+    required String scheduleId,
+    required CustomerComponentScheduleRequest request,
+  }) async {
+    final normalizedComponentId = componentId.trim();
+    final normalizedScheduleId = scheduleId.trim();
+    if (normalizedComponentId.isEmpty) {
+      throw const ApiException('Component ID is missing.');
+    }
+    if (normalizedScheduleId.isEmpty) {
+      throw const ApiException('Schedule ID is missing.');
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.appScheduleById(normalizedScheduleId),
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
+      body: request.toUpdateJson(),
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to update schedule.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
+  }
+
+  Future<ApiResponse> deleteSchedule({
+    required String bearerToken,
+    required String componentId,
+    required String scheduleId,
+  }) async {
+    final normalizedComponentId = componentId.trim();
+    final normalizedScheduleId = scheduleId.trim();
+    if (normalizedComponentId.isEmpty) {
+      throw const ApiException('Component ID is missing.');
+    }
+    if (normalizedScheduleId.isEmpty) {
+      throw const ApiException('Schedule ID is missing.');
+    }
+
+    final response = await _apiClient.delete(
+      ApiEndpoints.appScheduleById(normalizedScheduleId),
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to delete schedule.',
         statusCode: response.statusCode,
       );
     }

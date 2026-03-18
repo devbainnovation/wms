@@ -508,43 +508,81 @@ class _ValveSettingView extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: canAddSchedule
-                        ? () async {
-                            final error = await notifier.submitSchedule(
-                              valveIndex,
-                              scheduleIndex,
-                              addAnotherCard: true,
-                            );
-                            if (error != null && context.mounted) {
-                              _showSnackBar(context, error);
-                              return;
-                            }
-                            if (context.mounted) {
-                              _showSnackBar(
-                                context,
-                                'Schedule added successfully.',
-                              );
-                            }
-                          }
-                        : null,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(46),
-                      foregroundColor: AppColors.primaryTeal,
-                      side: const BorderSide(color: AppColors.primaryTeal),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    icon: schedule.isSubmitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add_circle_outline_rounded),
-                    label: const Text('Add Schedule'),
-                  ),
+                  child: schedule.persisted
+                      ? OutlinedButton.icon(
+                          onPressed: schedule.isSubmitting
+                              ? null
+                              : () async {
+                                  final error = await notifier.deleteSchedule(
+                                    valveIndex,
+                                    scheduleIndex,
+                                  );
+                                  if (error != null && context.mounted) {
+                                    _showSnackBar(context, error);
+                                    return;
+                                  }
+                                  if (context.mounted) {
+                                    _showSnackBar(context, 'Schedule deleted.');
+                                  }
+                                },
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: schedule.isSubmitting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.delete_outline_rounded),
+                          label: const Text('Delete'),
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: canAddSchedule
+                              ? () async {
+                                  final error = await notifier.submitSchedule(
+                                    valveIndex,
+                                    scheduleIndex,
+                                    addAnotherCard: true,
+                                  );
+                                  if (error != null && context.mounted) {
+                                    _showSnackBar(context, error);
+                                    return;
+                                  }
+                                  if (context.mounted) {
+                                    _showSnackBar(
+                                      context,
+                                      'Schedule added successfully.',
+                                    );
+                                  }
+                                }
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            foregroundColor: AppColors.primaryTeal,
+                            side: const BorderSide(color: AppColors.primaryTeal),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: schedule.isSubmitting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.add_circle_outline_rounded),
+                          label: const Text('Add Schedule'),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -561,7 +599,12 @@ class _ValveSettingView extends ConsumerWidget {
                               return;
                             }
                             if (context.mounted) {
-                              _showSnackBar(context, 'Schedule saved.');
+                              _showSnackBar(
+                                context,
+                                schedule.persisted
+                                    ? 'Schedule updated.'
+                                    : 'Schedule saved.',
+                              );
                             }
                           }
                         : null,
@@ -584,8 +627,12 @@ class _ValveSettingView extends ConsumerWidget {
                               color: AppColors.white,
                             ),
                           )
-                        : const Icon(Icons.save_outlined),
-                    label: const Text('Save'),
+                        : Icon(
+                            schedule.persisted
+                                ? Icons.edit_outlined
+                                : Icons.save_outlined,
+                          ),
+                    label: Text(schedule.persisted ? 'Edit' : 'Save'),
                   ),
                 ),
               ],
@@ -1113,11 +1160,20 @@ class _ValveSettingController extends ChangeNotifier {
         enabled: true,
       );
 
-      await ref.read(customerDevicesServiceProvider).createSchedule(
-        bearerToken: token,
-        componentId: componentId,
-        request: request,
-      );
+      if (schedule.persisted) {
+        await ref.read(customerDevicesServiceProvider).updateSchedule(
+          bearerToken: token,
+          componentId: componentId,
+          scheduleId: schedule.scheduleId,
+          request: request,
+        );
+      } else {
+        await ref.read(customerDevicesServiceProvider).createSchedule(
+          bearerToken: token,
+          componentId: componentId,
+          request: request,
+        );
+      }
 
       await _refreshSchedules(valveIndex, showLoader: false, showErrors: false);
 
@@ -1135,6 +1191,47 @@ class _ValveSettingController extends ChangeNotifier {
           ),
         );
       }
+      return null;
+    } catch (error) {
+      _updateSchedule(
+        valveIndex,
+        scheduleIndex,
+        (item) => item.copyWith(isSubmitting: false),
+      );
+      return error.toString();
+    }
+  }
+
+  Future<String?> deleteSchedule(int valveIndex, int scheduleIndex) async {
+    final valve = _state.valves[valveIndex];
+    final schedule = valve.schedules[scheduleIndex];
+    final componentId = valve.componentId.trim();
+    if (componentId.isEmpty) {
+      return 'Component ID missing for this valve.';
+    }
+    if (!schedule.persisted || schedule.scheduleId.trim().isEmpty) {
+      return 'Schedule ID missing.';
+    }
+
+    _updateSchedule(
+      valveIndex,
+      scheduleIndex,
+      (item) => item.copyWith(isSubmitting: true),
+    );
+
+    try {
+      final token = await _resolveToken();
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      await ref.read(customerDevicesServiceProvider).deleteSchedule(
+        bearerToken: token,
+        componentId: componentId,
+        scheduleId: schedule.scheduleId,
+      );
+
+      await _refreshSchedules(valveIndex, showLoader: false, showErrors: false);
       return null;
     } catch (error) {
       _updateSchedule(
