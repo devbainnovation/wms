@@ -33,5 +33,9 @@ class ApiEndpoints {
       '/api/admin/devices/$id/components/$compId';
   static String customerComponentSchedules(String componentId) =>
       '/api/customer/components/$componentId/schedules';
+  static String appComponentSchedules(String componentId) =>
+      '/api/app/components/$componentId/schedules';
+  static String appComponentScheduleById(String componentId, String scheduleId) =>
+      '/api/app/components/$componentId/schedules/$scheduleId';
   static String appScheduleById(String id) => '/api/app/schedules/$id';
 }

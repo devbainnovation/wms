@@ -165,15 +165,35 @@ class AdminDeviceComponentsScreen extends ConsumerWidget {
                               ),
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   flex: 3,
-                                  child: Text(
-                                    item.name.isEmpty ? '-' : item.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.darkText,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name.isEmpty ? '-' : item.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.darkText,
+                                        ),
+                                      ),
+                                      if (item.installedArea.trim().isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: Text(
+                                            item.installedArea,
+                                            style: const TextStyle(
+                                              color: AppColors.greyText,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                                 Expanded(
@@ -340,6 +360,7 @@ class _ComponentUpsertDialogState
   final _formKey = GlobalKey<FormState>();
   final _gpioController = TextEditingController();
   final _nameController = TextEditingController();
+  final _installedAreaController = TextEditingController();
 
   bool get _isEdit => widget.editItem != null;
 
@@ -349,6 +370,7 @@ class _ComponentUpsertDialogState
     final item = widget.editItem;
     _gpioController.text = item == null ? '' : item.gpioPin.toString();
     _nameController.text = item?.name ?? '';
+    _installedAreaController.text = item?.installedArea ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -366,6 +388,7 @@ class _ComponentUpsertDialogState
   void dispose() {
     _gpioController.dispose();
     _nameController.dispose();
+    _installedAreaController.dispose();
     super.dispose();
   }
 
@@ -436,17 +459,25 @@ class _ComponentUpsertDialogState
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _gpioController,
-                  hintText: 'Enter GPIO pin',
-                  labelText: 'gpioPin',
+                  hintText: 'GPIO Pin',
+                  labelText: 'GPIO Pin',
                   keyboardType: TextInputType.number,
                   validator: _validatePin,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _nameController,
-                  hintText: 'Enter name',
-                  labelText: 'name',
+                  hintText: 'Name',
+                  labelText: 'Name',
                   validator: (value) => _required(value, 'name'),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _installedAreaController,
+                  hintText: 'Area Location',
+                  labelText: 'Area Location',
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: (value) => _required(value, 'installedArea'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -511,6 +542,7 @@ class _ComponentUpsertDialogState
       type: ref.read(_componentUpsertTypeProvider),
       gpioPin: int.parse(_gpioController.text.trim()),
       name: _nameController.text.trim(),
+      installedArea: _normalizeInstalledArea(_installedAreaController.text),
       active: ref.read(_componentUpsertIsActiveProvider),
     );
 
@@ -563,6 +595,15 @@ class _ComponentUpsertDialogState
       return 'gpioPin must be a number';
     }
     return null;
+  }
+
+  String _normalizeInstalledArea(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
   }
 }
 

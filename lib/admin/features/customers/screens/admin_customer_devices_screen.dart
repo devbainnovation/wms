@@ -1327,6 +1327,7 @@ class _EditCustomerComponentDialogState
       type: ref.read(_customerComponentTypeProvider),
       gpioPin: int.parse(_gpioController.text.trim()),
       name: _nameController.text.trim(),
+      installedArea: '',
       active: ref.read(_customerComponentActiveProvider),
     );
 

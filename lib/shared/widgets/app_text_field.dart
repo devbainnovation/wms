@@ -7,6 +7,7 @@ class AppTextField extends StatelessWidget {
     required this.hintText,
     this.labelText,
     this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
     this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
@@ -20,6 +21,7 @@ class AppTextField extends StatelessWidget {
   final String hintText;
   final String? labelText;
   final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
   final bool obscureText;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
@@ -35,6 +37,7 @@ class AppTextField extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        textCapitalization: textCapitalization,
         obscureText: obscureText,
         maxLines: 1,
         validator: validator,

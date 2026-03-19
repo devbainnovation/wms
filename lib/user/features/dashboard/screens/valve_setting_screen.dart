@@ -928,6 +928,7 @@ class _ValveSettingArgs {
                 (name) => CustomerDeviceComponent(
                   componentId: '',
                   displayName: name,
+                  installedArea: '',
                   type: 'VALVE',
                 ),
               )
@@ -938,6 +939,7 @@ class _ValveSettingArgs {
             const CustomerDeviceComponent(
               componentId: '',
               displayName: '',
+              installedArea: '',
               type: 'VALVE',
             ),
           ]
@@ -967,6 +969,7 @@ class _ValveSettingArgs {
       final right = other.components[index];
       if (left.componentId != right.componentId ||
           left.displayName != right.displayName ||
+          left.installedArea != right.installedArea ||
           left.type != right.type) {
         return false;
       }
@@ -978,7 +981,10 @@ class _ValveSettingArgs {
   int get hashCode => Object.hash(
     deviceId,
     Object.hashAll(
-      components.map((item) => '${item.componentId}|${item.displayName}|${item.type}'),
+      components.map(
+        (item) =>
+            '${item.componentId}|${item.displayName}|${item.installedArea}|${item.type}',
+      ),
     ),
   );
 }
@@ -1016,7 +1022,9 @@ class _ValveSettingController extends ChangeNotifier {
         ) {
           final component = args.components[index];
           return _ValveComponentModel(
-            valveLabel: 'Valve ${index + 1}',
+            valveLabel: component.installedArea.trim().isEmpty
+                ? 'Valve ${index + 1}'
+                : component.installedArea,
             componentName: component.displayName,
             componentId: component.componentId,
             isActive: true,

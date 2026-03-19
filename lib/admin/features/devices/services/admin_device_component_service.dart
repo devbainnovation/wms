@@ -44,12 +44,14 @@ class AdminDeviceComponentRequest {
     required this.type,
     required this.gpioPin,
     required this.name,
+    required this.installedArea,
     required this.active,
   });
 
   final AdminComponentType type;
   final int gpioPin;
   final String name;
+  final String installedArea;
   final bool active;
 
   Map<String, dynamic> toJson() {
@@ -57,6 +59,7 @@ class AdminDeviceComponentRequest {
       'type': type.apiValue,
       'gpioPin': gpioPin,
       'name': name,
+      'installedArea': installedArea,
       'active': active,
     };
   }
@@ -68,6 +71,7 @@ class AdminDeviceComponent {
     required this.type,
     required this.gpioPin,
     required this.name,
+    required this.installedArea,
     required this.active,
   });
 
@@ -75,6 +79,7 @@ class AdminDeviceComponent {
   final AdminComponentType type;
   final int gpioPin;
   final String name;
+  final String installedArea;
   final bool active;
 
   factory AdminDeviceComponent.fromJson(Map<String, dynamic> json) {
@@ -82,6 +87,7 @@ class AdminDeviceComponent {
         .toString();
     final gpioPin = (json['gpioPin'] as num?)?.toInt() ?? 0;
     final name = (json['name'] ?? '').toString();
+    final installedArea = (json['installedArea'] ?? '').toString();
     final active = (json['active'] ?? json['isActive'] ?? true) == true;
     final type = _parseComponentType(json['type']);
 
@@ -90,6 +96,7 @@ class AdminDeviceComponent {
       type: type,
       gpioPin: gpioPin,
       name: name,
+      installedArea: installedArea,
       active: active,
     );
   }

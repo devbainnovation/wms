@@ -5,11 +5,13 @@ class CustomerDeviceComponent {
   const CustomerDeviceComponent({
     required this.componentId,
     required this.displayName,
+    required this.installedArea,
     required this.type,
   });
 
   final String componentId;
   final String displayName;
+  final String installedArea;
   final String type;
 }
 
@@ -251,6 +253,7 @@ class CustomerDeviceSummary {
               return CustomerDeviceComponent(
                 componentId: id,
                 displayName: resolvedName,
+                installedArea: readFromMap(item, const ['installedArea']),
                 type: readFromMap(item, const ['type']),
               );
             }
@@ -261,6 +264,7 @@ class CustomerDeviceSummary {
             return CustomerDeviceComponent(
               componentId: '',
               displayName: text,
+              installedArea: '',
               type: '',
             );
           })
@@ -381,9 +385,8 @@ class CustomerDevicesService {
     }
 
     final response = await _apiClient.get(
-      ApiEndpoints.appSchedules,
+      ApiEndpoints.appComponentSchedules(normalizedComponentId),
       bearerToken: bearerToken,
-      queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
       showGlobalLoader: false,
     );
     debugPrint(
