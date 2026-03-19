@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:wms/core/core.dart';
@@ -52,8 +53,6 @@ class _ValveSettingView extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _headerCard(device: device),
-            const SizedBox(height: 14),
             for (var index = 0; index < state.valves.length; index++) ...[
               _buildValveCard(
                 context: context,
@@ -65,38 +64,6 @@ class _ValveSettingView extends ConsumerWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _headerCard({required CustomerDeviceSummary device}) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGreyText),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            device.displayName.isEmpty ? '-' : device.displayName,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkText,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'ESP ID: ${device.espId.isEmpty ? '-' : device.espId}',
-            style: const TextStyle(
-              color: AppColors.greyText,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -234,10 +201,20 @@ class _ValveSettingView extends ConsumerWidget {
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (value) async {
+                                  int? duration;
+                                  if (value) {
+                                    duration = await _showManualDurationDialog(
+                                      context,
+                                    );
+                                    if (duration == null || !context.mounted) {
+                                      return;
+                                    }
+                                  }
                                   final error = await notifier
                                       .setManualToggleAndTrigger(
                                         valveIndex,
                                         value,
+                                        duration: duration ?? 0,
                                       );
                                   if (error != null && context.mounted) {
                                     _showSnackBar(context, error);
@@ -903,6 +880,68 @@ class _ValveSettingView extends ConsumerWidget {
       SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
     );
   }
+
+  Future<int?> _showManualDurationDialog(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    var durationText = '';
+
+    final result = await showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Manual Duration'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (value) => durationText = value,
+              decoration: const InputDecoration(
+                labelText: 'Duration (minutes)',
+                hintText: 'Max 300',
+              ),
+              validator: (value) {
+                final trimmed = (value ?? '').trim();
+                if (trimmed.isEmpty) {
+                  return 'Duration is required';
+                }
+                final parsed = int.tryParse(trimmed);
+                if (parsed == null) {
+                  return 'Enter a valid number';
+                }
+                if (parsed < 1 || parsed > 300) {
+                  return 'Enter 1 to 300 minutes';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final isValid = formKey.currentState?.validate() ?? false;
+                if (!isValid) {
+                  return;
+                }
+                Navigator.of(dialogContext).pop(int.parse(durationText.trim()));
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result;
+  }
 }
 
 class _ValveSettingArgs {
@@ -1028,7 +1067,7 @@ class _ValveSettingController extends ChangeNotifier {
             componentName: component.displayName,
             componentId: component.componentId,
             isActive: true,
-            isExpanded: index == 0,
+            isExpanded: false,
             manualActionOn: false,
             isLoadingSchedules: false,
             hasLoadedSchedules: false,
@@ -1041,13 +1080,6 @@ class _ValveSettingController extends ChangeNotifier {
     debugPrint(
       'VALVE_SETTING init: valves=${args.components.length}, firstValveComponentId='
       '${args.components.isNotEmpty ? args.components.first.componentId : 'n/a'}',
-    );
-    Future<void>.microtask(
-      () => _ensureSchedulesLoaded(
-        0,
-        showLoader: true,
-        showErrors: false,
-      ),
     );
   }
 
@@ -1159,7 +1191,11 @@ class _ValveSettingController extends ChangeNotifier {
     );
   }
 
-  Future<String?> setManualToggleAndTrigger(int valveIndex, bool value) async {
+  Future<String?> setManualToggleAndTrigger(
+    int valveIndex,
+    bool value, {
+    required int duration,
+  }) async {
     _updateValve(valveIndex, (item) => item.copyWith(manualActionOn: value));
 
     final action = value ? 'ON' : 'OFF';
@@ -1174,7 +1210,11 @@ class _ValveSettingController extends ChangeNotifier {
       }
       await ref
           .read(customerManualTriggerControllerProvider.notifier)
-          .trigger(componentId: componentId, action: action);
+          .trigger(
+            componentId: componentId,
+            action: action,
+            duration: duration,
+          );
       return null;
     } catch (error) {
       _updateValve(
@@ -1568,7 +1608,7 @@ class _ScheduleCardModel {
       cardKey: DateTime.now().microsecondsSinceEpoch.toString(),
       persisted: false,
       scheduleId: '',
-      isExpanded: true,
+      isExpanded: false,
       selectedDays: <int>{},
       initialSelectedDays: <int>{},
       fromTime: null,

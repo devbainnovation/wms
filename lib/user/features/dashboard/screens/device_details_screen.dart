@@ -17,7 +17,7 @@ class DeviceDetailsScreen extends StatelessWidget {
         surfaceTintColor: AppColors.white,
         elevation: 2,
         shadowColor: const Color(0x26000000),
-        title: const Text('Device Details'),
+        title: Text(device.displayName.isEmpty ? '-' : device.displayName),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -44,30 +44,6 @@ class DeviceDetailsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _sectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  device.displayName.isEmpty ? '-' : device.displayName,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  device.espId.isEmpty ? '-' : device.espId,
-                  style: const TextStyle(
-                    color: AppColors.greyText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
           _sectionCard(
             child: Column(
               children: [

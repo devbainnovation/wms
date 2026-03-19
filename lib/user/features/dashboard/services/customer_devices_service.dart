@@ -341,6 +341,7 @@ class CustomerDevicesService {
     required String bearerToken,
     required String componentId,
     required String action,
+    required int duration,
   }) async {
     final normalizedComponentId = componentId.trim();
     if (normalizedComponentId.isEmpty) {
@@ -351,6 +352,12 @@ class CustomerDevicesService {
     if (normalizedAction != 'ON' && normalizedAction != 'OFF') {
       throw const ApiException('Action must be ON or OFF.');
     }
+    if (normalizedAction == 'ON' && (duration < 1 || duration > 300)) {
+      throw const ApiException('Duration must be between 1 and 300 minutes.');
+    }
+    if (normalizedAction == 'OFF' && duration < 0) {
+      throw const ApiException('Duration is invalid.');
+    }
 
     final response = await _apiClient.post(
       ApiEndpoints.customerManualTriggers,
@@ -358,6 +365,7 @@ class CustomerDevicesService {
       queryParameters: <String, dynamic>{
         'componentId': normalizedComponentId,
         'action': normalizedAction,
+        'duration': duration,
       },
     );
 
@@ -472,7 +480,7 @@ class CustomerDevicesService {
       ApiEndpoints.appScheduleById(normalizedScheduleId),
       bearerToken: bearerToken,
       queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
-      body: request.toUpdateJson(),
+      body: request.toJson(),
     );
 
     if (!response.isSuccess) {

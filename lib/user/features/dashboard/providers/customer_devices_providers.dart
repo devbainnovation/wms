@@ -31,6 +31,7 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
   Future<ApiResponse> trigger({
     required String componentId,
     required String action,
+    required int duration,
   }) async {
     state = const AsyncLoading<void>();
     try {
@@ -46,6 +47,7 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
         bearerToken: token,
         componentId: componentId,
         action: action,
+        duration: duration,
       );
       if (!ref.mounted) {
         throw const ApiException('Manual trigger request was cancelled.');
