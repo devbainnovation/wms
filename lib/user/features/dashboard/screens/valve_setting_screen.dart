@@ -513,6 +513,11 @@ class _ValveSettingView extends ConsumerWidget {
                           onPressed: schedule.isSubmitting
                               ? null
                               : () async {
+                                  final confirmed =
+                                      await _confirmScheduleDelete(context);
+                                  if (confirmed != true || !context.mounted) {
+                                    return;
+                                  }
                                   final error = await notifier.deleteSchedule(
                                     valveIndex,
                                     scheduleIndex,
@@ -768,6 +773,34 @@ class _ValveSettingView extends ConsumerWidget {
     );
   }
 
+  Future<bool?> _confirmScheduleDelete(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Schedule'),
+          content: const Text(
+            'Are you sure you want to delete this schedule?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.white,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _durationLabel(_ScheduleCardModel schedule) {
     if (schedule.fromTime == null || schedule.toTime == null) {
       return 'Time: --';
@@ -989,14 +1022,25 @@ class _ValveSettingController extends ChangeNotifier {
             isActive: true,
             isExpanded: index == 0,
             manualActionOn: false,
-            isLoadingSchedules: component.componentId.trim().isNotEmpty,
+            isLoadingSchedules: false,
+            hasLoadedSchedules: false,
             schedules: <_ScheduleCardModel>[_ScheduleCardModel.createDraft()],
             lastUpdated: DateTime.now(),
           );
         }),
         isLeaving: false,
       ) {
-    Future<void>.microtask(_loadSchedulesForAllValves);
+    debugPrint(
+      'VALVE_SETTING init: valves=${args.components.length}, firstValveComponentId='
+      '${args.components.isNotEmpty ? args.components.first.componentId : 'n/a'}',
+    );
+    Future<void>.microtask(
+      () => _ensureSchedulesLoaded(
+        0,
+        showLoader: true,
+        showErrors: false,
+      ),
+    );
   }
 
   final Ref ref;
@@ -1020,7 +1064,12 @@ class _ValveSettingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleExpanded(int valveIndex) {
+  Future<void> toggleExpanded(int valveIndex) async {
+    final shouldExpand = !_state.valves[valveIndex].isExpanded;
+    debugPrint(
+      'VALVE_SETTING toggleExpanded: valveIndex=$valveIndex, '
+      'shouldExpand=$shouldExpand, componentId=${_state.valves[valveIndex].componentId}',
+    );
     _state = _state.copyWith(
       valves: List<_ValveComponentModel>.generate(_state.valves.length, (index) {
         final current = _state.valves[index];
@@ -1031,6 +1080,14 @@ class _ValveSettingController extends ChangeNotifier {
       }),
     );
     notifyListeners();
+
+    if (shouldExpand) {
+      await _ensureSchedulesLoaded(
+        valveIndex,
+        showLoader: true,
+        showErrors: false,
+      );
+    }
   }
 
   void toggleActive(int valveIndex, bool value) {
@@ -1243,10 +1300,28 @@ class _ValveSettingController extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadSchedulesForAllValves() async {
-    for (var index = 0; index < _state.valves.length; index++) {
-      await _refreshSchedules(index, showLoader: true, showErrors: false);
+  Future<void> _ensureSchedulesLoaded(
+    int valveIndex, {
+    required bool showLoader,
+    required bool showErrors,
+  }) async {
+    final valve = _state.valves[valveIndex];
+    debugPrint(
+      'VALVE_SETTING ensureSchedulesLoaded: valveIndex=$valveIndex, '
+      'componentId=${valve.componentId}, hasLoaded=${valve.hasLoadedSchedules}, '
+      'isLoading=${valve.isLoadingSchedules}, showLoader=$showLoader',
+    );
+    if (valve.hasLoadedSchedules || valve.isLoadingSchedules) {
+      debugPrint(
+        'VALVE_SETTING ensureSchedulesLoaded: skipped valveIndex=$valveIndex',
+      );
+      return;
     }
+    await _refreshSchedules(
+      valveIndex,
+      showLoader: showLoader,
+      showErrors: showErrors,
+    );
   }
 
   Future<void> _refreshSchedules(
@@ -1256,11 +1331,19 @@ class _ValveSettingController extends ChangeNotifier {
   }) async {
     final valve = _state.valves[valveIndex];
     final componentId = valve.componentId.trim();
+    debugPrint(
+      'VALVE_SETTING refreshSchedules:start valveIndex=$valveIndex, '
+      'componentId=$componentId, showLoader=$showLoader, showErrors=$showErrors',
+    );
     if (componentId.isEmpty) {
+      debugPrint(
+        'VALVE_SETTING refreshSchedules: empty componentId for valveIndex=$valveIndex',
+      );
       _updateValve(
         valveIndex,
         (item) => item.copyWith(
           isLoadingSchedules: false,
+          hasLoadedSchedules: true,
           schedules: <_ScheduleCardModel>[_ScheduleCardModel.createDraft()],
         ),
       );
@@ -1279,6 +1362,9 @@ class _ValveSettingController extends ChangeNotifier {
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
+      debugPrint(
+        'VALVE_SETTING refreshSchedules: token resolved for valveIndex=$valveIndex',
+      );
 
       final schedules = await ref
           .read(customerDevicesServiceProvider)
@@ -1286,6 +1372,10 @@ class _ValveSettingController extends ChangeNotifier {
             bearerToken: token,
             componentId: componentId,
           );
+      debugPrint(
+        'VALVE_SETTING refreshSchedules: received ${schedules.length} schedules '
+        'for valveIndex=$valveIndex, componentId=$componentId',
+      );
 
       final nextCards = schedules
           .take(3)
@@ -1300,14 +1390,20 @@ class _ValveSettingController extends ChangeNotifier {
         (item) => item.copyWith(
           schedules: nextCards,
           isLoadingSchedules: false,
+          hasLoadedSchedules: true,
           lastUpdated: DateTime.now(),
         ),
       );
     } catch (error) {
+      debugPrint(
+        'VALVE_SETTING refreshSchedules:error valveIndex=$valveIndex, '
+        'componentId=$componentId, error=$error',
+      );
       _updateValve(
         valveIndex,
         (item) => item.copyWith(
           isLoadingSchedules: false,
+          hasLoadedSchedules: false,
           schedules: item.schedules.isEmpty
               ? <_ScheduleCardModel>[_ScheduleCardModel.createDraft()]
               : item.schedules,
@@ -1322,10 +1418,16 @@ class _ValveSettingController extends ChangeNotifier {
   Future<String> _resolveToken() async {
     final session = ref.read(currentAuthSessionProvider);
     var token = (session?.token ?? '').trim();
+    debugPrint(
+      'VALVE_SETTING resolveToken: sessionTokenPresent=${token.isNotEmpty}',
+    );
     if (token.isEmpty) {
       final remembered =
           await ref.read(authLocalStorageProvider).loadLoginData();
       token = (remembered?.token ?? '').trim();
+      debugPrint(
+        'VALVE_SETTING resolveToken: storageTokenPresent=${token.isNotEmpty}',
+      );
     }
     debugPrint('VALVE_SETTING LOGIN TOKEN: $token');
     return token;
@@ -1374,6 +1476,7 @@ class _ValveComponentModel {
     required this.isExpanded,
     required this.manualActionOn,
     required this.isLoadingSchedules,
+    required this.hasLoadedSchedules,
     required this.schedules,
     required this.lastUpdated,
   });
@@ -1385,6 +1488,7 @@ class _ValveComponentModel {
   final bool isExpanded;
   final bool manualActionOn;
   final bool isLoadingSchedules;
+  final bool hasLoadedSchedules;
   final List<_ScheduleCardModel> schedules;
   final DateTime lastUpdated;
 
@@ -1396,6 +1500,7 @@ class _ValveComponentModel {
     bool? isExpanded,
     bool? manualActionOn,
     bool? isLoadingSchedules,
+    bool? hasLoadedSchedules,
     List<_ScheduleCardModel>? schedules,
     DateTime? lastUpdated,
   }) {
@@ -1407,6 +1512,7 @@ class _ValveComponentModel {
       isExpanded: isExpanded ?? this.isExpanded,
       manualActionOn: manualActionOn ?? this.manualActionOn,
       isLoadingSchedules: isLoadingSchedules ?? this.isLoadingSchedules,
+      hasLoadedSchedules: hasLoadedSchedules ?? this.hasLoadedSchedules,
       schedules: schedules ?? this.schedules,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );

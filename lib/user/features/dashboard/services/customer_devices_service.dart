@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:wms/core/api/api.dart';
 
 class CustomerDeviceComponent {
@@ -371,7 +372,11 @@ class CustomerDevicesService {
     required String componentId,
   }) async {
     final normalizedComponentId = componentId.trim();
+    debugPrint(
+      'CUSTOMER_DEVICES getComponentSchedules:start componentId=$normalizedComponentId',
+    );
     if (normalizedComponentId.isEmpty) {
+      debugPrint('CUSTOMER_DEVICES getComponentSchedules: skipped empty componentId');
       return const <CustomerComponentSchedule>[];
     }
 
@@ -380,6 +385,10 @@ class CustomerDevicesService {
       bearerToken: bearerToken,
       queryParameters: <String, dynamic>{'componentId': normalizedComponentId},
       showGlobalLoader: false,
+    );
+    debugPrint(
+      'CUSTOMER_DEVICES getComponentSchedules: status=${response.statusCode}, '
+      'componentId=$normalizedComponentId',
     );
 
     if (!response.isSuccess) {
@@ -403,10 +412,15 @@ class CustomerDevicesService {
       _ => const <dynamic>[],
     };
 
-    return rawList
+    final schedules = rawList
         .whereType<Map<String, dynamic>>()
         .map(CustomerComponentSchedule.fromJson)
         .toList();
+    debugPrint(
+      'CUSTOMER_DEVICES getComponentSchedules: parsed=${schedules.length}, '
+      'componentId=$normalizedComponentId',
+    );
+    return schedules;
   }
 
   Future<ApiResponse> createSchedule({
