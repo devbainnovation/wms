@@ -1,45 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/devices/screens/admin_device_components_screen.dart';
+import 'package:wms/admin/features/devices/screens/admin_device_dialogs.dart';
+import 'package:wms/admin/features/devices/screens/admin_device_tile.dart';
 import 'package:wms/admin/features/devices/providers/admin_devices_providers.dart';
-import 'package:wms/admin/features/devices/services/admin_device_service.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-
-final _deviceUpsertAmcExpiryProvider =
-    NotifierProvider.autoDispose<_DeviceUpsertAmcExpiryNotifier, DateTime?>(
-      _DeviceUpsertAmcExpiryNotifier.new,
-    );
-final _deviceUpsertRechargeExpiryProvider =
-    NotifierProvider.autoDispose<
-      _DeviceUpsertRechargeExpiryNotifier,
-      DateTime?
-    >(_DeviceUpsertRechargeExpiryNotifier.new);
-final _deviceUpsertIsActiveProvider =
-    NotifierProvider.autoDispose<_DeviceUpsertIsActiveNotifier, bool>(
-      _DeviceUpsertIsActiveNotifier.new,
-    );
-
-class _DeviceUpsertAmcExpiryNotifier extends Notifier<DateTime?> {
-  @override
-  DateTime? build() => null;
-
-  void set(DateTime? value) => state = value;
-}
-
-class _DeviceUpsertRechargeExpiryNotifier extends Notifier<DateTime?> {
-  @override
-  DateTime? build() => null;
-
-  void set(DateTime? value) => state = value;
-}
-
-class _DeviceUpsertIsActiveNotifier extends Notifier<bool> {
-  @override
-  bool build() => true;
-
-  void set(bool value) => state = value;
-}
 
 class AdminDevicesScreen extends ConsumerWidget {
   const AdminDevicesScreen({super.key});
@@ -81,7 +47,7 @@ class AdminDevicesScreen extends ConsumerWidget {
                         final created = await showDialog<bool>(
                           context: context,
                           barrierDismissible: false,
-                          builder: (_) => const _DeviceUpsertDialog(),
+                          builder: (_) => const AdminDeviceUpsertDialog(),
                         );
 
                         if (!context.mounted || created != true) {
@@ -120,7 +86,7 @@ class AdminDevicesScreen extends ConsumerWidget {
                         final created = await showDialog<bool>(
                           context: context,
                           barrierDismissible: false,
-                          builder: (_) => const _DeviceUpsertDialog(),
+                          builder: (_) => const AdminDeviceUpsertDialog(),
                         );
 
                         if (!context.mounted || created != true) {
@@ -199,7 +165,7 @@ class AdminDevicesScreen extends ConsumerWidget {
                               const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final item = result.items[index];
-                            return _DeviceTile(
+                            return AdminDeviceTile(
                               item: item,
                               isMobile: isMobile,
                               onOpenComponents: () {
@@ -217,7 +183,7 @@ class AdminDevicesScreen extends ConsumerWidget {
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (_) =>
-                                      _DeviceUpsertDialog(editItem: item),
+                                      AdminDeviceUpsertDialog(editItem: item),
                                 );
                                 if (updated == true) {
                                   ref.invalidate(adminDevicesListProvider);
@@ -236,7 +202,7 @@ class AdminDevicesScreen extends ConsumerWidget {
                               onDelete: () async {
                                 final deleted = await showDialog<bool>(
                                   context: context,
-                                  builder: (_) => _DeleteDeviceDialog(
+                                  builder: (_) => AdminDeleteDeviceDialog(
                                     id: item.id,
                                     name: item.displayName,
                                   ),
@@ -354,484 +320,6 @@ class AdminDevicesScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _DeviceTile extends StatelessWidget {
-  const _DeviceTile({
-    required this.item,
-    required this.isMobile,
-    required this.onOpenComponents,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final AdminDeviceSummary item;
-  final bool isMobile;
-  final VoidCallback onOpenComponents;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGreyText),
-      ),
-      child: isMobile ? _mobileLayout() : _desktopLayout(),
-    );
-  }
-
-  Widget _desktopLayout() {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Text(
-            item.displayName,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkText,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            item.macAddress.isEmpty ? '-' : item.macAddress,
-            style: const TextStyle(color: AppColors.darkText),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            item.fwVersion.isEmpty ? '-' : item.fwVersion,
-            style: const TextStyle(color: AppColors.darkText),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Align(alignment: Alignment.centerLeft, child: _statusChip()),
-        ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OutlinedButton.icon(
-              onPressed: onOpenComponents,
-              icon: const Icon(
-                Icons.settings_input_component_rounded,
-                size: 18,
-                color: AppColors.primaryTeal,
-              ),
-              label: const Text('Add Component'),
-            ),
-            const SizedBox(width: 6),
-            IconButton(
-              tooltip: 'Edit',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, color: AppColors.blue),
-            ),
-            IconButton(
-              tooltip: 'Delete',
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_rounded, color: AppColors.red),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _mobileLayout() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          item.displayName,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppColors.darkText,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _metaChip(
-              'MAC: ${item.macAddress.isEmpty ? '-' : item.macAddress}',
-            ),
-            _metaChip('FW: ${item.fwVersion.isEmpty ? '-' : item.fwVersion}'),
-            _statusChip(),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              onPressed: onOpenComponents,
-              icon: const Icon(
-                Icons.settings_input_component_rounded,
-                size: 18,
-                color: AppColors.primaryTeal,
-              ),
-              label: const Text('Add Component'),
-            ),
-            IconButton(
-              tooltip: 'Edit',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, color: AppColors.blue),
-            ),
-            IconButton(
-              tooltip: 'Delete',
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_rounded, color: AppColors.red),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _metaChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.lightBackground,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppColors.darkText,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _statusChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: item.isActive
-            ? AppColors.accentGreen.withValues(alpha: 0.12)
-            : AppColors.red.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        item.isActive ? 'Active' : 'Inactive',
-        style: TextStyle(
-          color: item.isActive ? AppColors.accentGreen : AppColors.red,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
-
-class _DeviceUpsertDialog extends ConsumerStatefulWidget {
-  const _DeviceUpsertDialog({this.editItem});
-
-  final AdminDeviceSummary? editItem;
-
-  @override
-  ConsumerState<_DeviceUpsertDialog> createState() =>
-      _DeviceUpsertDialogState();
-}
-
-class _DeviceUpsertDialogState extends ConsumerState<_DeviceUpsertDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _macController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _fwController = TextEditingController();
-
-  bool get _isEdit => widget.editItem != null;
-
-  @override
-  void initState() {
-    super.initState();
-    final item = widget.editItem;
-    if (item != null) {
-      _macController.text = item.macAddress;
-      _nameController.text = item.displayName;
-      _fwController.text = item.fwVersion;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      ref.read(_deviceUpsertAmcExpiryProvider.notifier).set(item?.amcExpiry);
-      ref
-          .read(_deviceUpsertRechargeExpiryProvider.notifier)
-          .set(item?.rechargeExpiry);
-      ref
-          .read(_deviceUpsertIsActiveProvider.notifier)
-          .set(item?.isActive ?? true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _macController.dispose();
-    _nameController.dispose();
-    _fwController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final registerState = ref.watch(adminRegisterDeviceControllerProvider);
-    final updateState = ref.watch(adminUpdateDeviceControllerProvider);
-    final amcExpiry = ref.watch(_deviceUpsertAmcExpiryProvider);
-    final rechargeExpiry = ref.watch(_deviceUpsertRechargeExpiryProvider);
-    final isActive = ref.watch(_deviceUpsertIsActiveProvider);
-    final isLoading = registerState.isLoading || updateState.isLoading;
-
-    return AlertDialog(
-      backgroundColor: AppColors.lightBackground,
-      title: Text(_isEdit ? 'Edit Device' : 'Register Device'),
-      content: SizedBox(
-        width: 460,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppTextField(
-                  controller: _macController,
-                  hintText: 'Enter MAC address',
-                  labelText: 'MAC Address',
-                  onChanged: (value) {
-                    final uppercaseValue = value.toUpperCase();
-                    if (value == uppercaseValue) {
-                      return;
-                    }
-                    _macController.value = _macController.value.copyWith(
-                      text: uppercaseValue,
-                      selection: TextSelection.collapsed(
-                        offset: uppercaseValue.length,
-                      ),
-                      composing: TextRange.empty,
-                    );
-                  },
-                  validator: (v) => _required(v, 'MAC address'),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _nameController,
-                  hintText: 'Enter display name',
-                  labelText: 'Display Name',
-                  validator: (v) => _required(v, 'Display name'),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _fwController,
-                  hintText: 'Enter firmware version',
-                  labelText: 'FW Version',
-                  validator: (v) => _required(v, 'FW version'),
-                ),
-                const SizedBox(height: 12),
-                AppDatePickerField(
-                  label: 'AMC Expiry',
-                  value: amcExpiry,
-                  onPick: (date) => ref
-                      .read(_deviceUpsertAmcExpiryProvider.notifier)
-                      .set(date),
-                ),
-                const SizedBox(height: 12),
-                AppDatePickerField(
-                  label: 'Recharge Expiry',
-                  value: rechargeExpiry,
-                  onPick: (date) => ref
-                      .read(_deviceUpsertRechargeExpiryProvider.notifier)
-                      .set(date),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Text(
-                      'Is Active',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkText,
-                      ),
-                    ),
-                    const Spacer(),
-                    Switch(
-                      value: isActive,
-                      activeThumbColor: AppColors.accentGreen,
-                      onChanged: (value) => ref
-                          .read(_deviceUpsertIsActiveProvider.notifier)
-                          .set(value),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: isLoading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryTeal,
-            foregroundColor: AppColors.white,
-          ),
-          onPressed: isLoading ? null : _submit,
-          child: isLoading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.white,
-                  ),
-                )
-              : Text(_isEdit ? 'Update' : 'Register'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _submit() async {
-    final valid = _formKey.currentState?.validate() ?? false;
-    if (!valid) {
-      return;
-    }
-    final amcExpiry = ref.read(_deviceUpsertAmcExpiryProvider);
-    final rechargeExpiry = ref.read(_deviceUpsertRechargeExpiryProvider);
-    final isActive = ref.read(_deviceUpsertIsActiveProvider);
-
-    if (amcExpiry == null) {
-      _showError('AMC expiry date is required.');
-      return;
-    }
-    if (rechargeExpiry == null) {
-      _showError('Recharge expiry date is required.');
-      return;
-    }
-
-    final request = AdminDeviceRequest(
-      macAddress: _macController.text.trim().toUpperCase(),
-      displayName: _nameController.text.trim(),
-      fwVersion: _fwController.text.trim(),
-      amcExpiry: amcExpiry,
-      rechargeExpiry: rechargeExpiry,
-      isActive: isActive,
-    );
-
-    try {
-      if (_isEdit) {
-        await ref
-            .read(adminUpdateDeviceControllerProvider.notifier)
-            .update(id: widget.editItem!.id, request: request);
-      } else {
-        await ref
-            .read(adminRegisterDeviceControllerProvider.notifier)
-            .register(request);
-      }
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pop(true);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      final message = error is ApiException
-          ? error.message
-          : 'Unable to register device.';
-      _showError(message);
-    }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  String? _required(String? value, String label) {
-    if ((value ?? '').trim().isEmpty) {
-      return '$label is required';
-    }
-    return null;
-  }
-}
-
-class _DeleteDeviceDialog extends ConsumerWidget {
-  const _DeleteDeviceDialog({required this.id, required this.name});
-
-  final String id;
-  final String name;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(adminDeleteDeviceControllerProvider);
-
-    return AlertDialog(
-      backgroundColor: AppColors.lightBackground,
-      title: const Text('Delete Device'),
-      content: Text(
-        'Are you sure you want to delete "$name"? This action cannot be undone.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: state.isLoading
-              ? null
-              : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-          onPressed: state.isLoading
-              ? null
-              : () async {
-                  try {
-                    await ref
-                        .read(adminDeleteDeviceControllerProvider.notifier)
-                        .delete(id);
-                    if (!context.mounted) {
-                      return;
-                    }
-                    Navigator.of(context).pop(true);
-                  } catch (error) {
-                    if (!context.mounted) {
-                      return;
-                    }
-                    final message = error is ApiException
-                        ? error.message
-                        : 'Unable to delete device.';
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(message)));
-                  }
-                },
-          child: state.isLoading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Delete'),
-        ),
-      ],
     );
   }
 }

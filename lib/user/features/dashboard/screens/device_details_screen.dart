@@ -44,7 +44,7 @@ class DeviceDetailsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _sectionCard(
+          AppSectionCard(
             child: Column(
               children: [
                 _detailRow('Display Name', device.displayName),
@@ -64,7 +64,7 @@ class DeviceDetailsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _sectionCard(
+          AppSectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,18 +111,6 @@ class DeviceDetailsScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _sectionCard({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGreyText),
-      ),
-      child: child,
     );
   }
 

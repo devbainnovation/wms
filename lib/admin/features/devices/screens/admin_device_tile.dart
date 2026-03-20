@@ -1,17 +1,20 @@
-part of 'admin_customers_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:wms/admin/features/devices/services/admin_device_service.dart';
+import 'package:wms/shared/shared.dart';
 
-class _CustomerTile extends StatelessWidget {
-  const _CustomerTile({
+class AdminDeviceTile extends StatelessWidget {
+  const AdminDeviceTile({
     required this.item,
     required this.isMobile,
-    required this.onAssignDevice,
+    required this.onOpenComponents,
     required this.onEdit,
     required this.onDelete,
+    super.key,
   });
 
-  final AdminCustomerSummary item;
+  final AdminDeviceSummary item;
   final bool isMobile;
-  final VoidCallback onAssignDevice;
+  final VoidCallback onOpenComponents;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -31,9 +34,9 @@ class _CustomerTile extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          flex: 2,
+          flex: 3,
           child: Text(
-            item.fullName.isEmpty ? '-' : item.fullName,
+            item.displayName,
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: AppColors.darkText,
@@ -41,55 +44,42 @@ class _CustomerTile extends StatelessWidget {
           ),
         ),
         Expanded(
-          flex: 2,
-          child: Text(
-            item.username.isEmpty ? '-' : item.username,
-            style: const TextStyle(color: AppColors.darkText),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            item.phoneNumber.isEmpty ? '-' : item.phoneNumber,
-            style: const TextStyle(color: AppColors.darkText),
-          ),
-        ),
-        Expanded(
           flex: 3,
           child: Text(
-            item.email.isEmpty ? '-' : item.email,
+            item.macAddress.isEmpty ? '-' : item.macAddress,
             style: const TextStyle(color: AppColors.darkText),
           ),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            item.formattedAddress.isEmpty ? '-' : item.formattedAddress,
+            item.fwVersion.isEmpty ? '-' : item.fwVersion,
             style: const TextStyle(color: AppColors.darkText),
-            softWrap: true,
           ),
         ),
         Expanded(
-          flex: 3,
-          child: Text(
-            item.espUnitIds.isEmpty ? '' : item.espUnitIds.join(', '),
-            style: const TextStyle(color: AppColors.greyText),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          flex: 2,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AppStatusChip(
+              label: item.isActive ? 'Active' : 'Inactive',
+              active: item.isActive,
+            ),
           ),
         ),
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              tooltip: 'Assign Device',
-              onPressed: onAssignDevice,
+            OutlinedButton.icon(
+              onPressed: onOpenComponents,
               icon: const Icon(
-                Icons.device_hub_rounded,
+                Icons.settings_input_component_rounded,
+                size: 18,
                 color: AppColors.primaryTeal,
               ),
+              label: const Text('Add Component'),
             ),
+            const SizedBox(width: 6),
             IconButton(
               tooltip: 'Edit',
               onPressed: onEdit,
@@ -111,7 +101,9 @@ class _CustomerTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          item.fullName.isEmpty ? item.username : item.fullName,
+          item.displayName,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             color: AppColors.darkText,
@@ -122,17 +114,15 @@ class _CustomerTile extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _metaChip('User: ${item.username.isEmpty ? '-' : item.username}'),
-            _metaChip(
-              'Phone: ${item.phoneNumber.isEmpty ? '-' : item.phoneNumber}',
+            AppMetaChip(
+              label: 'MAC: ${item.macAddress.isEmpty ? '-' : item.macAddress}',
             ),
-            _metaChip(
-              'Address: ${item.formattedAddress.isEmpty ? '-' : item.formattedAddress}',
+            AppMetaChip(
+              label: 'FW: ${item.fwVersion.isEmpty ? '-' : item.fwVersion}',
             ),
-            _metaChip(
-              item.espUnitIds.isEmpty
-                  ? 'Devices: None'
-                  : 'Devices: ${item.espUnitIds.length}',
+            AppStatusChip(
+              label: item.isActive ? 'Active' : 'Inactive',
+              active: item.isActive,
             ),
           ],
         ),
@@ -140,15 +130,16 @@ class _CustomerTile extends StatelessWidget {
         Wrap(
           spacing: 6,
           runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             OutlinedButton.icon(
-              onPressed: onAssignDevice,
+              onPressed: onOpenComponents,
               icon: const Icon(
-                Icons.device_hub_rounded,
+                Icons.settings_input_component_rounded,
                 size: 18,
                 color: AppColors.primaryTeal,
               ),
-              label: const Text('Assign Device'),
+              label: const Text('Add Component'),
             ),
             IconButton(
               tooltip: 'Edit',
@@ -164,9 +155,5 @@ class _CustomerTile extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Widget _metaChip(String label) {
-    return AppMetaChip(label: label);
   }
 }
