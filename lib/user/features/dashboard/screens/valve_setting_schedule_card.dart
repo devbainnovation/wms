@@ -8,6 +8,8 @@ class ValveSettingScheduleCard extends StatelessWidget {
     required this.schedule,
     required this.scheduleIndex,
     required this.isAllSelected,
+    required this.canEditSchedule,
+    required this.canDeleteSchedule,
     required this.validationMessage,
     required this.canSave,
     required this.canAddSchedule,
@@ -26,6 +28,8 @@ class ValveSettingScheduleCard extends StatelessWidget {
   final ScheduleCardModel schedule;
   final int scheduleIndex;
   final bool isAllSelected;
+  final bool canEditSchedule;
+  final bool canDeleteSchedule;
   final String? validationMessage;
   final bool canSave;
   final bool canAddSchedule;
@@ -112,7 +116,7 @@ class ValveSettingScheduleCard extends StatelessWidget {
                   _DayChip(
                     label: 'All',
                     selected: isAllSelected,
-                    onTap: onToggleAllDays,
+                    onTap: canEditSchedule ? onToggleAllDays : null,
                     isAll: true,
                   ),
                   const SizedBox(width: 8),
@@ -120,7 +124,9 @@ class ValveSettingScheduleCard extends StatelessWidget {
                     _DayChip(
                       label: dayChips[i].shortLabel,
                       selected: schedule.selectedDays.contains(dayChips[i].apiDay),
-                      onTap: () => onToggleDay(dayChips[i].apiDay),
+                      onTap: canEditSchedule
+                          ? () => onToggleDay(dayChips[i].apiDay)
+                          : null,
                     ),
                     if (i < dayChips.length - 1) const SizedBox(width: 8),
                   ],
@@ -145,7 +151,7 @@ class ValveSettingScheduleCard extends StatelessWidget {
                           contextForTimeFormat: contextForTimeFormat,
                           label: 'From',
                           value: schedule.fromTime,
-                          onTap: onPickFromTime,
+                          onTap: canEditSchedule ? onPickFromTime : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -154,7 +160,7 @@ class ValveSettingScheduleCard extends StatelessWidget {
                           contextForTimeFormat: contextForTimeFormat,
                           label: 'To',
                           value: schedule.toTime,
-                          onTap: onPickToTime,
+                          onTap: canEditSchedule ? onPickToTime : null,
                         ),
                       ),
                     ],
@@ -207,7 +213,9 @@ class ValveSettingScheduleCard extends StatelessWidget {
                 Expanded(
                   child: schedule.persisted
                       ? OutlinedButton.icon(
-                          onPressed: schedule.isSubmitting ? null : onDelete,
+                          onPressed: canDeleteSchedule && !schedule.isSubmitting
+                              ? onDelete
+                              : null,
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(46),
                             foregroundColor: AppColors.error,
@@ -310,7 +318,7 @@ class _DayChip extends StatelessWidget {
 
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isAll;
 
   @override
@@ -364,7 +372,7 @@ class _TimeField extends StatelessWidget {
   final BuildContext contextForTimeFormat;
   final String label;
   final TimeOfDay? value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

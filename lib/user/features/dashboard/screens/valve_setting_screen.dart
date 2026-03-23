@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/dashboard/providers/user_profile_providers.dart';
 import 'package:wms/user/features/dashboard/screens/valve_setting_controller.dart';
 import 'package:wms/user/features/dashboard/screens/valve_setting_dialogs.dart';
 import 'package:wms/user/features/dashboard/screens/valve_setting_models.dart';
 import 'package:wms/user/features/dashboard/screens/valve_setting_widgets.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
+import 'package:wms/user/features/dashboard/services/user_profile_service.dart';
 
 class ValveSettingScreen extends ConsumerWidget {
   const ValveSettingScreen({required this.device, super.key});
@@ -29,6 +31,8 @@ class _ValveSettingView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(valveSettingProvider(args));
     final state = controller.state;
+    final profileState = ref.watch(userProfileProvider);
+    final access = _resolveAccess(profileState: profileState);
 
     return PopScope(
       canPop: !state.isLeaving,
@@ -56,6 +60,7 @@ class _ValveSettingView extends ConsumerWidget {
             for (var index = 0; index < state.valves.length; index++) ...[
               ValveSettingValveCard(
                 valve: state.valves[index],
+                canControlValves: access.canControlValves,
                 onToggleExpanded: () =>
                     ref.read(valveSettingProvider(args)).toggleExpanded(index),
                 onToggleActive: (value) =>
@@ -90,6 +95,7 @@ class _ValveSettingView extends ConsumerWidget {
                       valveIndex: index,
                       scheduleIndex: scheduleIndex,
                       valve: state.valves[index],
+                      access: access,
                     ),
                     if (scheduleIndex < state.valves[index].schedules.length - 1)
                       const SizedBox(height: 12),
@@ -110,22 +116,29 @@ class _ValveSettingView extends ConsumerWidget {
     required int valveIndex,
     required int scheduleIndex,
     required ValveComponentModel valve,
+    required _ValveSettingAccess access,
   }) {
     final notifier = ref.read(valveSettingProvider(args));
     final schedule = valve.schedules[scheduleIndex];
     final isAllSelected = schedule.selectedDays.length == 7;
+    final canEditSchedule = schedule.persisted
+        ? access.canUpdateSchedules
+        : access.canCreateSchedules;
     final validationMessage = _scheduleValidationMessage(
       valve: valve,
       scheduleIndex: scheduleIndex,
     );
-    final canSave = _canSaveSchedule(valve, scheduleIndex);
-    final canAddSchedule = _canAddSchedule(valve, scheduleIndex);
+    final canSave = canEditSchedule && _canSaveSchedule(valve, scheduleIndex);
+    final canAddSchedule =
+        access.canCreateSchedules && _canAddSchedule(valve, scheduleIndex);
 
     return ValveSettingScheduleCard(
       contextForTimeFormat: context,
       schedule: schedule,
       scheduleIndex: scheduleIndex,
       isAllSelected: isAllSelected,
+      canEditSchedule: canEditSchedule,
+      canDeleteSchedule: access.canDeleteSchedules,
       validationMessage: validationMessage,
       canSave: canSave,
       canAddSchedule: canAddSchedule,
@@ -252,4 +265,55 @@ class _ValveSettingView extends ConsumerWidget {
       scheduleIndex: scheduleIndex,
     );
   }
+}
+
+class _ValveSettingAccess {
+  const _ValveSettingAccess({
+    required this.canControlValves,
+    required this.canCreateSchedules,
+    required this.canUpdateSchedules,
+    required this.canDeleteSchedules,
+  });
+
+  final bool canControlValves;
+  final bool canCreateSchedules;
+  final bool canUpdateSchedules;
+  final bool canDeleteSchedules;
+
+  factory _ValveSettingAccess.full() {
+    return const _ValveSettingAccess(
+      canControlValves: true,
+      canCreateSchedules: true,
+      canUpdateSchedules: true,
+      canDeleteSchedules: true,
+    );
+  }
+
+  factory _ValveSettingAccess.none() {
+    return const _ValveSettingAccess(
+      canControlValves: false,
+      canCreateSchedules: false,
+      canUpdateSchedules: false,
+      canDeleteSchedules: false,
+    );
+  }
+}
+
+_ValveSettingAccess _resolveAccess({
+  required AsyncValue<UserProfile> profileState,
+}) {
+  return profileState.maybeWhen(
+    data: (profile) {
+      if (profile.isAdmin) {
+        return _ValveSettingAccess.full();
+      }
+      return _ValveSettingAccess(
+        canControlValves: profile.permissions.canControlValves,
+        canCreateSchedules: profile.permissions.canCreateSchedules,
+        canUpdateSchedules: profile.permissions.canUpdateSchedules,
+        canDeleteSchedules: profile.permissions.canDeleteSchedules,
+      );
+    },
+    orElse: _ValveSettingAccess.none,
+  );
 }

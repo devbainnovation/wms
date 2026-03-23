@@ -5,6 +5,7 @@ import 'package:wms/user/features/dashboard/screens/valve_setting_models.dart';
 class ValveSettingValveCard extends StatelessWidget {
   const ValveSettingValveCard({
     required this.valve,
+    required this.canControlValves,
     required this.onToggleExpanded,
     required this.onToggleActive,
     required this.onToggleManual,
@@ -13,6 +14,7 @@ class ValveSettingValveCard extends StatelessWidget {
   });
 
   final ValveComponentModel valve;
+  final bool canControlValves;
   final VoidCallback onToggleExpanded;
   final ValueChanged<bool> onToggleActive;
   final ValueChanged<bool> onToggleManual;
@@ -69,7 +71,7 @@ class ValveSettingValveCard extends StatelessWidget {
                               activeThumbColor: AppColors.accentGreen,
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
-                              onChanged: onToggleActive,
+                              onChanged: canControlValves ? onToggleActive : null,
                             ),
                           ),
                           Icon(
@@ -143,7 +145,7 @@ class ValveSettingValveCard extends StatelessWidget {
                                 activeThumbColor: AppColors.accentGreen,
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
-                                onChanged: onToggleManual,
+                                onChanged: canControlValves ? onToggleManual : null,
                               ),
                             ),
                           ],

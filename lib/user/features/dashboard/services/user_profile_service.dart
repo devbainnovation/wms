@@ -1,4 +1,5 @@
 import 'package:wms/core/api/api.dart';
+import 'package:wms/user/features/dashboard/services/user_admin_users_service.dart';
 
 class UserProfile {
   const UserProfile({
@@ -16,6 +17,7 @@ class UserProfile {
     required this.pincode,
     required this.role,
     required this.createdAt,
+    required this.permissions,
     required this.active,
   });
 
@@ -33,6 +35,7 @@ class UserProfile {
   final String pincode;
   final String role;
   final DateTime? createdAt;
+  final UserAdminUserPermissions permissions;
   final bool active;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -73,9 +76,14 @@ class UserProfile {
       pincode: read(const ['pincode', 'pinCode', 'postalCode']),
       role: read(const ['role']),
       createdAt: readDate('createdAt'),
+      permissions: UserAdminUserPermissions.fromJson(
+        json['permissions'] as Map<String, dynamic>?,
+      ),
       active: json['active'] == true,
     );
   }
+
+  bool get isAdmin => role.trim().toUpperCase() == 'ADMIN';
 }
 
 class UserProfileUpdateRequest {
