@@ -408,11 +408,13 @@ class ProfileErrorView extends StatelessWidget {
   const ProfileErrorView({
     required this.message,
     required this.onRetry,
+    this.actionLabel = 'Retry',
     super.key,
   });
 
   final String message;
   final VoidCallback onRetry;
+  final String actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -437,7 +439,7 @@ class ProfileErrorView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+            OutlinedButton(onPressed: onRetry, child: Text(actionLabel)),
           ],
         ),
       ),

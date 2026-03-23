@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/screens/user_admin_user_dialogs.dart';
 import 'package:wms/user/features/dashboard/screens/user_admin_user_card.dart';
 import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
@@ -46,27 +47,33 @@ class UserAdminUsersScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primaryTeal),
         ),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                error is ApiException
-                    ? error.message
-                    : 'Unable to fetch users.',
-                style: const TextStyle(
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w600,
+        error: (error, _) {
+          final message = error is ApiException
+              ? error.message
+              : 'Unable to fetch users.';
+          final isSessionExpired = isSessionExpiredMessage(message);
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => ref.invalidate(userAdminUsersListProvider),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => isSessionExpired
+                      ? navigateToUserLogin(context)
+                      : ref.invalidate(userAdminUsersListProvider),
+                  child: Text(isSessionExpired ? 'Login' : 'Retry'),
+                ),
+              ],
+            ),
+          );
+        },
         data: (users) {
           if (users.isEmpty) {
             return const Center(

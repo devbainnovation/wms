@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
 import 'package:wms/user/features/dashboard/widgets/profile_tab_screens.dart';
 import 'package:wms/user/features/dashboard/widgets/profile_tab_sections.dart';
@@ -18,12 +19,19 @@ class ProfileTabView extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primaryTeal),
       ),
-      error: (error, _) => ProfileErrorView(
-        message: error is ApiException
+      error: (error, _) {
+        final message = error is ApiException
             ? error.message
-            : 'Unable to load profile.',
-        onRetry: () => ref.invalidate(userProfileProvider),
-      ),
+            : 'Unable to load profile.';
+        final isSessionExpired = isSessionExpiredMessage(message);
+        return ProfileErrorView(
+          message: message,
+          actionLabel: isSessionExpired ? 'Login' : 'Retry',
+          onRetry: () => isSessionExpired
+              ? navigateToUserLogin(context)
+              : ref.invalidate(userProfileProvider),
+        );
+      },
       data: (profile) {
         return RefreshIndicator(
           color: AppColors.primaryTeal,

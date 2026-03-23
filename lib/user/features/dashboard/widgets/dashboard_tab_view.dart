@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
 import 'package:wms/user/features/dashboard/screens/device_details_screen.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
@@ -22,14 +25,21 @@ class DashboardTabView extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           color: AppColors.white,
           child: weatherAsync.when(
-            data: (weather) => _WeatherCard(
-              weather: weather,
-              onRefresh: () => ref.invalidate(currentWeatherProvider),
-            ),
+            data: (weather) => _WeatherCard(weather: weather),
             loading: () => const _WeatherLoadingCard(),
-            error: (error, _) => _WeatherErrorCard(
-              onRetry: () => ref.invalidate(currentWeatherProvider),
-            ),
+            error: (error, _) {
+              final message = error is ApiException
+                  ? error.message
+                  : 'Unable to load weather data';
+              final isSessionExpired = isSessionExpiredMessage(message);
+              return _WeatherErrorCard(
+                message: message,
+                actionLabel: isSessionExpired ? 'Login' : 'Retry',
+                onRetry: () => isSessionExpired
+                    ? navigateToUserLogin(context)
+                    : unawaited(ref.refresh(currentWeatherProvider.future)),
+              );
+            },
           ),
         ),
         Expanded(
@@ -40,7 +50,7 @@ class DashboardTabView extends ConsumerWidget {
               children: [
                 TextField(
                   decoration: InputDecoration(
-                    hintText: 'Search location',
+                    hintText: 'Search Device',
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                       color: AppColors.blue,
@@ -96,12 +106,21 @@ class DashboardTabView extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  error: (error, _) => _DeviceErrorCard(
-                    message: error is ApiException
+                  error: (error, _) {
+                    final message = error is ApiException
                         ? error.message
-                        : 'Unable to load devices',
-                    onRetry: () => ref.invalidate(customerDevicesListProvider),
-                  ),
+                        : 'Unable to load devices';
+                    final isSessionExpired = isSessionExpiredMessage(message);
+                    return _DeviceErrorCard(
+                      message: message,
+                      actionLabel: isSessionExpired ? 'Login' : 'Retry',
+                      onRetry: () => isSessionExpired
+                          ? navigateToUserLogin(context)
+                          : unawaited(
+                              ref.refresh(customerDevicesListProvider.future),
+                            ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -356,10 +375,15 @@ class _DeviceEmptyCard extends StatelessWidget {
 }
 
 class _DeviceErrorCard extends StatelessWidget {
-  const _DeviceErrorCard({required this.message, required this.onRetry});
+  const _DeviceErrorCard({
+    required this.message,
+    required this.onRetry,
+    this.actionLabel = 'Retry',
+  });
 
   final String message;
   final VoidCallback onRetry;
+  final String actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +406,7 @@ class _DeviceErrorCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(actionLabel)),
         ],
       ),
     );
@@ -390,10 +414,9 @@ class _DeviceErrorCard extends StatelessWidget {
 }
 
 class _WeatherCard extends StatelessWidget {
-  const _WeatherCard({required this.weather, required this.onRefresh});
+  const _WeatherCard({required this.weather});
 
   final WeatherData weather;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -411,6 +434,7 @@ class _WeatherCard extends StatelessWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Column(
@@ -424,15 +448,6 @@ class _WeatherCard extends StatelessWidget {
                         fontSize: 14,
                         color: AppColors.greyText,
                         fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: onRefresh,
-                      borderRadius: BorderRadius.circular(10),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(Icons.refresh_rounded, size: 18),
                       ),
                     ),
                   ],
@@ -456,7 +471,9 @@ class _WeatherCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 12),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 _weatherIcon(weather.iconCode),
@@ -464,10 +481,24 @@ class _WeatherCard extends StatelessWidget {
                 color: AppColors.orange,
               ),
               const SizedBox(height: 8),
-              const Icon(
-                Icons.water_drop_rounded,
-                size: 44,
-                color: AppColors.blue,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.air_rounded,
+                    size: 16,
+                    color: AppColors.primaryTeal,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${weather.windSpeedKmh} km/h',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -475,19 +506,21 @@ class _WeatherCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  IconData _weatherIcon(String iconCode) {
-    switch (iconCode) {
-      case 'sunny':
-        return Icons.wb_sunny_rounded;
-      case 'rain':
-        return Icons.umbrella_rounded;
-      case 'cloud':
-        return Icons.cloud_rounded;
-      case 'partly_cloudy':
-      default:
-        return Icons.wb_cloudy_rounded;
-    }
+IconData _weatherIcon(String iconCode) {
+  switch (iconCode) {
+    case 'sunny':
+      return Icons.wb_sunny_rounded;
+    case 'rain':
+      return Icons.umbrella_rounded;
+    case 'cloud':
+      return Icons.cloud_rounded;
+    case 'night':
+      return Icons.nights_stay_rounded;
+    case 'partly_cloudy':
+    default:
+      return Icons.wb_cloudy_rounded;
   }
 }
 
@@ -602,9 +635,15 @@ class _WeatherLoadingCard extends StatelessWidget {
 }
 
 class _WeatherErrorCard extends StatelessWidget {
-  const _WeatherErrorCard({required this.onRetry});
+  const _WeatherErrorCard({
+    required this.onRetry,
+    this.message = 'Unable to load weather data',
+    this.actionLabel = 'Retry',
+  });
 
   final VoidCallback onRetry;
+  final String message;
+  final String actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -616,16 +655,16 @@ class _WeatherErrorCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'Unable to load weather data',
-              style: TextStyle(
+              message,
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.darkText,
               ),
             ),
           ),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(actionLabel)),
         ],
       ),
     );

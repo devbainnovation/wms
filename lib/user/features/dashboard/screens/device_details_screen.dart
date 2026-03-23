@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_screen.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
+import 'package:wms/user/features/valves/screens/valve_setting_screen.dart';
 
 class DeviceDetailsScreen extends StatelessWidget {
   const DeviceDetailsScreen({required this.device, super.key});

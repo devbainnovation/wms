@@ -143,6 +143,16 @@ class _WmsAppState extends ConsumerState<WmsApp> {
         return;
       }
 
+      final navigator = _navigatorKey.currentState;
+      if (!kIsWeb && navigator != null) {
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute<void>(
+            builder: (_) => const UserLoginScreen(),
+          ),
+          (route) => false,
+        );
+      }
+
       _scaffoldMessengerKey.currentState?.showSnackBar(
         const SnackBar(content: Text('Session expired. Please login again.')),
       );

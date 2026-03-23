@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
 import 'package:wms/user/features/dashboard/screens/user_admin_user_details_form.dart';
 import 'package:wms/user/features/dashboard/screens/user_admin_user_permissions_editor.dart';
@@ -204,29 +205,35 @@ class _UserAdminUserDetailsScreenState
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primaryTeal),
           ),
-          error: (error, _) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  error is ApiException
-                      ? error.message
-                      : 'Unable to load user details.',
-                  style: const TextStyle(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w600,
+          error: (error, _) {
+            final message = error is ApiException
+                ? error.message
+                : 'Unable to load user details.';
+            final isSessionExpired = isSessionExpiredMessage(message);
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => ref.invalidate(
-                    userAdminUserDetailsProvider(widget.seedUser.userId),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => isSessionExpired
+                        ? navigateToUserLogin(context)
+                        : ref.invalidate(
+                            userAdminUserDetailsProvider(widget.seedUser.userId),
+                          ),
+                    child: Text(isSessionExpired ? 'Login' : 'Retry'),
                   ),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          },
           data: (_) => TabBarView(
             children: [
               UserAdminUserDetailsForm(

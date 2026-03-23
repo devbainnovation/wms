@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_models.dart';
+import 'package:wms/user/features/valves/models/valve_setting_models.dart';
 
 class ValveSettingScheduleCard extends StatelessWidget {
   const ValveSettingScheduleCard({

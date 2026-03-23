@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/user_profile_providers.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_controller.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_dialogs.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_models.dart';
-import 'package:wms/user/features/dashboard/screens/valve_setting_widgets.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
 import 'package:wms/user/features/dashboard/services/user_profile_service.dart';
+import 'package:wms/user/features/valves/models/valve_setting_models.dart';
+import 'package:wms/user/features/valves/providers/valve_setting_controller.dart';
+import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
+import 'package:wms/user/features/valves/widgets/valve_setting_widgets.dart';
 
 class ValveSettingScreen extends ConsumerWidget {
   const ValveSettingScreen({required this.device, super.key});
