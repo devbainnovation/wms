@@ -11,9 +11,7 @@ final weatherServiceProvider = Provider<WeatherService>((ref) {
   return service;
 });
 
-final currentWeatherProvider = FutureProvider.autoDispose<WeatherData>((
-  ref,
-) async {
+final currentWeatherProvider = FutureProvider<WeatherData>((ref) async {
   final profile = await ref.watch(userProfileProvider.future);
   final pincode = profile.pincode.trim();
   if (pincode.isEmpty) {

@@ -12,6 +12,65 @@ class CustomerDeviceComponent {
   final String type;
 }
 
+class CustomerMotorSummary {
+  const CustomerMotorSummary({
+    required this.componentId,
+    required this.name,
+    required this.status,
+    required this.startedAt,
+    required this.estimatedOffAt,
+  });
+
+  final String componentId;
+  final String name;
+  final String status;
+  final String startedAt;
+  final String estimatedOffAt;
+
+  bool get isOn => status.trim().toUpperCase() == 'ON';
+
+  factory CustomerMotorSummary.fromJson(Map<String, dynamic> json) {
+    return CustomerMotorSummary(
+      componentId: _readTextFromJson(json, const ['componentId', 'id']),
+      name: _readTextFromJson(json, const ['name', 'displayName']),
+      status: _readTextFromJson(json, const ['status']),
+      startedAt: _readTextFromJson(json, const ['startedAt']),
+      estimatedOffAt: _readTextFromJson(json, const ['estimatedOffAt']),
+    );
+  }
+}
+
+class CustomerValveSummary {
+  const CustomerValveSummary({
+    required this.componentId,
+    required this.name,
+    required this.status,
+    required this.installedArea,
+    required this.startedAt,
+    required this.estimatedOffAt,
+  });
+
+  final String componentId;
+  final String name;
+  final String status;
+  final String installedArea;
+  final String startedAt;
+  final String estimatedOffAt;
+
+  bool get isOn => status.trim().toUpperCase() == 'ON';
+
+  factory CustomerValveSummary.fromJson(Map<String, dynamic> json) {
+    return CustomerValveSummary(
+      componentId: _readTextFromJson(json, const ['componentId', 'id']),
+      name: _readTextFromJson(json, const ['name', 'displayName']),
+      status: _readTextFromJson(json, const ['status']),
+      installedArea: _readTextFromJson(json, const ['installedArea']),
+      startedAt: _readTextFromJson(json, const ['startedAt']),
+      estimatedOffAt: _readTextFromJson(json, const ['estimatedOffAt']),
+    );
+  }
+}
+
 class CustomerScheduleTime {
   const CustomerScheduleTime({
     required this.hour,
@@ -150,6 +209,9 @@ class CustomerDeviceSummary {
     required this.createdAt,
     required this.components,
     required this.componentDetails,
+    required this.motor,
+    required this.valves,
+    required this.allValvesOff,
     required this.isActive,
     required this.isOnline,
   });
@@ -164,6 +226,9 @@ class CustomerDeviceSummary {
   final String createdAt;
   final List<String> components;
   final List<CustomerDeviceComponent> componentDetails;
+  final CustomerMotorSummary? motor;
+  final List<CustomerValveSummary> valves;
+  final bool allValvesOff;
   final bool isActive;
   final bool isOnline;
 
@@ -259,7 +324,33 @@ class CustomerDeviceSummary {
           .toList();
     }
 
+    CustomerMotorSummary? readMotor() {
+      final raw = json['motor'];
+      if (raw is Map<String, dynamic>) {
+        return CustomerMotorSummary.fromJson(raw);
+      }
+      return null;
+    }
+
+    List<CustomerValveSummary> readValves() {
+      final raw = json['valves'];
+      if (raw is! List) {
+        return const <CustomerValveSummary>[];
+      }
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(CustomerValveSummary.fromJson)
+          .toList();
+    }
+
     final componentDetails = readComponents();
+    final motor = readMotor();
+    final valves = readValves();
+    final hasExplicitMotorOrValves =
+        json.containsKey('motor') || json.containsKey('valves');
+    final resolvedIsActive = hasExplicitMotorOrValves
+        ? (motor?.isOn ?? false)
+        : readBool(const ['active', 'isActive']);
 
     return CustomerDeviceSummary(
       espId: read(const ['espId', 'id', 'deviceId']),
@@ -275,10 +366,29 @@ class CustomerDeviceSummary {
           .where((value) => value.trim().isNotEmpty)
           .toList(),
       componentDetails: componentDetails,
-      isActive: readBool(const ['active', 'isActive']),
+      motor: motor,
+      valves: valves,
+      allValvesOff:
+          (json['allValvesOff'] as bool?) ??
+          (valves.isEmpty ? true : !valves.any((item) => item.isOn)),
+      isActive: resolvedIsActive,
       isOnline: readBool(const ['online', 'isOnline']),
     );
   }
+}
+
+String _readTextFromJson(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final raw = json[key];
+    if (raw == null) {
+      continue;
+    }
+    final value = raw.toString().trim();
+    if (value.isNotEmpty && value.toLowerCase() != 'null') {
+      return value;
+    }
+  }
+  return '';
 }
 
 int? _normalizeScheduleDay(int? day) {

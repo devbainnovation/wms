@@ -14,7 +14,7 @@ class CustomerDevicesService {
     required String bearerToken,
   }) async {
     final response = await _apiClient.get(
-      ApiEndpoints.customerDevices,
+      ApiEndpoints.appDashboard,
       bearerToken: bearerToken,
       showGlobalLoader: false,
     );

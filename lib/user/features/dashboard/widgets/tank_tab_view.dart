@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
 import 'package:wms/user/features/dashboard/services/tank_service.dart';
+import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 
 class TankTabView extends ConsumerWidget {
   const TankTabView({super.key});
@@ -102,9 +104,11 @@ class TankTabView extends ConsumerWidget {
               child: tankAsync.when(
                 data: (list) {
                   final filtered = list.where((tank) {
-                    final matchName = tank.name.toLowerCase().contains(
-                      searchQuery,
-                    );
+                    final searchableName = (tank.espDisplayName.isEmpty
+                            ? tank.espId
+                            : tank.espDisplayName)
+                        .toLowerCase();
+                    final matchName = searchableName.contains(searchQuery);
                     final byFilter = switch (selectedFilter) {
                       TankFilter.all => true,
                       TankFilter.low => tank.levelPercent < 0.2,
@@ -150,25 +154,34 @@ class TankTabView extends ConsumerWidget {
                     Center(child: CircularProgressIndicator()),
                   ],
                 ),
-                error: (error, _) => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 100),
-                    const Center(
-                      child: Text(
-                        'Unable to load tanks',
-                        style: TextStyle(color: AppColors.red),
+                error: (error, _) {
+                  final message = error is ApiException
+                      ? error.message
+                      : 'Unable to load tanks';
+                  final isSessionExpired = isSessionExpiredMessage(message);
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      const SizedBox(height: 100),
+                      Center(
+                        child: Text(
+                          message,
+                          style: const TextStyle(color: AppColors.red),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => ref.invalidate(tankListProvider),
-                        child: const Text('Retry'),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => isSessionExpired
+                              ? navigateToUserLogin(context)
+                              : ref.invalidate(tankListProvider),
+                          child: Text(isSessionExpired ? 'Login' : 'Retry'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -247,7 +260,7 @@ class _TankLevelCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data.name,
+                  data.espDisplayName.isEmpty ? data.espId : data.espDisplayName,
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -256,7 +269,7 @@ class _TankLevelCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Capacity: ${data.capacityLabel}',
+                  'Location: ${data.installedArea.isEmpty ? '-' : data.installedArea}',
                   style: const TextStyle(color: AppColors.greyText),
                 ),
                 const SizedBox(height: 4),

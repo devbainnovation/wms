@@ -10,6 +10,8 @@ class ApiEndpoints {
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
   static const String customerUsers = '/api/customer/users';
   static const String customerDevices = '/api/customer/devices';
+  static const String appDashboard = '/api/app/dashboard';
+  static const String appTankLevels = '/api/app/tank-levels';
   static const String customerManualTriggers = '/api/app/control/toggle';
   static const String customerSchedules = '/api/customer/schedules';
   static const String appSchedules = '/api/app/schedules';
