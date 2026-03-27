@@ -398,19 +398,19 @@ class _MotorSection extends ConsumerWidget {
         return;
       }
       ref.invalidate(customerDevicesListProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(value ? 'Motor turned on.' : 'Motor turned off.'),
-        ),
+      showAppSnackBar(
+        context,
+        value ? 'Motor turned on.' : 'Motor turned off.',
+        status: AppSnackBarStatus.success,
       );
     } catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
+      showAppSnackBar(
+        context,
+        error.toString(),
+        status: AppSnackBarStatus.error,
       );
     } finally {
       ref

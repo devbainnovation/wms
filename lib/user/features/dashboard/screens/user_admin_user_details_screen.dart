@@ -318,8 +318,10 @@ class _UserAdminUserDetailsScreenState
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permissions updated successfully.')),
+      showAppSnackBar(
+        context,
+        'Permissions updated successfully.',
+        status: AppSnackBarStatus.success,
       );
     } catch (error) {
       if (!mounted) {
@@ -328,9 +330,11 @@ class _UserAdminUserDetailsScreenState
       final message = error is ApiException
           ? error.message
           : 'Unable to update permissions.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 
@@ -361,8 +365,10 @@ class _UserAdminUserDetailsScreenState
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User details updated successfully.')),
+      showAppSnackBar(
+        context,
+        'User details updated successfully.',
+        status: AppSnackBarStatus.success,
       );
     } catch (error) {
       if (!mounted) {
@@ -371,9 +377,11 @@ class _UserAdminUserDetailsScreenState
       final message = error is ApiException
           ? error.message
           : 'Unable to update user details.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 

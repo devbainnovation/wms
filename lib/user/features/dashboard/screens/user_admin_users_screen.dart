@@ -35,8 +35,10 @@ class UserAdminUsersScreen extends ConsumerWidget {
                 if (!context.mounted) {
                   return;
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('User added successfully.')),
+                showAppSnackBar(
+                  context,
+                  'User added successfully.',
+                  status: AppSnackBarStatus.success,
                 );
               }
             },

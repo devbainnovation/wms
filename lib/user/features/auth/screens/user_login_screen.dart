@@ -103,9 +103,11 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       final message = error is AuthApiException
           ? error.message
           : 'Login failed. Please try again.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 
@@ -118,8 +120,10 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password reset request submitted.')),
+    showAppSnackBar(
+      context,
+      'Password reset request submitted.',
+      status: AppSnackBarStatus.success,
     );
   }
 

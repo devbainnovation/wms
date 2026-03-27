@@ -113,7 +113,17 @@ Future<int?> showManualDurationDialog(BuildContext context) async {
 }
 
 void showValveSettingSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
+  final normalized = message.replaceFirst('Exception: ', '');
+  final status = normalized.toLowerCase().contains('success') ||
+          normalized.toLowerCase().contains('saved') ||
+          normalized.toLowerCase().contains('added') ||
+          normalized.toLowerCase().contains('updated') ||
+          normalized.toLowerCase().contains('deleted')
+      ? AppSnackBarStatus.success
+      : AppSnackBarStatus.error;
+  showAppSnackBar(
+    context,
+    normalized,
+    status: status,
   );
 }

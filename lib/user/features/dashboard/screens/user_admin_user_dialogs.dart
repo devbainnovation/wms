@@ -107,9 +107,11 @@ class UserAdminDeleteUserDialog extends ConsumerWidget {
                     final message = error is ApiException
                         ? error.message
                         : 'Unable to delete user.';
-                    ScaffoldMessenger.of(
+                    showAppSnackBar(
                       context,
-                    ).showSnackBar(SnackBar(content: Text(message)));
+                      message,
+                      status: AppSnackBarStatus.error,
+                    );
                   }
                 },
           child: state.isLoading
@@ -440,9 +442,11 @@ class _UserAdminAddUserDialogState
       final message = error is ApiException
           ? error.message
           : 'Unable to add user.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 

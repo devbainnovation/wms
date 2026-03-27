@@ -218,8 +218,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully.')),
+      showAppSnackBar(
+        context,
+        'Profile updated successfully.',
+        status: AppSnackBarStatus.success,
       );
       Navigator.of(context).pop();
     } catch (error) {
@@ -229,9 +231,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final message = error is ApiException
           ? error.message
           : 'Unable to update profile.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 
@@ -395,8 +399,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password updated successfully.')),
+      showAppSnackBar(
+        context,
+        'Password updated successfully.',
+        status: AppSnackBarStatus.success,
       );
       Navigator.of(context).pop();
     } catch (error) {
@@ -406,9 +412,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final message = error is ApiException
           ? error.message
           : 'Unable to update password.';
-      ScaffoldMessenger.of(
+      showAppSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message,
+        status: AppSnackBarStatus.error,
+      );
     }
   }
 

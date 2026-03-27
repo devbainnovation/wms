@@ -57,10 +57,10 @@ class UserAdminUserCard extends ConsumerWidget {
                         if (!context.mounted) {
                           return;
                         }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('User deleted successfully.'),
-                          ),
+                        showAppSnackBar(
+                          context,
+                          'User deleted successfully.',
+                          status: AppSnackBarStatus.success,
                         );
                       }
                     },
