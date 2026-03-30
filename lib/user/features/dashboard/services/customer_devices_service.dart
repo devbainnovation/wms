@@ -47,6 +47,49 @@ class CustomerDevicesService {
     return const <CustomerDeviceSummary>[];
   }
 
+  Future<List<CustomerDeviceComponent>> getDeviceComponents({
+    required String bearerToken,
+    required String espId,
+  }) async {
+    final normalizedEspId = espId.trim();
+    if (normalizedEspId.isEmpty) {
+      throw const ApiException('Device ID is missing.');
+    }
+
+    final response = await _apiClient.get(
+      ApiEndpoints.customerDeviceComponents(normalizedEspId),
+      bearerToken: bearerToken,
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch device components.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    if (data is List) {
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(_mapDeviceComponent)
+          .toList();
+    }
+
+    if (data is Map<String, dynamic>) {
+      final content = data['content'] ?? data['items'] ?? data['data'];
+      if (content is List) {
+        return content
+            .whereType<Map<String, dynamic>>()
+            .map(_mapDeviceComponent)
+            .toList();
+      }
+    }
+
+    return const <CustomerDeviceComponent>[];
+  }
+
   Future<ApiResponse> triggerManualAction({
     required String bearerToken,
     required String componentId,
@@ -247,5 +290,28 @@ class CustomerDevicesService {
     }
     final message = rawMessage.toString().trim();
     return message.isEmpty ? null : message;
+  }
+
+  CustomerDeviceComponent _mapDeviceComponent(Map<String, dynamic> json) {
+    String read(List<String> keys) {
+      for (final key in keys) {
+        final raw = json[key];
+        if (raw == null) {
+          continue;
+        }
+        final value = raw.toString().trim();
+        if (value.isNotEmpty && value.toLowerCase() != 'null') {
+          return value;
+        }
+      }
+      return '';
+    }
+
+    return CustomerDeviceComponent(
+      componentId: read(const ['componentId', 'id']),
+      displayName: read(const ['name', 'displayName']),
+      installedArea: read(const ['installedArea']),
+      type: read(const ['type']),
+    );
   }
 }

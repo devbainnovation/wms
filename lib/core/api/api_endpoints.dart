@@ -25,6 +25,8 @@ class ApiEndpoints {
   static String adminCustomerById(String id) => '/api/admin/customers/$id';
   static String adminCustomerDevices(String id) =>
       '/api/admin/customers/$id/devices';
+  static String customerDeviceComponents(String espId) =>
+      '/api/customer/devices/$espId/components';
   static String customerUserById(String userId) =>
       '/api/customer/users/$userId';
   static String customerUserPermissions(String userId) =>

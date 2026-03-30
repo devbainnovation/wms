@@ -22,7 +22,7 @@ void showAppSnackBar(
         normalizedMessage,
         style: const TextStyle(
           color: AppColors.white,
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
       ),

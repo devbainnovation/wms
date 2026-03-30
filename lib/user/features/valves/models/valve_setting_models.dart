@@ -30,22 +30,11 @@ class ValveSettingArgs {
               )
               .toList();
 
-    final items = componentDetails.isEmpty
-        ? <CustomerDeviceComponent>[
-            const CustomerDeviceComponent(
-              componentId: '',
-              displayName: '',
-              installedArea: '',
-              type: 'VALVE',
-            ),
-          ]
-        : componentDetails;
-
     return ValveSettingArgs(
       deviceId: device.espId,
       displayName: device.displayName,
       espId: device.espId,
-      components: items,
+      components: componentDetails,
     );
   }
 
@@ -89,18 +78,22 @@ class ValveSettingState {
   const ValveSettingState({
     required this.valves,
     required this.isLeaving,
+    required this.isLoadingComponents,
   });
 
   final List<ValveComponentModel> valves;
   final bool isLeaving;
+  final bool isLoadingComponents;
 
   ValveSettingState copyWith({
     List<ValveComponentModel>? valves,
     bool? isLeaving,
+    bool? isLoadingComponents,
   }) {
     return ValveSettingState(
       valves: valves ?? this.valves,
       isLeaving: isLeaving ?? this.isLeaving,
+      isLoadingComponents: isLoadingComponents ?? this.isLoadingComponents,
     );
   }
 }

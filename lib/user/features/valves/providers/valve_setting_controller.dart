@@ -14,31 +14,17 @@ final valveSettingProvider = legacy.ChangeNotifierProvider.autoDispose
 class ValveSettingController extends ChangeNotifier {
   ValveSettingController(this.ref, this.args)
     : _state = ValveSettingState(
-        valves: List<ValveComponentModel>.generate(args.components.length, (
-          index,
-        ) {
-          final component = args.components[index];
-          return ValveComponentModel(
-            valveLabel: component.installedArea.trim().isEmpty
-                ? 'Valve ${index + 1}'
-                : component.installedArea,
-            componentName: component.displayName,
-            componentId: component.componentId,
-            isActive: true,
-            isExpanded: false,
-            manualActionOn: false,
-            isLoadingSchedules: false,
-            hasLoadedSchedules: false,
-            schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
-            lastUpdated: DateTime.now(),
-          );
-        }),
+        valves: _buildValves(args.components),
         isLeaving: false,
+        isLoadingComponents: args.components.isEmpty,
       ) {
     debugPrint(
       'VALVE_SETTING init: valves=${args.components.length}, firstValveComponentId='
       '${args.components.isNotEmpty ? args.components.first.componentId : 'n/a'}',
     );
+    if (args.components.isEmpty) {
+      Future<void>.microtask(_loadDeviceComponents);
+    }
   }
 
   final Ref ref;
@@ -46,6 +32,28 @@ class ValveSettingController extends ChangeNotifier {
   ValveSettingState _state;
 
   ValveSettingState get state => _state;
+
+  static List<ValveComponentModel> _buildValves(
+    List<CustomerDeviceComponent> components,
+  ) {
+    return List<ValveComponentModel>.generate(components.length, (index) {
+      final component = components[index];
+      return ValveComponentModel(
+        valveLabel: component.installedArea.trim().isEmpty
+            ? 'Valve ${index + 1}'
+            : component.installedArea,
+        componentName: component.displayName,
+        componentId: component.componentId,
+        isActive: true,
+        isExpanded: false,
+        manualActionOn: false,
+        isLoadingSchedules: false,
+        hasLoadedSchedules: false,
+        schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
+        lastUpdated: DateTime.now(),
+      );
+    });
+  }
 
   void markLeaving() {
     _state = _state.copyWith(isLeaving: true);
@@ -293,6 +301,36 @@ class ValveSettingController extends ChangeNotifier {
         (item) => item.copyWith(isSubmitting: false),
       );
       return error.toString();
+    }
+  }
+
+  Future<void> _loadDeviceComponents() async {
+    try {
+      final token = await _resolveToken();
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      final components = await ref
+          .read(customerDevicesServiceProvider)
+          .getDeviceComponents(bearerToken: token, espId: args.espId);
+
+      final valves = components
+          .where((item) => item.type.trim().toUpperCase() == 'VALVE')
+          .toList();
+
+      _state = _state.copyWith(
+        valves: _buildValves(valves),
+        isLoadingComponents: false,
+      );
+      notifyListeners();
+    } catch (error) {
+      debugPrint('VALVE_SETTING loadDeviceComponents:error $error');
+      _state = _state.copyWith(
+        valves: const <ValveComponentModel>[],
+        isLoadingComponents: false,
+      );
+      notifyListeners();
     }
   }
 

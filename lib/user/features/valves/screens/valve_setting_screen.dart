@@ -57,53 +57,83 @@ class _ValveSettingView extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            for (var index = 0; index < state.valves.length; index++) ...[
-              ValveSettingValveCard(
-                valve: state.valves[index],
-                canControlValves: access.canControlValves,
-                onToggleExpanded: () =>
-                    ref.read(valveSettingProvider(args)).toggleExpanded(index),
-                onToggleActive: (value) =>
-                    ref.read(valveSettingProvider(args)).toggleActive(index, value),
-                onToggleManual: (value) async {
-                  final notifier = ref.read(valveSettingProvider(args));
-                  int? duration;
-                  if (value) {
-                    duration = await showManualDurationDialog(context);
-                    if (duration == null || !context.mounted) {
-                      return;
+            if (state.isLoadingComponents)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryTeal,
+                  ),
+                ),
+              )
+            else if (state.valves.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.lightGreyText),
+                ),
+                child: const Text(
+                  'No data found.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.greyText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              for (var index = 0; index < state.valves.length; index++) ...[
+                ValveSettingValveCard(
+                  valve: state.valves[index],
+                  canControlValves: access.canControlValves,
+                  onToggleExpanded: () =>
+                      ref.read(valveSettingProvider(args)).toggleExpanded(index),
+                  onToggleActive: (value) => ref
+                      .read(valveSettingProvider(args))
+                      .toggleActive(index, value),
+                  onToggleManual: (value) async {
+                    final notifier = ref.read(valveSettingProvider(args));
+                    int? duration;
+                    if (value) {
+                      duration = await showManualDurationDialog(context);
+                      if (duration == null || !context.mounted) {
+                        return;
+                      }
                     }
-                  }
-                  final error = await notifier.setManualToggleAndTrigger(
-                    index,
-                    value,
-                    duration: duration ?? 0,
-                  );
-                  if (error != null && context.mounted) {
-                    showValveSettingSnackBar(context, error);
-                  }
-                },
-                scheduleChildren: [
-                  for (
-                    var scheduleIndex = 0;
-                    scheduleIndex < state.valves[index].schedules.length;
-                    scheduleIndex++
-                  ) ...[
-                    _buildScheduleCard(
-                      context: context,
-                      ref: ref,
-                      valveIndex: index,
-                      scheduleIndex: scheduleIndex,
-                      valve: state.valves[index],
-                      access: access,
-                    ),
-                    if (scheduleIndex < state.valves[index].schedules.length - 1)
-                      const SizedBox(height: 12),
+                    final error = await notifier.setManualToggleAndTrigger(
+                      index,
+                      value,
+                      duration: duration ?? 0,
+                    );
+                    if (error != null && context.mounted) {
+                      showValveSettingSnackBar(context, error);
+                    }
+                  },
+                  scheduleChildren: [
+                    for (
+                      var scheduleIndex = 0;
+                      scheduleIndex < state.valves[index].schedules.length;
+                      scheduleIndex++
+                    ) ...[
+                      _buildScheduleCard(
+                        context: context,
+                        ref: ref,
+                        valveIndex: index,
+                        scheduleIndex: scheduleIndex,
+                        valve: state.valves[index],
+                        access: access,
+                      ),
+                      if (scheduleIndex <
+                          state.valves[index].schedules.length - 1)
+                        const SizedBox(height: 12),
+                    ],
                   ],
-                ],
-              ),
-              if (index < state.valves.length - 1) const SizedBox(height: 12),
-            ],
+                ),
+                if (index < state.valves.length - 1) const SizedBox(height: 12),
+              ],
           ],
         ),
       ),
