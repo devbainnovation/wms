@@ -86,13 +86,6 @@ class ValveSettingController extends ChangeNotifier {
     }
   }
 
-  void toggleActive(int valveIndex, bool value) {
-    final nextValves = List<ValveComponentModel>.from(_state.valves);
-    nextValves[valveIndex] = nextValves[valveIndex].copyWith(isActive: value);
-    _state = _state.copyWith(valves: nextValves);
-    notifyListeners();
-  }
-
   void toggleDay(int valveIndex, int scheduleIndex, int day) {
     final schedule = _state.valves[valveIndex].schedules[scheduleIndex];
     final nextDays = Set<int>.from(schedule.selectedDays);
@@ -179,6 +172,24 @@ class ValveSettingController extends ChangeNotifier {
       );
       return error.toString();
     }
+  }
+
+  Future<String?> validateManualToggleOn(int valveIndex) async {
+    try {
+      await _ensureSchedulesLoaded(
+        valveIndex,
+        showLoader: false,
+        showErrors: true,
+      );
+    } catch (error) {
+      return error.toString();
+    }
+
+    final valve = _state.valves[valveIndex];
+    if (hasRunningScheduleNow(valve)) {
+      return 'A schedule is already running for the current day and time.';
+    }
+    return null;
   }
 
   Future<String?> submitSchedule(

@@ -26,6 +26,7 @@ class ValveSettingArgs {
                   displayName: name,
                   installedArea: '',
                   type: 'VALVE',
+                  gpioPin: 0,
                 ),
               )
               .toList();
@@ -321,6 +322,37 @@ int durationInMinutes(TimeOfDay from, TimeOfDay to) {
 
 int toMinutes(TimeOfDay value) => value.hour * 60 + value.minute;
 
+bool isScheduleRunningAt({
+  required ScheduleCardModel schedule,
+  required DateTime now,
+}) {
+  if (!schedule.persisted ||
+      schedule.selectedDays.isEmpty ||
+      schedule.fromTime == null ||
+      schedule.toTime == null) {
+    return false;
+  }
+
+  if (!schedule.selectedDays.contains(now.weekday)) {
+    return false;
+  }
+
+  final currentMinutes = now.hour * 60 + now.minute;
+  final fromMinutes = toMinutes(schedule.fromTime!);
+  final toMinutesValue = toMinutes(schedule.toTime!);
+  return currentMinutes >= fromMinutes && currentMinutes < toMinutesValue;
+}
+
+bool hasRunningScheduleNow(
+  ValveComponentModel valve, {
+  DateTime? now,
+}) {
+  final current = now ?? DateTime.now();
+  return valve.schedules.any(
+    (schedule) => isScheduleRunningAt(schedule: schedule, now: current),
+  );
+}
+
 String? scheduleValidationMessage({
   required ValveComponentModel valve,
   required int scheduleIndex,
@@ -350,8 +382,9 @@ String? scheduleValidationMessage({
       continue;
     }
 
-    final sharedDays =
-        schedule.selectedDays.intersection(other.selectedDays).isNotEmpty;
+    final sharedDays = schedule.selectedDays
+        .intersection(other.selectedDays)
+        .isNotEmpty;
     if (!sharedDays) {
       continue;
     }

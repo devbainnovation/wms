@@ -14,6 +14,8 @@ class ApiEndpoints {
   static const String appTankLevels = '/api/app/tank-levels';
   static const String customerManualTriggers = '/api/app/control/toggle';
   static const String customerSchedules = '/api/customer/schedules';
+  static const String customerMotorSettings =
+      '/api/customer/devices/motor-settings';
   static const String appSchedules = '/api/app/schedules';
   static const String userProfile = '/api/user/profile';
   static const String userProfilePassword = '/api/user/profile/password';
@@ -39,7 +41,9 @@ class ApiEndpoints {
       '/api/customer/components/$componentId/schedules';
   static String appComponentSchedules(String componentId) =>
       '/api/app/components/$componentId/schedules';
-  static String appComponentScheduleById(String componentId, String scheduleId) =>
-      '/api/app/components/$componentId/schedules/$scheduleId';
+  static String appComponentScheduleById(
+    String componentId,
+    String scheduleId,
+  ) => '/api/app/components/$componentId/schedules/$scheduleId';
   static String appScheduleById(String id) => '/api/app/schedules/$id';
 }

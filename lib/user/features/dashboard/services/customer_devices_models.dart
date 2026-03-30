@@ -4,12 +4,14 @@ class CustomerDeviceComponent {
     required this.displayName,
     required this.installedArea,
     required this.type,
+    required this.gpioPin,
   });
 
   final String componentId;
   final String displayName;
   final String installedArea;
   final String type;
+  final int gpioPin;
 }
 
 class CustomerMotorSummary {
@@ -119,12 +121,7 @@ class CustomerScheduleTime {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'hour': hour,
-      'minute': minute,
-      'second': second,
-      'nano': nano,
-    };
+    return {'hour': hour, 'minute': minute, 'second': second, 'nano': nano};
   }
 
   String toFormattedString() {
@@ -232,6 +229,36 @@ class CustomerDeviceSummary {
   final bool isActive;
   final bool isOnline;
 
+  CustomerDeviceSummary mergeWith(CustomerDeviceSummary other) {
+    return CustomerDeviceSummary(
+      espId: other.espId.trim().isNotEmpty ? other.espId : espId,
+      macAddress: other.macAddress.trim().isNotEmpty
+          ? other.macAddress
+          : macAddress,
+      displayName: other.displayName.trim().isNotEmpty
+          ? other.displayName
+          : displayName,
+      fwVersion: other.fwVersion.trim().isNotEmpty ? other.fwVersion : fwVersion,
+      lastHeartbeat: other.lastHeartbeat.trim().isNotEmpty
+          ? other.lastHeartbeat
+          : lastHeartbeat,
+      amcExpiry: other.amcExpiry.trim().isNotEmpty ? other.amcExpiry : amcExpiry,
+      rechargeExpiry: other.rechargeExpiry.trim().isNotEmpty
+          ? other.rechargeExpiry
+          : rechargeExpiry,
+      createdAt: other.createdAt.trim().isNotEmpty ? other.createdAt : createdAt,
+      components: other.components.isNotEmpty ? other.components : components,
+      componentDetails: other.componentDetails.isNotEmpty
+          ? other.componentDetails
+          : componentDetails,
+      motor: other.motor ?? motor,
+      valves: other.valves.isNotEmpty ? other.valves : valves,
+      allValvesOff: other.valves.isNotEmpty ? other.allValvesOff : allValvesOff,
+      isActive: other.isActive,
+      isOnline: other.isOnline,
+    );
+  }
+
   factory CustomerDeviceSummary.fromJson(Map<String, dynamic> json) {
     String read(List<String> keys) {
       for (final key in keys) {
@@ -307,6 +334,7 @@ class CustomerDeviceSummary {
                 displayName: resolvedName,
                 installedArea: readFromMap(item, const ['installedArea']),
                 type: readFromMap(item, const ['type']),
+                gpioPin: (item['gpioPin'] as num?)?.toInt() ?? 0,
               );
             }
             final text = item.toString().trim();
@@ -318,6 +346,7 @@ class CustomerDeviceSummary {
               displayName: text,
               installedArea: '',
               type: '',
+              gpioPin: 0,
             );
           })
           .whereType<CustomerDeviceComponent>()

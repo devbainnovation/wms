@@ -47,6 +47,43 @@ class CustomerDevicesService {
     return const <CustomerDeviceSummary>[];
   }
 
+  Future<List<CustomerDeviceSummary>> getCustomerDevices({
+    required String bearerToken,
+  }) async {
+    final response = await _apiClient.get(
+      ApiEndpoints.customerDevices,
+      bearerToken: bearerToken,
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch customer devices.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    if (data is List) {
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(CustomerDeviceSummary.fromJson)
+          .toList();
+    }
+
+    if (data is Map<String, dynamic>) {
+      final content = data['content'] ?? data['items'] ?? data['data'];
+      if (content is List) {
+        return content
+            .whereType<Map<String, dynamic>>()
+            .map(CustomerDeviceSummary.fromJson)
+            .toList();
+      }
+    }
+
+    return const <CustomerDeviceSummary>[];
+  }
+
   Future<List<CustomerDeviceComponent>> getDeviceComponents({
     required String bearerToken,
     required String espId,
@@ -132,6 +169,50 @@ class CustomerDevicesService {
     return response;
   }
 
+  Future<ApiResponse> updateMotorSettings({
+    required String bearerToken,
+    required String motorId,
+    required String sensorId,
+    required int min,
+    required int max,
+  }) async {
+    final normalizedMotorId = motorId.trim();
+    final normalizedSensorId = sensorId.trim();
+
+    if (normalizedMotorId.isEmpty) {
+      throw const ApiException('Motor ID is missing.');
+    }
+    if (normalizedSensorId.isEmpty) {
+      throw const ApiException('Sensor ID is missing.');
+    }
+    if (min <= 0 || max <= 0) {
+      throw const ApiException('Min and max must be greater than 0.');
+    }
+    if (min > max) {
+      throw const ApiException('Min cannot be greater than max.');
+    }
+
+    final response = await _apiClient.put(
+      ApiEndpoints.customerMotorSettings,
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{
+        'motorId': normalizedMotorId,
+        'sensorId': normalizedSensorId,
+        'min': min,
+        'max': max,
+      },
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to update motor settings.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
+  }
+
   Future<List<CustomerComponentSchedule>> getComponentSchedules({
     required String bearerToken,
     required String componentId,
@@ -141,7 +222,9 @@ class CustomerDevicesService {
       'CUSTOMER_DEVICES getComponentSchedules:start componentId=$normalizedComponentId',
     );
     if (normalizedComponentId.isEmpty) {
-      debugPrint('CUSTOMER_DEVICES getComponentSchedules: skipped empty componentId');
+      debugPrint(
+        'CUSTOMER_DEVICES getComponentSchedules: skipped empty componentId',
+      );
       return const <CustomerComponentSchedule>[];
     }
 
@@ -312,6 +395,7 @@ class CustomerDevicesService {
       displayName: read(const ['name', 'displayName']),
       installedArea: read(const ['installedArea']),
       type: read(const ['type']),
+      gpioPin: (json['gpioPin'] as num?)?.toInt() ?? 0,
     );
   }
 }

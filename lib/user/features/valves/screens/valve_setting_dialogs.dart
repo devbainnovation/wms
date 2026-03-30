@@ -112,6 +112,27 @@ Future<int?> showManualDurationDialog(BuildContext context) async {
   return result;
 }
 
+Future<void> showManualScheduleRunningDialog(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Schedule Running'),
+        content: const Text(
+          'A schedule is already running for the current day and time. '
+          'Please try manual mode after the running schedule ends.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 void showValveSettingSnackBar(BuildContext context, String message) {
   final normalized = message.replaceFirst('Exception: ', '');
   final status = normalized.toLowerCase().contains('success') ||

@@ -7,7 +7,6 @@ class ValveSettingValveCard extends StatelessWidget {
     required this.valve,
     required this.canControlValves,
     required this.onToggleExpanded,
-    required this.onToggleActive,
     required this.onToggleManual,
     required this.scheduleChildren,
     super.key,
@@ -16,7 +15,6 @@ class ValveSettingValveCard extends StatelessWidget {
   final ValveComponentModel valve;
   final bool canControlValves;
   final VoidCallback onToggleExpanded;
-  final ValueChanged<bool> onToggleActive;
   final ValueChanged<bool> onToggleManual;
   final List<Widget> scheduleChildren;
 
@@ -63,17 +61,18 @@ class ValveSettingValveCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Transform.scale(
-                            scale: 0.78,
-                            child: Switch(
-                              value: valve.isActive,
-                              activeThumbColor: AppColors.accentGreen,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              onChanged: canControlValves ? onToggleActive : null,
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: valve.isActive
+                                  ? AppColors.accentGreen
+                                  : AppColors.red,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Icon(
                             valve.isExpanded
                                 ? Icons.expand_less_rounded

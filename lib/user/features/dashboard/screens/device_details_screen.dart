@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms/shared/shared.dart';
+import 'package:wms/user/features/dashboard/screens/motor_setting_screen.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_screen.dart';
 
@@ -18,35 +19,66 @@ class DeviceDetailsScreen extends StatelessWidget {
         elevation: 2,
         shadowColor: const Color(0x26000000),
         title: Text(device.displayName.isEmpty ? '-' : device.displayName),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ValveSettingScreen(device: device),
-                  ),
-                );
-              },
-              icon: const Icon(
-                Icons.tune_rounded,
-                color: AppColors.primaryTeal,
-              ),
-              label: const Text(
-                'Valve Setting',
-                style: TextStyle(color: AppColors.primaryTeal),
-              ),
-            ),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           AppSectionCard(
+            padding: EdgeInsets.zero,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(14, 14, 14, 8),
+                  child: Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                ),
+                _settingsTile(
+                  context: context,
+                  title: 'Valve',
+                  imageAsset: AppAssets.valve,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ValveSettingScreen(device: device),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 14, endIndent: 14),
+                _settingsTile(
+                  context: context,
+                  title: 'Motor',
+                  imageAsset: AppAssets.devicePower,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MotorSettingScreen(device: device),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppSectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Device Details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkText,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _detailRow('Display Name', device.displayName),
                 _detailRow('ESP ID', device.espId),
                 _detailRow('MAC Address', device.macAddress),
@@ -148,5 +180,68 @@ class DeviceDetailsScreen extends StatelessWidget {
 
   String _formatDateTime(String value) {
     return AppDateTimeFormatter.formatString(value);
+  }
+
+  Widget _settingsTile({
+    required BuildContext context,
+    required String title,
+    String? imageAsset,
+    IconData? icon,
+    VoidCallback? onTap,
+  }) {
+    final textColor = onTap == null ? AppColors.greyText : AppColors.darkText;
+    final iconColor = onTap == null
+        ? AppColors.greyText
+        : AppColors.primaryTeal;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: imageAsset != null
+                    ? Image.asset(
+                        imageAsset,
+                        color: iconColor,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          icon ?? Icons.settings_rounded,
+                          color: iconColor,
+                          size: 20,
+                        ),
+                      )
+                    : Icon(
+                        icon ?? Icons.settings_rounded,
+                        color: iconColor,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: onTap == null
+                    ? AppColors.lightGreyText
+                    : AppColors.greyText,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

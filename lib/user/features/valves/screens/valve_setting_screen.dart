@@ -91,13 +91,24 @@ class _ValveSettingView extends ConsumerWidget {
                   canControlValves: access.canControlValves,
                   onToggleExpanded: () =>
                       ref.read(valveSettingProvider(args)).toggleExpanded(index),
-                  onToggleActive: (value) => ref
-                      .read(valveSettingProvider(args))
-                      .toggleActive(index, value),
                   onToggleManual: (value) async {
                     final notifier = ref.read(valveSettingProvider(args));
                     int? duration;
                     if (value) {
+                      final validationError =
+                          await notifier.validateManualToggleOn(index);
+                      if (!context.mounted) {
+                        return;
+                      }
+                      if (validationError != null) {
+                        if (validationError ==
+                            'A schedule is already running for the current day and time.') {
+                          await showManualScheduleRunningDialog(context);
+                        } else {
+                          showValveSettingSnackBar(context, validationError);
+                        }
+                        return;
+                      }
                       duration = await showManualDurationDialog(context);
                       if (duration == null || !context.mounted) {
                         return;

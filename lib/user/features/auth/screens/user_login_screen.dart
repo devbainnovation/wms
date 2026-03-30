@@ -5,7 +5,6 @@ import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/user_forgot_password_screen.dart';
 import 'package:wms/user/features/auth/providers/providers.dart';
-import 'package:wms/user/features/dashboard/screens/user_dashboard_screen.dart';
 
 class UserLoginScreen extends ConsumerStatefulWidget {
   const UserLoginScreen({super.key});
@@ -66,11 +65,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
             sessionId: remembered.sessionId,
           ),
         );
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
-      (route) => false,
-    );
   }
 
   Future<void> _onLoginTap() async {
@@ -103,11 +97,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       final message = error is AuthApiException
           ? error.message
           : 'Login failed. Please try again.';
-      showAppSnackBar(
-        context,
-        message,
-        status: AppSnackBarStatus.error,
-      );
+      showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
 

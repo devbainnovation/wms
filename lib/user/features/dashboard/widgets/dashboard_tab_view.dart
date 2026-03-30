@@ -17,7 +17,7 @@ class DashboardTabView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(currentWeatherProvider);
-    final devicesAsync = ref.watch(customerDevicesListProvider);
+    final devicesAsync = ref.watch(customerDashboardDevicesProvider);
     final searchQuery = ref.watch(dashboardSearchQueryProvider).toLowerCase();
 
     return Column(
@@ -49,8 +49,10 @@ class DashboardTabView extends ConsumerWidget {
             color: AppColors.white,
             child: RefreshIndicator(
               onRefresh: () async {
+                ref.invalidate(customerAssignedDevicesProvider);
                 ref.invalidate(customerDevicesListProvider);
-                await ref.read(customerDevicesListProvider.future);
+                ref.invalidate(customerDashboardDevicesProvider);
+                await ref.read(customerDashboardDevicesProvider.future);
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -143,7 +145,7 @@ class DashboardTabView extends ConsumerWidget {
                         onRetry: () => isSessionExpired
                             ? navigateToUserLogin(context)
                             : unawaited(
-                                ref.refresh(customerDevicesListProvider.future),
+                                ref.refresh(customerDashboardDevicesProvider.future),
                               ),
                       );
                     },
