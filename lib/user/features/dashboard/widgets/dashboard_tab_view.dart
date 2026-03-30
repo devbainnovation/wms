@@ -145,7 +145,9 @@ class DashboardTabView extends ConsumerWidget {
                         onRetry: () => isSessionExpired
                             ? navigateToUserLogin(context)
                             : unawaited(
-                                ref.refresh(customerDashboardDevicesProvider.future),
+                                ref.refresh(
+                                  customerDashboardDevicesProvider.future,
+                                ),
                               ),
                       );
                     },
@@ -166,7 +168,10 @@ class DashboardTabView extends ConsumerWidget {
     final displayName = device.displayName.isEmpty
         ? (device.espId.isEmpty ? 'Device' : device.espId)
         : device.displayName;
-    final lastUpdated = _formatFullDateTime(device.lastHeartbeat, device.createdAt);
+    final lastUpdated = _formatFullDateTime(
+      device.lastHeartbeat,
+      device.createdAt,
+    );
     final modeLabel = device.isOnline ? 'Online' : 'Offline';
 
     return Material(
@@ -288,7 +293,9 @@ class _MotorSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final motor = device.motor;
     final isOn = motor?.isOn ?? false;
-    final motorName = motor?.name.trim().isNotEmpty == true ? motor!.name : 'Motor';
+    final motorName = motor?.name.trim().isNotEmpty == true
+        ? motor!.name
+        : 'Motor';
     final motorKey = motor?.componentId.trim().isNotEmpty == true
         ? motor!.componentId
         : (device.espId.isNotEmpty ? device.espId : device.displayName);
@@ -343,10 +350,10 @@ class _MotorSection extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   isOn ? '$motorName is On' : 'Motor is Off',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.darkText,
+                    color: isOn ? AppColors.accentGreen : AppColors.red,
                   ),
                 ),
                 if (isOn && motor != null) ...[
@@ -369,7 +376,8 @@ class _MotorSection extends ConsumerWidget {
             activeThumbColor: AppColors.primaryTeal,
             onChanged: submitting || motor?.componentId.trim().isEmpty != false
                 ? null
-                : (value) => _handleToggle(context, ref, motor!, value, motorKey),
+                : (value) =>
+                      _handleToggle(context, ref, motor!, value, motorKey),
           ),
         ],
       ),
@@ -439,7 +447,10 @@ class _ValvesSection extends ConsumerWidget {
     final valves = device.valves;
     final activeValveCount = valves.where((valve) => valve.isOn).length;
     final showAllValvesOff = device.allValvesOff;
-    final expandKey = device.espId.isNotEmpty ? device.espId : device.displayName;
+    final showActiveCount = activeValveCount > 0;
+    final expandKey = device.espId.isNotEmpty
+        ? device.espId
+        : device.displayName;
     final expanded =
         ref.watch(dashboardValvesExpandedProvider)[expandKey] ?? false;
 
@@ -482,33 +493,38 @@ class _ValvesSection extends ConsumerWidget {
                           showAllValvesOff
                               ? 'All valves are off'
                               : '$activeValveCount valve${activeValveCount == 1 ? '' : 's'} on',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.greyText,
-                            fontWeight: FontWeight.w500,
+                            color: showAllValvesOff
+                                ? AppColors.red
+                                : AppColors.accentGreen,
+                            fontWeight: showAllValvesOff
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightBlue.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '$activeValveCount',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryTeal,
+                  if (showActiveCount)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightBlue.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$activeValveCount',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryTeal,
+                        ),
                       ),
                     ),
-                  ),
                   if (!showAllValvesOff && valves.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Icon(
@@ -522,18 +538,7 @@ class _ValvesSection extends ConsumerWidget {
               ),
             ),
           ),
-          if (showAllValvesOff || valves.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Text(
-                'All valves are off.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.greyText,
-                ),
-              ),
-            )
-          else if (expanded) ...[
+          if (!showAllValvesOff && valves.isNotEmpty && expanded) ...[
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
