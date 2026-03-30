@@ -293,18 +293,18 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                                 builder: (_) => _DeleteCustomerDialog(
                                   customerId: result.items[index].id,
                                   customerName: result.items[index].fullName,
+                                  username: result.items[index].username,
                                 ),
                               );
                               if (deleted == true) {
                                 ref.invalidate(adminCustomersListProvider);
+                                ref.invalidate(adminUnassignedDevicesProvider);
                                 if (!context.mounted) {
                                   return;
                                 }
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'Customer deleted successfully.',
-                                    ),
+                                    content: Text('User deleted successfully.'),
                                   ),
                                 );
                               }

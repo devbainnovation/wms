@@ -225,7 +225,7 @@ class AdminCustomerService {
     }
 
     final response = await _apiClient.delete(
-      ApiEndpoints.adminCustomerById(normalizedCustomerId),
+      ApiEndpoints.adminCustomerUserById(normalizedCustomerId),
       bearerToken: bearerToken,
     );
 

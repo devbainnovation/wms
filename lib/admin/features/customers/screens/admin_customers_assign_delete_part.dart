@@ -4,20 +4,27 @@ class _DeleteCustomerDialog extends ConsumerWidget {
   const _DeleteCustomerDialog({
     required this.customerId,
     required this.customerName,
+    required this.username,
   });
 
   final String customerId;
   final String customerName;
+  final String username;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(adminDeleteCustomerControllerProvider);
+    final displayName = customerName.trim().isNotEmpty
+        ? customerName.trim()
+        : username.trim().isNotEmpty
+        ? username.trim()
+        : customerId;
 
     return AlertDialog(
       backgroundColor: AppColors.lightBackground,
-      title: const Text('Delete Customer'),
+      title: const Text('Delete User'),
       content: Text(
-        'Are you sure you want to delete "${customerName.trim().isEmpty ? customerId : customerName}"? This action cannot be undone.',
+        'Are you sure you want to delete "$displayName"? This action cannot be undone.',
       ),
       actions: [
         TextButton(
@@ -45,7 +52,7 @@ class _DeleteCustomerDialog extends ConsumerWidget {
                     }
                     final message = error is ApiException
                         ? error.message
-                        : 'Unable to delete customer.';
+                        : 'Unable to delete user.';
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text(message)));

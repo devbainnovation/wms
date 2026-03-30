@@ -25,6 +25,8 @@ class ApiEndpoints {
   static String adminDeviceUnassign(String espId) =>
       '/api/admin/devices/$espId/unassign';
   static String adminCustomerById(String id) => '/api/admin/customers/$id';
+  static String adminCustomerUserById(String userId) =>
+      '/api/admin/customers/$userId';
   static String adminCustomerDevices(String id) =>
       '/api/admin/customers/$id/devices';
   static String customerDeviceComponents(String espId) =>
