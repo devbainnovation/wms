@@ -8,6 +8,9 @@ class AdminDeviceRequest {
     required this.amcExpiry,
     required this.rechargeExpiry,
     required this.isActive,
+    this.simCardNumber,
+    this.networkProvider,
+    this.planExpiry,
   });
 
   final String macAddress;
@@ -16,9 +19,12 @@ class AdminDeviceRequest {
   final DateTime amcExpiry;
   final DateTime rechargeExpiry;
   final bool isActive;
+  final String? simCardNumber;
+  final String? networkProvider;
+  final DateTime? planExpiry;
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = <String, dynamic>{
       'macAddress': macAddress,
       'displayName': displayName,
       'fwVersion': fwVersion,
@@ -26,6 +32,22 @@ class AdminDeviceRequest {
       'rechargeExpiry': _formatDate(rechargeExpiry),
       'isActive': isActive,
     };
+
+    final simCardNumberValue = simCardNumber?.trim();
+    if (simCardNumberValue != null && simCardNumberValue.isNotEmpty) {
+      data['simCardNumber'] = simCardNumberValue;
+    }
+
+    final networkProviderValue = networkProvider?.trim();
+    if (networkProviderValue != null && networkProviderValue.isNotEmpty) {
+      data['networkProvider'] = networkProviderValue;
+    }
+
+    if (planExpiry != null) {
+      data['planExpiry'] = _formatDate(planExpiry!);
+    }
+
+    return data;
   }
 
   String _formatDate(DateTime dt) {
@@ -45,6 +67,9 @@ class AdminDeviceSummary {
     required this.isActive,
     this.amcExpiry,
     this.rechargeExpiry,
+    this.simCardNumber,
+    this.networkProvider,
+    this.planExpiry,
   });
 
   final String id;
@@ -54,6 +79,9 @@ class AdminDeviceSummary {
   final bool isActive;
   final DateTime? amcExpiry;
   final DateTime? rechargeExpiry;
+  final String? simCardNumber;
+  final String? networkProvider;
+  final DateTime? planExpiry;
 
   factory AdminDeviceSummary.fromJson(Map<String, dynamic> json) {
     final id = (json['id'] ?? json['espId'] ?? json['deviceId'] ?? '')
@@ -65,6 +93,9 @@ class AdminDeviceSummary {
     final isActive = (json['isActive'] ?? json['active'] ?? true) == true;
     final amcExpiry = _tryParseDate(json['amcExpiry']);
     final rechargeExpiry = _tryParseDate(json['rechargeExpiry']);
+    final simCardNumber = _readOptionalString(json['simCardNumber']);
+    final networkProvider = _readOptionalString(json['networkProvider']);
+    final planExpiry = _tryParseDate(json['planExpiry']);
 
     return AdminDeviceSummary(
       id: id,
@@ -74,6 +105,9 @@ class AdminDeviceSummary {
       isActive: isActive,
       amcExpiry: amcExpiry,
       rechargeExpiry: rechargeExpiry,
+      simCardNumber: simCardNumber,
+      networkProvider: networkProvider,
+      planExpiry: planExpiry,
     );
   }
 
@@ -86,6 +120,17 @@ class AdminDeviceSummary {
       return null;
     }
     return DateTime.tryParse(raw);
+  }
+
+  static String? _readOptionalString(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty || raw.toLowerCase() == 'null') {
+      return null;
+    }
+    return raw;
   }
 }
 
@@ -185,17 +230,18 @@ class AdminDeviceService {
 
     final data = response.data;
     final items = switch (data) {
-      List<dynamic>() => data
-          .whereType<Map<String, dynamic>>()
-          .map(AdminDeviceSummary.fromJson)
-          .toList(),
-      Map<String, dynamic>() => ((data['content'] ?? data['items'] ?? data['data'])
-              is List
-          ? ((data['content'] ?? data['items'] ?? data['data']) as List)
-              .whereType<Map<String, dynamic>>()
-              .map(AdminDeviceSummary.fromJson)
-              .toList()
-          : const <AdminDeviceSummary>[]),
+      List<dynamic>() =>
+        data
+            .whereType<Map<String, dynamic>>()
+            .map(AdminDeviceSummary.fromJson)
+            .toList(),
+      Map<String, dynamic>() =>
+        ((data['content'] ?? data['items'] ?? data['data']) is List
+            ? ((data['content'] ?? data['items'] ?? data['data']) as List)
+                  .whereType<Map<String, dynamic>>()
+                  .map(AdminDeviceSummary.fromJson)
+                  .toList()
+            : const <AdminDeviceSummary>[]),
       _ => const <AdminDeviceSummary>[],
     };
 

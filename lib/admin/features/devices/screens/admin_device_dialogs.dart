@@ -14,6 +14,10 @@ final _deviceUpsertRechargeExpiryProvider =
       _DeviceUpsertRechargeExpiryNotifier,
       DateTime?
     >(_DeviceUpsertRechargeExpiryNotifier.new);
+final _deviceUpsertPlanExpiryProvider =
+    NotifierProvider.autoDispose<_DeviceUpsertPlanExpiryNotifier, DateTime?>(
+      _DeviceUpsertPlanExpiryNotifier.new,
+    );
 final _deviceUpsertIsActiveProvider =
     NotifierProvider.autoDispose<_DeviceUpsertIsActiveNotifier, bool>(
       _DeviceUpsertIsActiveNotifier.new,
@@ -27,6 +31,13 @@ class _DeviceUpsertAmcExpiryNotifier extends Notifier<DateTime?> {
 }
 
 class _DeviceUpsertRechargeExpiryNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void set(DateTime? value) => state = value;
+}
+
+class _DeviceUpsertPlanExpiryNotifier extends Notifier<DateTime?> {
   @override
   DateTime? build() => null;
 
@@ -56,6 +67,8 @@ class _AdminDeviceUpsertDialogState
   final _macController = TextEditingController();
   final _nameController = TextEditingController();
   final _fwController = TextEditingController();
+  final _simCardNumberController = TextEditingController();
+  final _networkProviderController = TextEditingController();
 
   bool get _isEdit => widget.editItem != null;
 
@@ -67,6 +80,8 @@ class _AdminDeviceUpsertDialogState
       _macController.text = item.macAddress;
       _nameController.text = item.displayName;
       _fwController.text = item.fwVersion;
+      _simCardNumberController.text = item.simCardNumber ?? '';
+      _networkProviderController.text = item.networkProvider ?? '';
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -76,6 +91,7 @@ class _AdminDeviceUpsertDialogState
       ref
           .read(_deviceUpsertRechargeExpiryProvider.notifier)
           .set(item?.rechargeExpiry);
+      ref.read(_deviceUpsertPlanExpiryProvider.notifier).set(item?.planExpiry);
       ref
           .read(_deviceUpsertIsActiveProvider.notifier)
           .set(item?.isActive ?? true);
@@ -87,6 +103,8 @@ class _AdminDeviceUpsertDialogState
     _macController.dispose();
     _nameController.dispose();
     _fwController.dispose();
+    _simCardNumberController.dispose();
+    _networkProviderController.dispose();
     super.dispose();
   }
 
@@ -96,6 +114,7 @@ class _AdminDeviceUpsertDialogState
     final updateState = ref.watch(adminUpdateDeviceControllerProvider);
     final amcExpiry = ref.watch(_deviceUpsertAmcExpiryProvider);
     final rechargeExpiry = ref.watch(_deviceUpsertRechargeExpiryProvider);
+    final planExpiry = ref.watch(_deviceUpsertPlanExpiryProvider);
     final isActive = ref.watch(_deviceUpsertIsActiveProvider);
     final isLoading = registerState.isLoading || updateState.isLoading;
 
@@ -149,6 +168,54 @@ class _AdminDeviceUpsertDialogState
                   value: amcExpiry,
                   onPick: (date) => ref
                       .read(_deviceUpsertAmcExpiryProvider.notifier)
+                      .set(date),
+                ),
+                const SizedBox(height: 12),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Sim Details',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                AppTextField(
+                  controller: _networkProviderController,
+                  hintText: 'Enter network provider',
+                  labelText: 'Network Provider',
+                  textCapitalization: TextCapitalization.sentences,
+                  onChanged: (value) {
+                    final capitalizedValue = _capitalizeFirstLetter(value);
+                    if (value == capitalizedValue) {
+                      return;
+                    }
+                    _networkProviderController.value =
+                        _networkProviderController.value.copyWith(
+                          text: capitalizedValue,
+                          selection: TextSelection.collapsed(
+                            offset: capitalizedValue.length,
+                          ),
+                          composing: TextRange.empty,
+                        );
+                  },
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _simCardNumberController,
+                  hintText: 'Enter SIM card number',
+                  labelText: 'SIM Card Number',
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 12),
+                AppDatePickerField(
+                  label: 'Plan Expiry',
+                  value: planExpiry,
+                  onPick: (date) => ref
+                      .read(_deviceUpsertPlanExpiryProvider.notifier)
                       .set(date),
                 ),
                 const SizedBox(height: 12),
@@ -217,6 +284,7 @@ class _AdminDeviceUpsertDialogState
     }
     final amcExpiry = ref.read(_deviceUpsertAmcExpiryProvider);
     final rechargeExpiry = ref.read(_deviceUpsertRechargeExpiryProvider);
+    final planExpiry = ref.read(_deviceUpsertPlanExpiryProvider);
     final isActive = ref.read(_deviceUpsertIsActiveProvider);
 
     if (amcExpiry == null) {
@@ -235,6 +303,11 @@ class _AdminDeviceUpsertDialogState
       amcExpiry: amcExpiry,
       rechargeExpiry: rechargeExpiry,
       isActive: isActive,
+      simCardNumber: _simCardNumberController.text.trim(),
+      networkProvider: _capitalizeFirstLetter(
+        _networkProviderController.text.trim(),
+      ),
+      planExpiry: planExpiry,
     );
 
     try {
@@ -273,6 +346,14 @@ class _AdminDeviceUpsertDialogState
       return '$label is required';
     }
     return null;
+  }
+
+  String _capitalizeFirstLetter(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
   }
 }
 
