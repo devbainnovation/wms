@@ -59,22 +59,31 @@ class MotorSettingArgs {
 class MotorSettingState {
   const MotorSettingState({
     required this.components,
+    required this.settings,
     required this.isLoadingComponents,
+    required this.isLoadingSettings,
     required this.isSubmitting,
   });
 
   final List<CustomerDeviceComponent> components;
+  final CustomerMotorSettings? settings;
   final bool isLoadingComponents;
+  final bool isLoadingSettings;
   final bool isSubmitting;
 
   MotorSettingState copyWith({
     List<CustomerDeviceComponent>? components,
+    CustomerMotorSettings? settings,
+    bool clearSettings = false,
     bool? isLoadingComponents,
+    bool? isLoadingSettings,
     bool? isSubmitting,
   }) {
     return MotorSettingState(
       components: components ?? this.components,
+      settings: clearSettings ? null : (settings ?? this.settings),
       isLoadingComponents: isLoadingComponents ?? this.isLoadingComponents,
+      isLoadingSettings: isLoadingSettings ?? this.isLoadingSettings,
       isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
@@ -89,7 +98,9 @@ class MotorSettingController extends ChangeNotifier {
   MotorSettingController(this.ref, this.args)
     : _state = MotorSettingState(
         components: args.initialComponents,
+        settings: null,
         isLoadingComponents: false,
+        isLoadingSettings: false,
         isSubmitting: false,
       );
 
@@ -104,6 +115,14 @@ class MotorSettingController extends ChangeNotifier {
 
   CustomerDeviceComponent? get sensorComponent =>
       _findComponentByType('SENSOR') ?? _findComponentByName('sensor');
+
+  Future<String?> ensureInitialDataLoaded() async {
+    final componentsError = await ensureComponentsLoaded();
+    if (componentsError != null) {
+      return componentsError;
+    }
+    return ensureSettingsLoaded();
+  }
 
   Future<String?> ensureComponentsLoaded() async {
     final motorComponent = this.motorComponent;
@@ -141,6 +160,42 @@ class MotorSettingController extends ChangeNotifier {
     }
   }
 
+  Future<String?> ensureSettingsLoaded() async {
+    if (_state.settings != null || _state.isLoadingSettings) {
+      return null;
+    }
+
+    _updateState(_state.copyWith(isLoadingSettings: true));
+    try {
+      final motorComponent = this.motorComponent;
+      if (motorComponent == null || motorComponent.componentId.trim().isEmpty) {
+        throw const ApiException('Motor ID is missing.');
+      }
+
+      final token = await _resolveToken();
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      final settings = await ref
+          .read(customerDevicesServiceProvider)
+          .getMotorSettings(
+            bearerToken: token,
+            motorId: motorComponent.componentId,
+          );
+      _updateState(
+        _state.copyWith(
+          settings: settings,
+          isLoadingSettings: false,
+        ),
+      );
+      return null;
+    } catch (error) {
+      _updateState(_state.copyWith(isLoadingSettings: false));
+      return error.toString();
+    }
+  }
+
   Future<String?> submit({
     required int min,
     required int max,
@@ -167,7 +222,23 @@ class MotorSettingController extends ChangeNotifier {
             min: min,
             max: max,
           );
-      _updateState(_state.copyWith(isSubmitting: false));
+      final refreshedSettings = _state.settings == null
+          ? null
+          : CustomerMotorSettings(
+              motorId: motorComponent.componentId,
+              sensorId: sensorComponent.componentId,
+              minLevel: min,
+              maxLevel: max,
+              active: _state.settings!.active,
+              syncStatus: _state.settings!.syncStatus,
+              lastSyncedAt: _state.settings!.lastSyncedAt,
+            );
+      _updateState(
+        _state.copyWith(
+          settings: refreshedSettings,
+          isSubmitting: false,
+        ),
+      );
       return null;
     } catch (error) {
       _updateState(_state.copyWith(isSubmitting: false));

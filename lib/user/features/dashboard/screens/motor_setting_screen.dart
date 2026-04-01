@@ -18,6 +18,7 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _minController = TextEditingController();
   final _maxController = TextEditingController();
+  String? _appliedSettingsKey;
 
   @override
   void initState() {
@@ -27,7 +28,9 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
         espId: widget.device.espId,
         initialComponents: widget.device.componentDetails,
       );
-      final error = await ref.read(motorSettingProvider(args)).ensureComponentsLoaded();
+      final error = await ref
+          .read(motorSettingProvider(args))
+          .ensureInitialDataLoaded();
       if (error != null && mounted) {
         showAppSnackBar(
           context,
@@ -53,11 +56,26 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
     );
     final controller = ref.watch(motorSettingProvider(args));
     final state = controller.state;
+    final settings = state.settings;
+    final settingsKey = settings == null
+        ? null
+        : '${settings.minLevel}|${settings.maxLevel}|${settings.lastSyncedAt}';
+    if (settingsKey != null && settingsKey != _appliedSettingsKey) {
+      final resolvedSettings = settings!;
+      _minController.text = resolvedSettings.minLevel > 0
+          ? '${resolvedSettings.minLevel}'
+          : '';
+      _maxController.text = resolvedSettings.maxLevel > 0
+          ? '${resolvedSettings.maxLevel}'
+          : '';
+      _appliedSettingsKey = settingsKey;
+    }
     final motorComponent = controller.motorComponent;
     final sensorComponent = controller.sensorComponent;
     final canSubmit =
         !state.isSubmitting &&
         !state.isLoadingComponents &&
+        !state.isLoadingSettings &&
         motorComponent?.componentId.trim().isNotEmpty == true &&
         sensorComponent?.componentId.trim().isNotEmpty == true;
 
@@ -79,12 +97,9 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Motor Settings',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.darkText,
-                    ),
+                  _ReadOnlyDetailRow(
+                    label: 'Last Synced',
+                    value: _formatLastSyncedAt(settings?.lastSyncedAt ?? ''),
                   ),
                   const SizedBox(height: 16),
                   _ReadOnlyDetailRow(
@@ -125,6 +140,8 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
                     Text(
                       state.isLoadingComponents
                           ? 'Loading component details...'
+                          : state.isLoadingSettings
+                          ? 'Loading motor settings...'
                           : 'Motor and sensor components are required to save settings.',
                       style: const TextStyle(
                         color: AppColors.greyText,
@@ -221,6 +238,14 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
       return '0';
     }
     return component.gpioPin.toString();
+  }
+
+  String _formatLastSyncedAt(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') {
+      return '-';
+    }
+    return AppDateTimeFormatter.formatString(value);
   }
 
   String? _validateMin(String? value) {

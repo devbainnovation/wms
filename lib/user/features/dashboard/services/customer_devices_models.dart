@@ -206,6 +206,38 @@ class CustomerComponentSchedule {
   }
 }
 
+class CustomerMotorSettings {
+  const CustomerMotorSettings({
+    required this.motorId,
+    required this.sensorId,
+    required this.minLevel,
+    required this.maxLevel,
+    required this.active,
+    required this.syncStatus,
+    required this.lastSyncedAt,
+  });
+
+  final String motorId;
+  final String sensorId;
+  final int minLevel;
+  final int maxLevel;
+  final bool active;
+  final String syncStatus;
+  final String lastSyncedAt;
+
+  factory CustomerMotorSettings.fromJson(Map<String, dynamic> json) {
+    return CustomerMotorSettings(
+      motorId: (json['motorId'] ?? '').toString().trim(),
+      sensorId: (json['sensorId'] ?? '').toString().trim(),
+      minLevel: (json['minLevel'] as num?)?.toInt() ?? 0,
+      maxLevel: (json['maxLevel'] as num?)?.toInt() ?? 0,
+      active: json['active'] == true,
+      syncStatus: (json['syncStatus'] ?? '').toString().trim(),
+      lastSyncedAt: (json['lastSyncedAt'] ?? '').toString().trim(),
+    );
+  }
+}
+
 class CustomerDeviceSummary {
   const CustomerDeviceSummary({
     required this.espId,

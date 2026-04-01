@@ -213,6 +213,37 @@ class CustomerDevicesService {
     return response;
   }
 
+  Future<CustomerMotorSettings> getMotorSettings({
+    required String bearerToken,
+    required String motorId,
+  }) async {
+    final normalizedMotorId = motorId.trim();
+    if (normalizedMotorId.isEmpty) {
+      throw const ApiException('Motor ID is missing.');
+    }
+
+    final response = await _apiClient.get(
+      ApiEndpoints.customerMotorSettings,
+      bearerToken: bearerToken,
+      queryParameters: <String, dynamic>{'motorId': normalizedMotorId},
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch motor settings.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final body = response.dataAsMap;
+    if (body == null) {
+      throw const ApiException('Invalid motor settings response.');
+    }
+
+    return CustomerMotorSettings.fromJson(body);
+  }
+
   Future<List<CustomerComponentSchedule>> getComponentSchedules({
     required String bearerToken,
     required String componentId,
