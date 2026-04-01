@@ -50,6 +50,33 @@ Future<bool?> confirmValveScheduleDelete(BuildContext context) {
   );
 }
 
+Future<bool?> confirmManualActionDialog({
+  required BuildContext context,
+  required String title,
+  required String message,
+  String confirmLabel = 'Yes, Continue',
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 Future<int?> showManualDurationDialog(BuildContext context) async {
   final formKey = GlobalKey<FormState>();
   var durationText = '';

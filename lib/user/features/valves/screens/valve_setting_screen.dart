@@ -113,6 +113,16 @@ class _ValveSettingView extends ConsumerWidget {
                       if (duration == null || !context.mounted) {
                         return;
                       }
+                    } else {
+                      final confirmed = await confirmManualActionDialog(
+                        context: context,
+                        title: 'Turn off valve?',
+                        message:
+                            'This action will stop the valve immediately.',
+                      );
+                      if (confirmed != true || !context.mounted) {
+                        return;
+                      }
                     }
                     final error = await notifier.setManualToggleAndTrigger(
                       index,

@@ -247,6 +247,9 @@ class CustomerDeviceSummary {
     required this.lastHeartbeat,
     required this.amcExpiry,
     required this.rechargeExpiry,
+    required this.simCardNumber,
+    required this.networkProvider,
+    required this.planExpiry,
     required this.createdAt,
     required this.components,
     required this.componentDetails,
@@ -264,6 +267,9 @@ class CustomerDeviceSummary {
   final String lastHeartbeat;
   final String amcExpiry;
   final String rechargeExpiry;
+  final String simCardNumber;
+  final String networkProvider;
+  final String planExpiry;
   final String createdAt;
   final List<String> components;
   final List<CustomerDeviceComponent> componentDetails;
@@ -290,6 +296,15 @@ class CustomerDeviceSummary {
       rechargeExpiry: other.rechargeExpiry.trim().isNotEmpty
           ? other.rechargeExpiry
           : rechargeExpiry,
+      simCardNumber: other.simCardNumber.trim().isNotEmpty
+          ? other.simCardNumber
+          : simCardNumber,
+      networkProvider: other.networkProvider.trim().isNotEmpty
+          ? other.networkProvider
+          : networkProvider,
+      planExpiry: other.planExpiry.trim().isNotEmpty
+          ? other.planExpiry
+          : planExpiry,
       createdAt: other.createdAt.trim().isNotEmpty ? other.createdAt : createdAt,
       components: other.components.isNotEmpty ? other.components : components,
       componentDetails: other.componentDetails.isNotEmpty
@@ -433,6 +448,9 @@ class CustomerDeviceSummary {
       lastHeartbeat: read(const ['lastHeartbeat']),
       amcExpiry: read(const ['amcExpiry']),
       rechargeExpiry: read(const ['rechargeExpiry']),
+      simCardNumber: read(const ['simCardNumber']),
+      networkProvider: read(const ['networkProvider']),
+      planExpiry: read(const ['planExpiry']),
       createdAt: read(const ['createdAt']),
       components: componentDetails
           .map((item) => item.displayName)

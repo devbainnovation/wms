@@ -142,8 +142,10 @@ class CustomerDevicesService {
     if (normalizedAction != 'ON' && normalizedAction != 'OFF') {
       throw const ApiException('Action must be ON or OFF.');
     }
-    if (normalizedAction == 'ON' && (duration < 1 || duration > 300)) {
-      throw const ApiException('Duration must be between 1 and 300 minutes.');
+    if (normalizedAction == 'ON' && (duration < 0 || duration > 300)) {
+      throw const ApiException(
+        'Duration must be between 0 and 300 minutes.',
+      );
     }
     if (normalizedAction == 'OFF' && duration < 0) {
       throw const ApiException('Duration is invalid.');

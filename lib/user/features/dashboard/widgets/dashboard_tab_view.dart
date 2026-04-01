@@ -395,13 +395,15 @@ class _MotorSection extends ConsumerWidget {
     bool value,
     String motorKey,
   ) async {
-    int duration = 0;
-    if (value) {
-      final selectedDuration = await showManualDurationDialog(context);
-      if (selectedDuration == null || !context.mounted) {
-        return;
-      }
-      duration = selectedDuration;
+    final confirmed = await confirmManualActionDialog(
+      context: context,
+      title: value ? 'Turn on motor?' : 'Turn off motor?',
+      message: value
+          ? 'This action will start the motor immediately.'
+          : 'This action will stop the motor immediately.',
+    );
+    if (confirmed != true || !context.mounted) {
+      return;
     }
 
     ref
@@ -413,7 +415,7 @@ class _MotorSection extends ConsumerWidget {
           .trigger(
             componentId: motor.componentId,
             action: value ? 'ON' : 'OFF',
-            duration: duration,
+            duration: 0,
           );
       if (!context.mounted) {
         return;

@@ -79,7 +79,6 @@ class DeviceDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _detailRow('Display Name', device.displayName),
                 _detailRow('ESP ID', device.espId),
                 _detailRow('MAC Address', device.macAddress),
                 _detailRow('FW Version', device.fwVersion),
@@ -88,10 +87,29 @@ class DeviceDetailsScreen extends StatelessWidget {
                   _formatDateTime(device.lastHeartbeat),
                 ),
                 _detailRow('AMC Expiry', device.amcExpiry),
-                _detailRow('Recharge Expiry', device.rechargeExpiry),
                 _detailRow('Created At', _formatDateTime(device.createdAt)),
                 _detailRow('Active', device.isActive ? 'Yes' : 'No'),
                 _detailRow('Online', device.isOnline ? 'Yes' : 'No'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppSectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Device SIM Details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _detailRow('Recharge Expiry', device.rechargeExpiry),
+                _detailRow('SIM Card Number', device.simCardNumber),
+                _detailRow('Network Provider', device.networkProvider),
+                _detailRow('Plan Expiry', _formatDateTime(device.planExpiry)),
               ],
             ),
           ),
