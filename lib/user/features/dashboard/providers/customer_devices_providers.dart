@@ -82,7 +82,7 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
   Future<ApiResponse> trigger({
     required String componentId,
     required String action,
-    required int duration,
+    int? duration,
   }) async {
     state = const AsyncLoading<void>();
     try {

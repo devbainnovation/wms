@@ -415,7 +415,7 @@ class _MotorSection extends ConsumerWidget {
           .trigger(
             componentId: motor.componentId,
             action: value ? 'ON' : 'OFF',
-            duration: 0,
+            duration: null,
           );
       if (!context.mounted) {
         return;

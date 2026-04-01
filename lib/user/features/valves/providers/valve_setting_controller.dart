@@ -162,7 +162,7 @@ class ValveSettingController extends ChangeNotifier {
           .trigger(
             componentId: componentId,
             action: action,
-            duration: duration,
+            duration: value ? duration : null,
           );
       return null;
     } catch (error) {
