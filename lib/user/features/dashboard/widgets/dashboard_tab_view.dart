@@ -293,9 +293,21 @@ class _MotorSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final motor = device.motor;
     final isOn = motor?.isOn ?? false;
-    final motorName = motor?.name.trim().isNotEmpty == true
-        ? motor!.name
-        : 'Motor';
+    final motorLocation = motor?.installedArea.trim().isNotEmpty == true
+        ? motor!.installedArea
+        : '';
+    final motorTitle = motorLocation.isEmpty
+        ? 'Motor'
+        : 'Motor - $motorLocation';
+    final mode = motor?.mode.trim().toUpperCase() ?? '';
+    final timeValue = isOn
+        ? _formatTimeOnly(motor?.startedAt ?? '')
+        : _formatTimeOnly(motor?.lastOffAt ?? '');
+    final subtitle = _buildMotorStatusText(
+      isOn: isOn,
+      timeValue: timeValue,
+      mode: mode,
+    );
     final motorKey = motor?.componentId.trim().isNotEmpty == true
         ? motor!.componentId
         : (device.espId.isNotEmpty ? device.espId : device.displayName);
@@ -339,8 +351,8 @@ class _MotorSection extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Motor',
+                Text(
+                  motorTitle,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -348,22 +360,14 @@ class _MotorSection extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  isOn ? '$motorName is On' : 'Motor is Off',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isOn ? AppColors.accentGreen : AppColors.red,
-                  ),
-                ),
-                if (isOn && motor != null) ...[
+                if (motor != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Started: ${_formatTimeOnly(motor.startedAt)}  •  Off at: ${_formatTimeOnly(motor.estimatedOffAt)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.greyText,
-                      fontWeight: FontWeight.w500,
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isOn ? AppColors.accentGreen : AppColors.red,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -435,6 +439,30 @@ class _MotorSection extends ConsumerWidget {
           .setSubmitting(motorKey, false);
     }
   }
+}
+
+String _buildMotorStatusText({
+  required bool isOn,
+  required String timeValue,
+  required String mode,
+}) {
+  final normalizedMode = mode.trim();
+  final normalizedTime = timeValue.trim();
+  final timePart = normalizedTime.isEmpty || normalizedTime == '-'
+      ? null
+      : normalizedTime;
+  final modePart = normalizedMode.isEmpty ? null : normalizedMode;
+
+  final suffixParts = [
+    timePart,
+    modePart == null ? null : '($modePart)',
+  ];
+
+  if (suffixParts.isEmpty) {
+    return isOn ? 'ON' : 'OFF';
+  }
+
+  return '${isOn ? 'ON' : 'OFF'} ${suffixParts.join(' ')}';
 }
 
 class _ValvesSection extends ConsumerWidget {
@@ -569,7 +597,12 @@ class _ValveRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = valve.name.trim().isEmpty ? 'Valve' : valve.name;
+    final valveName = valve.name.trim().isEmpty ? 'Valve' : valve.name;
+    final valveMode = valve.mode.trim();
+    final normalizedMode = valveMode.trim();
+    final title = normalizedMode.isEmpty
+        ? valveName
+        : '$valveName ($normalizedMode)';
 
     return Theme(
       data: Theme.of(context),
@@ -671,7 +704,7 @@ class _DetailLine extends StatelessWidget {
 
 String _formatTimeOnly(String raw) {
   final value = raw.trim();
-  if (value.isEmpty) {
+  if (value.isEmpty || value.toLowerCase() == 'null') {
     return '-';
   }
   final parsed = DateTime.tryParse(value);
@@ -679,11 +712,25 @@ String _formatTimeOnly(String raw) {
     return value;
   }
   final local = parsed.toLocal();
+  final now = DateTime.now();
   final hour24 = local.hour;
   final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
   final minute = local.minute.toString().padLeft(2, '0');
   final period = hour24 >= 12 ? 'PM' : 'AM';
-  return '${hour12.toString().padLeft(2, '0')}:$minute $period';
+  final timeText = '${hour12.toString().padLeft(2, '0')}:$minute $period';
+  final isToday =
+      local.year == now.year &&
+      local.month == now.month &&
+      local.day == now.day;
+
+  if (isToday) {
+    return 'Today $timeText';
+  }
+
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final year = local.year.toString().padLeft(4, '0');
+  return '$day/$month/$year $timeText';
 }
 
 class _DeviceEmptyCard extends StatelessWidget {

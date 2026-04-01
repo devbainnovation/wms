@@ -56,13 +56,20 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     final password = _passwordController.text.trim();
 
     try {
+      final appDeviceInfoService = ref.read(appDeviceInfoServiceProvider);
+      final deviceInfo = await appDeviceInfoService.buildDeviceInfo();
+      final fcmToken = appDeviceInfoService.shouldAttachFcmToken
+          ? await ref.read(pushNotificationServiceProvider).getToken()
+          : null;
+
       await ref
           .read(authLoginControllerProvider.notifier)
           .login(
             username: username,
             password: password,
             rememberMe: rememberMe,
-            deviceInfo: 'admin-login',
+            deviceInfo: deviceInfo,
+            fcmToken: fcmToken,
           );
     } catch (error) {
       if (!mounted) {

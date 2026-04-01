@@ -1,5 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/core/services/app_device_info_service.dart';
 import 'package:wms/core/services/push_notification_service.dart';
+
+final appDeviceInfoServiceProvider = Provider<AppDeviceInfoService>((ref) {
+  return const AppDeviceInfoService();
+});
 
 final pushNotificationServiceProvider = Provider<PushNotificationService>((
   ref,

@@ -19,8 +19,17 @@ class AuthApiService {
       final payload = <String, dynamic>{
         'username': username,
         'password': password,
-        'deviceInfo': 'string',
       };
+
+      final trimmedDeviceInfo = deviceInfo?.trim();
+      if (trimmedDeviceInfo != null && trimmedDeviceInfo.isNotEmpty) {
+        payload['deviceInfo'] = trimmedDeviceInfo;
+      }
+
+      final trimmedFcmToken = fcmToken?.trim();
+      if (trimmedFcmToken != null && trimmedFcmToken.isNotEmpty) {
+        payload['fcmToken'] = trimmedFcmToken;
+      }
 
       final response = await _apiClient.post(
         ApiEndpoints.authLogin,

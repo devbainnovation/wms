@@ -82,13 +82,20 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
     final rememberMe = ref.read(userRememberMeProvider);
 
     try {
+      final appDeviceInfoService = ref.read(appDeviceInfoServiceProvider);
+      final deviceInfo = await appDeviceInfoService.buildDeviceInfo();
+      final fcmToken = appDeviceInfoService.shouldAttachFcmToken
+          ? await ref.read(pushNotificationServiceProvider).getToken()
+          : null;
+
       await ref
           .read(authLoginControllerProvider.notifier)
           .login(
             username: enteredEmail,
             password: enteredPassword,
             rememberMe: rememberMe,
-            deviceInfo: 'user-login',
+            deviceInfo: deviceInfo,
+            fcmToken: fcmToken,
           );
     } catch (error) {
       if (!mounted) {

@@ -19,15 +19,21 @@ class CustomerMotorSummary {
     required this.componentId,
     required this.name,
     required this.status,
+    required this.mode,
+    required this.installedArea,
     required this.startedAt,
     required this.estimatedOffAt,
+    required this.lastOffAt,
   });
 
   final String componentId;
   final String name;
   final String status;
+  final String mode;
+  final String installedArea;
   final String startedAt;
   final String estimatedOffAt;
+  final String lastOffAt;
 
   bool get isOn => status.trim().toUpperCase() == 'ON';
 
@@ -36,8 +42,11 @@ class CustomerMotorSummary {
       componentId: _readTextFromJson(json, const ['componentId', 'id']),
       name: _readTextFromJson(json, const ['name', 'displayName']),
       status: _readTextFromJson(json, const ['status']),
+      mode: _readTextFromJson(json, const ['mode']),
+      installedArea: _readTextFromJson(json, const ['installedArea']),
       startedAt: _readTextFromJson(json, const ['startedAt']),
       estimatedOffAt: _readTextFromJson(json, const ['estimatedOffAt']),
+      lastOffAt: _readTextFromJson(json, const ['lastOffAt']),
     );
   }
 }
@@ -47,6 +56,7 @@ class CustomerValveSummary {
     required this.componentId,
     required this.name,
     required this.status,
+    required this.mode,
     required this.installedArea,
     required this.startedAt,
     required this.estimatedOffAt,
@@ -55,6 +65,7 @@ class CustomerValveSummary {
   final String componentId;
   final String name;
   final String status;
+  final String mode;
   final String installedArea;
   final String startedAt;
   final String estimatedOffAt;
@@ -66,6 +77,7 @@ class CustomerValveSummary {
       componentId: _readTextFromJson(json, const ['componentId', 'id']),
       name: _readTextFromJson(json, const ['name', 'displayName']),
       status: _readTextFromJson(json, const ['status']),
+      mode: _readTextFromJson(json, const ['mode']),
       installedArea: _readTextFromJson(json, const ['installedArea']),
       startedAt: _readTextFromJson(json, const ['startedAt']),
       estimatedOffAt: _readTextFromJson(json, const ['estimatedOffAt']),
