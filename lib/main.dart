@@ -145,12 +145,10 @@ class _WmsAppState extends ConsumerState<WmsApp> {
 
       final navigator = _navigatorKey.currentState;
       if (!kIsWeb && navigator != null) {
-        navigator.pushAndRemoveUntil(
-          MaterialPageRoute<void>(
-            builder: (_) => const UserLoginScreen(),
-          ),
-          (route) => false,
-        );
+        // Return to the root app gate instead of pushing a standalone login
+        // route, so a successful relogin can naturally rebuild into the
+        // dashboard from auth state changes.
+        navigator.popUntil((route) => route.isFirst);
       }
 
       _scaffoldMessengerKey.currentState?.showSnackBar(

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wms/user/features/dashboard/providers/customer_devices_providers.dart';
 
 final userDashboardTabProvider =
     NotifierProvider.autoDispose<UserDashboardTabNotifier, int>(
@@ -31,6 +32,11 @@ final dashboardSearchQueryProvider =
       DashboardSearchQueryNotifier.new,
     );
 
+final dashboardRefreshControllerProvider =
+    NotifierProvider.autoDispose<DashboardRefreshController, AsyncValue<void>>(
+      DashboardRefreshController.new,
+    );
+
 class DashboardMotorSubmittingNotifier extends Notifier<Map<String, bool>> {
   @override
   Map<String, bool> build() => <String, bool>{};
@@ -56,5 +62,29 @@ class DashboardSearchQueryNotifier extends Notifier<String> {
 
   void setQuery(String query) {
     state = query;
+  }
+}
+
+class DashboardRefreshController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<void> refreshDashboard() async {
+    state = const AsyncLoading<void>();
+    try {
+      ref.invalidate(customerAssignedDevicesProvider);
+      ref.invalidate(customerDevicesListProvider);
+      ref.invalidate(customerDashboardDevicesProvider);
+      await ref.read(customerDashboardDevicesProvider.future);
+      if (!ref.mounted) {
+        return;
+      }
+      state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      if (ref.mounted) {
+        state = AsyncError<void>(error, stackTrace);
+      }
+      rethrow;
+    }
   }
 }

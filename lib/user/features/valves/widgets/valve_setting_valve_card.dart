@@ -53,26 +53,8 @@ class ValveSettingValveCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            'Active',
-                            style: TextStyle(
-                              color: AppColors.darkText,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: valve.isActive
-                                  ? AppColors.accentGreen
-                                  : AppColors.red,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                          // Keep the expand affordance visible; active status can be
+                          // reintroduced here if a future feature needs it again.
                           Icon(
                             valve.isExpanded
                                 ? Icons.expand_less_rounded
@@ -144,7 +126,9 @@ class ValveSettingValveCard extends StatelessWidget {
                                 activeThumbColor: AppColors.accentGreen,
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
-                                onChanged: canControlValves ? onToggleManual : null,
+                                onChanged: canControlValves
+                                    ? onToggleManual
+                                    : null,
                               ),
                             ),
                           ],

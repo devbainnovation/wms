@@ -16,43 +16,21 @@ class DashboardTabView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weatherAsync = ref.watch(currentWeatherProvider);
     final devicesAsync = ref.watch(customerDashboardDevicesProvider);
     final searchQuery = ref.watch(dashboardSearchQueryProvider).toLowerCase();
 
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          color: AppColors.white,
-          child: weatherAsync.when(
-            data: (weather) => _WeatherCard(weather: weather),
-            loading: () => const _WeatherLoadingCard(),
-            error: (error, _) {
-              final message = error is ApiException
-                  ? error.message
-                  : 'Unable to load weather data';
-              final isSessionExpired = isSessionExpiredMessage(message);
-              return _WeatherErrorCard(
-                message: message,
-                actionLabel: isSessionExpired ? 'Login' : 'Retry',
-                onRetry: () => isSessionExpired
-                    ? navigateToUserLogin(context)
-                    : unawaited(ref.refresh(currentWeatherProvider.future)),
-              );
-            },
-          ),
-        ),
+        // Weather widget is temporarily hidden. We will use this feature again
+        // once the dashboard header design is finalized.
         Expanded(
           child: Container(
             color: AppColors.white,
             child: RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(customerAssignedDevicesProvider);
-                ref.invalidate(customerDevicesListProvider);
-                ref.invalidate(customerDashboardDevicesProvider);
-                await ref.read(customerDashboardDevicesProvider.future);
+                await ref
+                    .read(dashboardRefreshControllerProvider.notifier)
+                    .refreshDashboard();
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -334,7 +312,7 @@ class _MotorSection extends ConsumerWidget {
             ),
             child: Center(
               child: Image.asset(
-                AppAssets.devicePower,
+                AppAssets.motor,
                 width: 22,
                 height: 22,
                 color: isOn ? AppColors.accentGreen : AppColors.red,
@@ -380,8 +358,14 @@ class _MotorSection extends ConsumerWidget {
             activeThumbColor: AppColors.primaryTeal,
             onChanged: submitting || motor?.componentId.trim().isEmpty != false
                 ? null
-                : (value) =>
-                      _handleToggle(context, ref, motor!, value, motorKey),
+                : (value) => _handleToggle(
+                    context,
+                    ref,
+                    device,
+                    motor!,
+                    value,
+                    motorKey,
+                  ),
           ),
         ],
       ),
@@ -391,10 +375,20 @@ class _MotorSection extends ConsumerWidget {
   Future<void> _handleToggle(
     BuildContext context,
     WidgetRef ref,
+    CustomerDeviceSummary device,
     CustomerMotorSummary motor,
     bool value,
     String motorKey,
   ) async {
+    if (!device.isOnline) {
+      showAppSnackBar(
+        context,
+        'Device is offline.',
+        status: AppSnackBarStatus.error,
+      );
+      return;
+    }
+
     final confirmed = await confirmManualActionDialog(
       context: context,
       title: value ? 'Turn on motor?' : 'Turn off motor?',
@@ -455,10 +449,7 @@ String _buildMotorStatusText({
       : normalizedTime;
   final modePart = normalizedMode.isEmpty ? null : normalizedMode;
 
-  final suffixParts = [
-    timePart,
-    modePart == null ? null : '($modePart)',
-  ];
+  final suffixParts = [timePart, modePart == null ? null : '($modePart)'];
 
   if (suffixParts.isEmpty) {
     return isOn ? 'ON' : 'OFF';
@@ -549,8 +540,8 @@ class _ValvesSection extends ConsumerWidget {
                       child: Text(
                         '$activeValveCount',
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.primaryTeal,
                         ),
                       ),

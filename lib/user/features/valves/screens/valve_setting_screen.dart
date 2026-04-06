@@ -53,109 +53,151 @@ class _ValveSettingView extends ConsumerWidget {
           surfaceTintColor: AppColors.white,
           elevation: 2,
           shadowColor: const Color(0x26000000),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (state.isLoadingComponents)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryTeal,
-                  ),
-                ),
-              )
-            else if (state.valves.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.lightGreyText),
-                ),
-                child: const Text(
-                  'No data found.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.greyText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-            else
-              for (var index = 0; index < state.valves.length; index++) ...[
-                ValveSettingValveCard(
-                  valve: state.valves[index],
-                  canControlValves: access.canControlValves,
-                  onToggleExpanded: () =>
-                      ref.read(valveSettingProvider(args)).toggleExpanded(index),
-                  onToggleManual: (value) async {
-                    final notifier = ref.read(valveSettingProvider(args));
-                    int? duration;
-                    if (value) {
-                      final validationError =
-                          await notifier.validateManualToggleOn(index);
-                      if (!context.mounted) {
-                        return;
+          actions: [
+            IconButton(
+              tooltip: 'Refresh',
+              onPressed:
+                  state.isLoadingComponents || state.isRefreshingComponents
+                  ? null
+                  : () async {
+                      final error = await ref
+                          .read(valveSettingProvider(args))
+                          .reloadDeviceComponents();
+                      if (error != null && context.mounted) {
+                        showValveSettingSnackBar(context, error);
                       }
-                      if (validationError != null) {
-                        if (validationError ==
-                            'A schedule is already running for the current day and time.') {
-                          await showManualScheduleRunningDialog(context);
-                        } else {
-                          showValveSettingSnackBar(context, validationError);
-                        }
-                        return;
-                      }
-                      duration = await showManualDurationDialog(context);
-                      if (duration == null || !context.mounted) {
-                        return;
-                      }
-                    } else {
-                      final confirmed = await confirmManualActionDialog(
-                        context: context,
-                        title: 'Turn off valve?',
-                        message:
-                            'This action will stop the valve immediately.',
-                      );
-                      if (confirmed != true || !context.mounted) {
-                        return;
-                      }
-                    }
-                    final error = await notifier.setManualToggleAndTrigger(
-                      index,
-                      value,
-                      duration: duration ?? 0,
-                    );
-                    if (error != null && context.mounted) {
-                      showValveSettingSnackBar(context, error);
-                    }
-                  },
-                  scheduleChildren: [
-                    for (
-                      var scheduleIndex = 0;
-                      scheduleIndex < state.valves[index].schedules.length;
-                      scheduleIndex++
-                    ) ...[
-                      _buildScheduleCard(
-                        context: context,
-                        ref: ref,
-                        valveIndex: index,
-                        scheduleIndex: scheduleIndex,
-                        valve: state.valves[index],
-                        access: access,
+                    },
+              icon: state.isRefreshingComponents
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accentGreen,
                       ),
-                      if (scheduleIndex <
-                          state.valves[index].schedules.length - 1)
-                        const SizedBox(height: 12),
-                    ],
-                  ],
-                ),
-                if (index < state.valves.length - 1) const SizedBox(height: 12),
-              ],
+                    )
+                  : const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.accentGreen,
+                    ),
+            ),
           ],
+        ),
+        body: AppPageBody(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (state.isLoadingComponents)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryTeal,
+                    ),
+                  ),
+                )
+              else if (state.valves.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.lightGreyText),
+                  ),
+                  child: const Text(
+                    'No data found.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.greyText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+              else
+                for (var index = 0; index < state.valves.length; index++) ...[
+                  ValveSettingValveCard(
+                    valve: state.valves[index],
+                    canControlValves: access.canControlValves,
+                    onToggleExpanded: () => ref
+                        .read(valveSettingProvider(args))
+                        .toggleExpanded(index),
+                    onToggleManual: (value) async {
+                      if (!device.isOnline) {
+                        showAppSnackBar(
+                          context,
+                          'Device is offline.',
+                          status: AppSnackBarStatus.error,
+                        );
+                        return;
+                      }
+
+                      final notifier = ref.read(valveSettingProvider(args));
+                      int? duration;
+                      if (value) {
+                        final validationError = await notifier
+                            .validateManualToggleOn(index);
+                        if (!context.mounted) {
+                          return;
+                        }
+                        if (validationError != null) {
+                          if (validationError ==
+                              'A schedule is already running for the current day and time.') {
+                            await showManualScheduleRunningDialog(context);
+                          } else {
+                            showValveSettingSnackBar(context, validationError);
+                          }
+                          return;
+                        }
+                        duration = await showManualDurationDialog(context);
+                        if (duration == null || !context.mounted) {
+                          return;
+                        }
+                      } else {
+                        final confirmed = await confirmManualActionDialog(
+                          context: context,
+                          title: 'Turn off valve?',
+                          message:
+                              'This action will stop the valve immediately.',
+                        );
+                        if (confirmed != true || !context.mounted) {
+                          return;
+                        }
+                      }
+                      final error = await notifier.setManualToggleAndTrigger(
+                        index,
+                        value,
+                        duration: duration ?? 0,
+                      );
+                      if (error != null && context.mounted) {
+                        showValveSettingSnackBar(context, error);
+                      }
+                    },
+                    scheduleChildren: [
+                      for (
+                        var scheduleIndex = 0;
+                        scheduleIndex < state.valves[index].schedules.length;
+                        scheduleIndex++
+                      ) ...[
+                        _buildScheduleCard(
+                          context: context,
+                          ref: ref,
+                          valveIndex: index,
+                          scheduleIndex: scheduleIndex,
+                          valve: state.valves[index],
+                          access: access,
+                        ),
+                        if (scheduleIndex <
+                            state.valves[index].schedules.length - 1)
+                          const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                  if (index < state.valves.length - 1)
+                    const SizedBox(height: 12),
+                ],
+            ],
+          ),
         ),
       ),
     );
@@ -195,8 +237,7 @@ class _ValveSettingView extends ConsumerWidget {
       canAddSchedule: canAddSchedule,
       onToggleExpanded: () =>
           notifier.toggleScheduleExpanded(valveIndex, scheduleIndex),
-      onToggleAllDays: () =>
-          notifier.toggleAllDays(valveIndex, scheduleIndex),
+      onToggleAllDays: () => notifier.toggleAllDays(valveIndex, scheduleIndex),
       onToggleDay: (day) => notifier.toggleDay(valveIndex, scheduleIndex, day),
       onPickFromTime: () async {
         final picked = await pickValveScheduleTime(

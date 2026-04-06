@@ -17,14 +17,13 @@ class ValveSettingController extends ChangeNotifier {
         valves: _buildValves(args.components),
         isLeaving: false,
         isLoadingComponents: args.components.isEmpty,
+        isRefreshingComponents: false,
       ) {
     debugPrint(
       'VALVE_SETTING init: valves=${args.components.length}, firstValveComponentId='
       '${args.components.isNotEmpty ? args.components.first.componentId : 'n/a'}',
     );
-    if (args.components.isEmpty) {
-      Future<void>.microtask(_loadDeviceComponents);
-    }
+    Future<void>.microtask(reloadDeviceComponents);
   }
 
   final Ref ref;
@@ -36,21 +35,25 @@ class ValveSettingController extends ChangeNotifier {
   static List<ValveComponentModel> _buildValves(
     List<CustomerDeviceComponent> components,
   ) {
-    return List<ValveComponentModel>.generate(components.length, (index) {
-      final component = components[index];
+    final sortedComponents = List<CustomerDeviceComponent>.from(components)
+      ..sort((left, right) => left.gpioPin.compareTo(right.gpioPin));
+
+    return List<ValveComponentModel>.generate(sortedComponents.length, (index) {
+      final component = sortedComponents[index];
+      final currentState = component.currentState.trim().toUpperCase();
       return ValveComponentModel(
         valveLabel: component.installedArea.trim().isEmpty
             ? 'Valve ${index + 1}'
             : component.installedArea,
         componentName: component.displayName,
         componentId: component.componentId,
-        isActive: true,
+        isActive: component.active,
         isExpanded: false,
-        manualActionOn: false,
+        manualActionOn: currentState == 'ON',
         isLoadingSchedules: false,
         hasLoadedSchedules: false,
         schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
-        lastUpdated: DateTime.now(),
+        lastUpdated: component.stateChangedAt ?? DateTime.now(),
       );
     });
   }
@@ -166,10 +169,7 @@ class ValveSettingController extends ChangeNotifier {
           );
       return null;
     } catch (error) {
-      _updateValve(
-        valveIndex,
-        (item) => item.copyWith(manualActionOn: !value),
-      );
+      _updateValve(valveIndex, (item) => item.copyWith(manualActionOn: !value));
       return error.toString();
     }
   }
@@ -233,18 +233,22 @@ class ValveSettingController extends ChangeNotifier {
       );
 
       if (schedule.persisted) {
-        await ref.read(customerDevicesServiceProvider).updateSchedule(
-          bearerToken: token,
-          componentId: componentId,
-          scheduleId: schedule.scheduleId,
-          request: request,
-        );
+        await ref
+            .read(customerDevicesServiceProvider)
+            .updateSchedule(
+              bearerToken: token,
+              componentId: componentId,
+              scheduleId: schedule.scheduleId,
+              request: request,
+            );
       } else {
-        await ref.read(customerDevicesServiceProvider).createSchedule(
-          bearerToken: token,
-          componentId: componentId,
-          request: request,
-        );
+        await ref
+            .read(customerDevicesServiceProvider)
+            .createSchedule(
+              bearerToken: token,
+              componentId: componentId,
+              request: request,
+            );
       }
 
       await _refreshSchedules(valveIndex, showLoader: false, showErrors: false);
@@ -297,11 +301,13 @@ class ValveSettingController extends ChangeNotifier {
         throw const ApiException('Session expired. Please login again.');
       }
 
-      await ref.read(customerDevicesServiceProvider).deleteSchedule(
-        bearerToken: token,
-        componentId: componentId,
-        scheduleId: schedule.scheduleId,
-      );
+      await ref
+          .read(customerDevicesServiceProvider)
+          .deleteSchedule(
+            bearerToken: token,
+            componentId: componentId,
+            scheduleId: schedule.scheduleId,
+          );
 
       await _refreshSchedules(valveIndex, showLoader: false, showErrors: false);
       return null;
@@ -315,7 +321,14 @@ class ValveSettingController extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadDeviceComponents() async {
+  Future<String?> reloadDeviceComponents() async {
+    final hadValves = _state.valves.isNotEmpty;
+    _state = _state.copyWith(
+      isLoadingComponents: !hadValves,
+      isRefreshingComponents: hadValves,
+    );
+    notifyListeners();
+
     try {
       final token = await _resolveToken();
       if (token.isEmpty) {
@@ -333,15 +346,19 @@ class ValveSettingController extends ChangeNotifier {
       _state = _state.copyWith(
         valves: _buildValves(valves),
         isLoadingComponents: false,
+        isRefreshingComponents: false,
       );
       notifyListeners();
+      return null;
     } catch (error) {
       debugPrint('VALVE_SETTING loadDeviceComponents:error $error');
       _state = _state.copyWith(
-        valves: const <ValveComponentModel>[],
         isLoadingComponents: false,
+        isRefreshingComponents: false,
+        valves: hadValves ? _state.valves : const <ValveComponentModel>[],
       );
       notifyListeners();
+      return error.toString();
     }
   }
 
@@ -413,16 +430,16 @@ class ValveSettingController extends ChangeNotifier {
 
       final schedules = await ref
           .read(customerDevicesServiceProvider)
-          .getComponentSchedules(
-            bearerToken: token,
-            componentId: componentId,
-          );
+          .getComponentSchedules(bearerToken: token, componentId: componentId);
       debugPrint(
         'VALVE_SETTING refreshSchedules: received ${schedules.length} schedules '
         'for valveIndex=$valveIndex, componentId=$componentId',
       );
 
-      final nextCards = schedules.take(3).map(ScheduleCardModel.fromRemote).toList();
+      final nextCards = schedules
+          .take(3)
+          .map(ScheduleCardModel.fromRemote)
+          .toList();
       if (nextCards.length < 3) {
         nextCards.add(ScheduleCardModel.createDraft());
       }
@@ -464,8 +481,9 @@ class ValveSettingController extends ChangeNotifier {
       'VALVE_SETTING resolveToken: sessionTokenPresent=${token.isNotEmpty}',
     );
     if (token.isEmpty) {
-      final remembered =
-          await ref.read(authLocalStorageProvider).loadLoginData();
+      final remembered = await ref
+          .read(authLocalStorageProvider)
+          .loadLoginData();
       token = (remembered?.token ?? '').trim();
       debugPrint(
         'VALVE_SETTING resolveToken: storageTokenPresent=${token.isNotEmpty}',

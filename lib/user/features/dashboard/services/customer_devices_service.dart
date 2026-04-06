@@ -146,9 +146,7 @@ class CustomerDevicesService {
     if (normalizedAction == 'ON' &&
         resolvedDuration != null &&
         (resolvedDuration < 0 || resolvedDuration > 300)) {
-      throw const ApiException(
-        'Duration must be between 0 and 300 minutes.',
-      );
+      throw const ApiException('Duration must be between 0 and 300 minutes.');
     }
     if (normalizedAction == 'OFF' &&
         resolvedDuration != null &&
@@ -432,12 +430,30 @@ class CustomerDevicesService {
       return '';
     }
 
+    DateTime? readDateTime(List<String> keys) {
+      for (final key in keys) {
+        final raw = json[key];
+        if (raw == null) {
+          continue;
+        }
+        final value = raw.toString().trim();
+        if (value.isEmpty || value.toLowerCase() == 'null') {
+          continue;
+        }
+        return DateTime.tryParse(value);
+      }
+      return null;
+    }
+
     return CustomerDeviceComponent(
       componentId: read(const ['componentId', 'id']),
       displayName: read(const ['name', 'displayName']),
       installedArea: read(const ['installedArea']),
       type: read(const ['type']),
       gpioPin: (json['gpioPin'] as num?)?.toInt() ?? 0,
+      currentState: read(const ['currentState', 'status']),
+      stateChangedAt: readDateTime(const ['stateChangedAt', 'updatedAt']),
+      active: json['active'] == true,
     );
   }
 }

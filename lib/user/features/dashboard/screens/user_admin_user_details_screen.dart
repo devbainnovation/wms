@@ -201,62 +201,66 @@ class _UserAdminUserDetailsScreenState
             ),
           ),
         ),
-        body: detailsAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryTeal),
-          ),
-          error: (error, _) {
-            final message = error is ApiException
-                ? error.message
-                : 'Unable to load user details.';
-            final isSessionExpired = isSessionExpiredMessage(message);
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      color: AppColors.red,
-                      fontWeight: FontWeight.w600,
+        body: AppPageBody(
+          child: detailsAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryTeal),
+            ),
+            error: (error, _) {
+              final message = error is ApiException
+                  ? error.message
+                  : 'Unable to load user details.';
+              final isSessionExpired = isSessionExpiredMessage(message);
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      message,
+                      style: const TextStyle(
+                        color: AppColors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => isSessionExpired
-                        ? navigateToUserLogin(context)
-                        : ref.invalidate(
-                            userAdminUserDetailsProvider(widget.seedUser.userId),
-                          ),
-                    child: Text(isSessionExpired ? 'Login' : 'Retry'),
-                  ),
-                ],
-              ),
-            );
-          },
-          data: (_) => TabBarView(
-            children: [
-              UserAdminUserDetailsForm(
-                formKey: _detailsFormKey,
-                user: user,
-                fullNameController: _fullNameController,
-                emailController: _emailController,
-                villageController: _villageController,
-                addressLine1Controller: _addressLine1Controller,
-                addressLine2Controller: _addressLine2Controller,
-                talukaController: _talukaController,
-                districtController: _districtController,
-                stateController: _stateController,
-                pincodeController: _pincodeController,
-                isSaving: updateUserState.isLoading,
-                onSave: () => _saveUserDetails(user.userId),
-              ),
-              _permissionsTab(
-                user.userId,
-                permissionsState.permissions,
-                updatePermissionsState.isLoading,
-              ),
-            ],
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => isSessionExpired
+                          ? navigateToUserLogin(context)
+                          : ref.invalidate(
+                              userAdminUserDetailsProvider(
+                                widget.seedUser.userId,
+                              ),
+                            ),
+                      child: Text(isSessionExpired ? 'Login' : 'Retry'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            data: (_) => TabBarView(
+              children: [
+                UserAdminUserDetailsForm(
+                  formKey: _detailsFormKey,
+                  user: user,
+                  fullNameController: _fullNameController,
+                  emailController: _emailController,
+                  villageController: _villageController,
+                  addressLine1Controller: _addressLine1Controller,
+                  addressLine2Controller: _addressLine2Controller,
+                  talukaController: _talukaController,
+                  districtController: _districtController,
+                  stateController: _stateController,
+                  pincodeController: _pincodeController,
+                  isSaving: updateUserState.isLoading,
+                  onSave: () => _saveUserDetails(user.userId),
+                ),
+                _permissionsTab(
+                  user.userId,
+                  permissionsState.permissions,
+                  updatePermissionsState.isLoading,
+                ),
+              ],
+            ),
           ),
         ),
       ),

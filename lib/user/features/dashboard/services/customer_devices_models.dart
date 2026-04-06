@@ -5,6 +5,9 @@ class CustomerDeviceComponent {
     required this.installedArea,
     required this.type,
     required this.gpioPin,
+    this.currentState = '',
+    this.stateChangedAt,
+    this.active = false,
   });
 
   final String componentId;
@@ -12,6 +15,9 @@ class CustomerDeviceComponent {
   final String installedArea;
   final String type;
   final int gpioPin;
+  final String currentState;
+  final DateTime? stateChangedAt;
+  final bool active;
 }
 
 class CustomerMotorSummary {
@@ -288,11 +294,15 @@ class CustomerDeviceSummary {
       displayName: other.displayName.trim().isNotEmpty
           ? other.displayName
           : displayName,
-      fwVersion: other.fwVersion.trim().isNotEmpty ? other.fwVersion : fwVersion,
+      fwVersion: other.fwVersion.trim().isNotEmpty
+          ? other.fwVersion
+          : fwVersion,
       lastHeartbeat: other.lastHeartbeat.trim().isNotEmpty
           ? other.lastHeartbeat
           : lastHeartbeat,
-      amcExpiry: other.amcExpiry.trim().isNotEmpty ? other.amcExpiry : amcExpiry,
+      amcExpiry: other.amcExpiry.trim().isNotEmpty
+          ? other.amcExpiry
+          : amcExpiry,
       rechargeExpiry: other.rechargeExpiry.trim().isNotEmpty
           ? other.rechargeExpiry
           : rechargeExpiry,
@@ -305,7 +315,9 @@ class CustomerDeviceSummary {
       planExpiry: other.planExpiry.trim().isNotEmpty
           ? other.planExpiry
           : planExpiry,
-      createdAt: other.createdAt.trim().isNotEmpty ? other.createdAt : createdAt,
+      createdAt: other.createdAt.trim().isNotEmpty
+          ? other.createdAt
+          : createdAt,
       components: other.components.isNotEmpty ? other.components : components,
       componentDetails: other.componentDetails.isNotEmpty
           ? other.componentDetails

@@ -88,103 +88,105 @@ class _MotorSettingScreenState extends ConsumerState<MotorSettingScreen> {
         elevation: 2,
         shadowColor: const Color(0x26000000),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          AppSectionCard(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _ReadOnlyDetailRow(
-                    label: 'Last Synced',
-                    value: _formatLastSyncedAt(settings?.lastSyncedAt ?? ''),
-                  ),
-                  const SizedBox(height: 16),
-                  _ReadOnlyDetailRow(
-                    label: 'Motor',
-                    value: _formatGpioValue(motorComponent),
-                  ),
-                  const SizedBox(height: 12),
-                  _ReadOnlyDetailRow(
-                    label: 'Sensor',
-                    value: _formatGpioValue(sensorComponent),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _minController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    decoration: _inputDecoration(
-                      labelText: 'Min',
-                      hintText: 'Enter minimum value',
+      body: AppPageBody(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            AppSectionCard(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ReadOnlyDetailRow(
+                      label: 'Last Synced',
+                      value: _formatLastSyncedAt(settings?.lastSyncedAt ?? ''),
                     ),
-                    validator: _validateMin,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _maxController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    decoration: _inputDecoration(
-                      labelText: 'Max',
-                      hintText: 'Enter maximum value',
+                    const SizedBox(height: 16),
+                    _ReadOnlyDetailRow(
+                      label: 'Motor',
+                      value: _formatGpioValue(motorComponent),
                     ),
-                    validator: _validateMax,
-                  ),
-                  if (!canSubmit) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      state.isLoadingComponents
-                          ? 'Loading component details...'
-                          : state.isLoadingSettings
-                          ? 'Loading motor settings...'
-                          : 'Motor and sensor components are required to save settings.',
-                      style: const TextStyle(
-                        color: AppColors.greyText,
-                        fontWeight: FontWeight.w500,
+                    _ReadOnlyDetailRow(
+                      label: 'Sensor',
+                      value: _formatGpioValue(sensorComponent),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _minController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      decoration: _inputDecoration(
+                        labelText: 'Min',
+                        hintText: 'Enter minimum value',
+                      ),
+                      validator: _validateMin,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _maxController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      decoration: _inputDecoration(
+                        labelText: 'Max',
+                        hintText: 'Enter maximum value',
+                      ),
+                      validator: _validateMax,
+                    ),
+                    if (!canSubmit) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        state.isLoadingComponents
+                            ? 'Loading component details...'
+                            : state.isLoadingSettings
+                            ? 'Loading motor settings...'
+                            : 'Motor and sensor components are required to save settings.',
+                        style: const TextStyle(
+                          color: AppColors.greyText,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: canSubmit
+                            ? () => _submit(
+                                controller: ref.read(motorSettingProvider(args)),
+                              )
+                            : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primaryTeal,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: state.isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Submit',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: canSubmit
-                          ? () => _submit(
-                              controller: ref.read(motorSettingProvider(args)),
-                            )
-                          : null,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primaryTeal,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: state.isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.white,
-                              ),
-                            )
-                          : const Text(
-                              'Submit',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -45,63 +45,65 @@ class UserAdminUsersScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: usersAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryTeal),
-        ),
-        error: (error, _) {
-          final message = error is ApiException
-              ? error.message
-              : 'Unable to fetch users.';
-          final isSessionExpired = isSessionExpiredMessage(message);
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  message,
-                  style: const TextStyle(
-                    color: AppColors.red,
+      body: AppPageBody(
+        child: usersAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryTeal),
+          ),
+          error: (error, _) {
+            final message = error is ApiException
+                ? error.message
+                : 'Unable to fetch users.';
+            final isSessionExpired = isSessionExpiredMessage(message);
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => isSessionExpired
+                        ? navigateToUserLogin(context)
+                        : ref.invalidate(userAdminUsersListProvider),
+                    child: Text(isSessionExpired ? 'Login' : 'Retry'),
+                  ),
+                ],
+              ),
+            );
+          },
+          data: (users) {
+            if (users.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No users found.',
+                  style: TextStyle(
+                    color: AppColors.greyText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => isSessionExpired
-                      ? navigateToUserLogin(context)
-                      : ref.invalidate(userAdminUsersListProvider),
-                  child: Text(isSessionExpired ? 'Login' : 'Retry'),
-                ),
-              ],
-            ),
-          );
-        },
-        data: (users) {
-          if (users.isEmpty) {
-            return const Center(
-              child: Text(
-                'No users found.',
-                style: TextStyle(
-                  color: AppColors.greyText,
-                  fontWeight: FontWeight.w600,
-                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async => ref.invalidate(userAdminUsersListProvider),
+              child: ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: users.length,
+                separatorBuilder: (_, index) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final user = users[index];
+                  return UserAdminUserCard(user: user);
+                },
               ),
             );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(userAdminUsersListProvider),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: users.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final user = users[index];
-                return UserAdminUserCard(user: user);
-              },
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

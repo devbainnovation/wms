@@ -80,21 +80,26 @@ class ValveSettingState {
     required this.valves,
     required this.isLeaving,
     required this.isLoadingComponents,
+    required this.isRefreshingComponents,
   });
 
   final List<ValveComponentModel> valves;
   final bool isLeaving;
   final bool isLoadingComponents;
+  final bool isRefreshingComponents;
 
   ValveSettingState copyWith({
     List<ValveComponentModel>? valves,
     bool? isLeaving,
     bool? isLoadingComponents,
+    bool? isRefreshingComponents,
   }) {
     return ValveSettingState(
       valves: valves ?? this.valves,
       isLeaving: isLeaving ?? this.isLeaving,
       isLoadingComponents: isLoadingComponents ?? this.isLoadingComponents,
+      isRefreshingComponents:
+          isRefreshingComponents ?? this.isRefreshingComponents,
     );
   }
 }
@@ -343,10 +348,7 @@ bool isScheduleRunningAt({
   return currentMinutes >= fromMinutes && currentMinutes < toMinutesValue;
 }
 
-bool hasRunningScheduleNow(
-  ValveComponentModel valve, {
-  DateTime? now,
-}) {
+bool hasRunningScheduleNow(ValveComponentModel valve, {DateTime? now}) {
   final current = now ?? DateTime.now();
   return valve.schedules.any(
     (schedule) => isScheduleRunningAt(schedule: schedule, now: current),

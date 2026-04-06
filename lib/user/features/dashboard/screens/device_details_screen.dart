@@ -20,146 +20,150 @@ class DeviceDetailsScreen extends StatelessWidget {
         shadowColor: const Color(0x26000000),
         title: Text(device.displayName.isEmpty ? '-' : device.displayName),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          AppSectionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(14, 14, 14, 8),
-                  child: Text(
-                    'Settings',
+      body: AppPageBody(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            AppSectionCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(14, 14, 14, 8),
+                    child: Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkText,
+                      ),
+                    ),
+                  ),
+                  _settingsTile(
+                    context: context,
+                    title: 'Valve',
+                    imageAsset: AppAssets.valve,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ValveSettingScreen(device: device),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 14, endIndent: 14),
+                  _settingsTile(
+                    context: context,
+                    title: 'Motor',
+                    imageAsset: AppAssets.motor,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => MotorSettingScreen(device: device),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            AppSectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Device Details',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: AppColors.darkText,
                     ),
                   ),
-                ),
-                _settingsTile(
-                  context: context,
-                  title: 'Valve',
-                  imageAsset: AppAssets.valve,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ValveSettingScreen(device: device),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(height: 1, indent: 14, endIndent: 14),
-                _settingsTile(
-                  context: context,
-                  title: 'Motor',
-                  imageAsset: AppAssets.devicePower,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => MotorSettingScreen(device: device),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppSectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Device Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
+                  const SizedBox(height: 8),
+                  _detailRow('ESP ID', device.espId),
+                  _detailRow('MAC Address', device.macAddress),
+                  _detailRow('FW Version', device.fwVersion),
+                  _detailRow(
+                    'Last Heartbeat',
+                    _formatDateTime(device.lastHeartbeat),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _detailRow('ESP ID', device.espId),
-                _detailRow('MAC Address', device.macAddress),
-                _detailRow('FW Version', device.fwVersion),
-                _detailRow(
-                  'Last Heartbeat',
-                  _formatDateTime(device.lastHeartbeat),
-                ),
-                _detailRow('AMC Expiry', device.amcExpiry),
-                _detailRow('Created At', _formatDateTime(device.createdAt)),
-                _detailRow('Active', device.isActive ? 'Yes' : 'No'),
-                _detailRow('Online', device.isOnline ? 'Yes' : 'No'),
-              ],
+                  _detailRow('AMC Expiry', device.amcExpiry),
+                  _detailRow('Created At', _formatDateTime(device.createdAt)),
+                  _detailRow('Active', device.isActive ? 'Yes' : 'No'),
+                  _detailRow('Online', device.isOnline ? 'Yes' : 'No'),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          AppSectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Device SIM Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _detailRow('Recharge Expiry', device.rechargeExpiry),
-                _detailRow('SIM Card Number', device.simCardNumber),
-                _detailRow('Network Provider', device.networkProvider),
-                _detailRow('Plan Expiry', _formatDateTime(device.planExpiry)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppSectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Components',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (device.components.isEmpty)
+            const SizedBox(height: 12),
+            AppSectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   const Text(
-                    'No components available',
-                    style: TextStyle(color: AppColors.greyText),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final component in device.components)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.lightBlue.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            component,
-                            style: const TextStyle(
-                              color: AppColors.darkText,
-                              fontWeight: FontWeight.w600,
+                    'Device SIM Details',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _detailRow('Recharge Expiry', device.rechargeExpiry),
+                  _detailRow('SIM Card Number', device.simCardNumber),
+                  _detailRow('Network Provider', device.networkProvider),
+                  _detailRow('Plan Expiry', _formatDateTime(device.planExpiry)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            AppSectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Components',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (device.components.isEmpty)
+                    const Text(
+                      'No components available',
+                      style: TextStyle(color: AppColors.greyText),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final component in device.components)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightBlue.withValues(
+                                alpha: 0.25,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              component,
+                              style: const TextStyle(
+                                color: AppColors.darkText,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-              ],
+                      ],
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

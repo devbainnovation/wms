@@ -67,99 +67,101 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         elevation: 0,
         title: const Text('Edit Profile'),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            SectionCard(
-              title: 'Basic Info',
-              child: Column(
-                children: [
-                  ReadOnlyInfoRow(
-                    label: 'Phone Number',
-                    value: widget.profile.phoneNumber,
-                  ),
-                  const SizedBox(height: 12),
-                  ReadOnlyInfoRow(
-                    label: 'Username',
-                    value: widget.profile.username,
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _fullNameController,
-                    hintText: 'Enter full name',
-                    labelText: 'Full Name',
-                    validator: (v) => _required(v, 'Full name'),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _emailController,
-                    hintText: 'Enter email',
-                    labelText: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      final msg = _required(v, 'Email');
-                      if (msg != null) {
-                        return msg;
-                      }
-                      return AppValidators.email(v);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _villageController,
-                    hintText: 'Enter village',
-                    labelText: 'Village',
-                  ),
-                ],
+      body: AppPageBody(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              SectionCard(
+                title: 'Basic Info',
+                child: Column(
+                  children: [
+                    ReadOnlyInfoRow(
+                      label: 'Phone Number',
+                      value: widget.profile.phoneNumber,
+                    ),
+                    const SizedBox(height: 12),
+                    ReadOnlyInfoRow(
+                      label: 'Username',
+                      value: widget.profile.username,
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _fullNameController,
+                      hintText: 'Enter full name',
+                      labelText: 'Full Name',
+                      validator: (v) => _required(v, 'Full name'),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _emailController,
+                      hintText: 'Enter email',
+                      labelText: 'Email',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        final msg = _required(v, 'Email');
+                        if (msg != null) {
+                          return msg;
+                        }
+                        return AppValidators.email(v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _villageController,
+                      hintText: 'Enter village',
+                      labelText: 'Village',
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            SectionCard(
-              title: 'Address',
-              child: Column(
-                children: [
-                  AppTextField(
-                    controller: _addressLine1Controller,
-                    hintText: 'Enter address line 1',
-                    labelText: 'Address Line 1',
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _addressLine2Controller,
-                    hintText: 'Enter address line 2',
-                    labelText: 'Address Line 2',
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _talukaController,
-                    hintText: 'Enter taluka',
-                    labelText: 'Taluka',
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _districtController,
-                    hintText: 'Enter district',
-                    labelText: 'District',
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _stateController,
-                    hintText: 'Enter state',
-                    labelText: 'State',
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _pincodeController,
-                    hintText: 'Enter pincode',
-                    labelText: 'Pincode',
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+              const SizedBox(height: 16),
+              SectionCard(
+                title: 'Address',
+                child: Column(
+                  children: [
+                    AppTextField(
+                      controller: _addressLine1Controller,
+                      hintText: 'Enter address line 1',
+                      labelText: 'Address Line 1',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _addressLine2Controller,
+                      hintText: 'Enter address line 2',
+                      labelText: 'Address Line 2',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _talukaController,
+                      hintText: 'Enter taluka',
+                      labelText: 'Taluka',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _districtController,
+                      hintText: 'Enter district',
+                      labelText: 'District',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _stateController,
+                      hintText: 'Enter state',
+                      labelText: 'State',
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _pincodeController,
+                      hintText: 'Enter pincode',
+                      labelText: 'Pincode',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: SafeArea(
@@ -281,74 +283,76 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         elevation: 0,
         title: const Text('Change Password'),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFD9E5E0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Secure Your Account',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.darkText,
+      body: AppPageBody(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFD9E5E0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Secure Your Account',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.darkText,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Use a strong password with letters, numbers and symbols.',
-                    style: TextStyle(
-                      color: AppColors.greyText,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Use a strong password with letters, numbers and symbols.',
+                      style: TextStyle(
+                        color: AppColors.greyText,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  AppTextField(
-                    controller: _currentPasswordController,
-                    hintText: 'Enter current password',
-                    labelText: 'Current Password',
-                    obscureText: true,
-                    validator: (v) => _required(v, 'Current password'),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _newPasswordController,
-                    hintText: 'Enter new password',
-                    labelText: 'New Password',
-                    obscureText: true,
-                    validator: AppValidators.password,
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: _confirmPasswordController,
-                    hintText: 'Confirm new password',
-                    labelText: 'Confirm Password',
-                    obscureText: true,
-                    validator: (v) {
-                      final msg = _required(v, 'Confirm password');
-                      if (msg != null) {
-                        return msg;
-                      }
-                      if (v!.trim() != _newPasswordController.text.trim()) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    AppTextField(
+                      controller: _currentPasswordController,
+                      hintText: 'Enter current password',
+                      labelText: 'Current Password',
+                      obscureText: true,
+                      validator: (v) => _required(v, 'Current password'),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _newPasswordController,
+                      hintText: 'Enter new password',
+                      labelText: 'New Password',
+                      obscureText: true,
+                      validator: AppValidators.password,
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: _confirmPasswordController,
+                      hintText: 'Confirm new password',
+                      labelText: 'Confirm Password',
+                      obscureText: true,
+                      validator: (v) {
+                        final msg = _required(v, 'Confirm password');
+                        if (msg != null) {
+                          return msg;
+                        }
+                        if (v!.trim() != _newPasswordController.text.trim()) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: SafeArea(

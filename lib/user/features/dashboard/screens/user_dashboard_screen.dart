@@ -11,6 +11,7 @@ class UserDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTab = ref.watch(userDashboardTabProvider);
     final profileAsync = ref.watch(userProfileProvider);
+    final refreshState = ref.watch(dashboardRefreshControllerProvider);
     final displayName =
         profileAsync.asData?.value.fullName.trim().isNotEmpty == true
         ? profileAsync.asData!.value.fullName.trim()
@@ -56,11 +57,33 @@ class UserDashboardScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_rounded,
-              color: AppColors.darkText,
-              size: 30,
+            onPressed: refreshState.isLoading
+                ? null
+                : () async {
+                    try {
+                      await ref
+                          .read(dashboardRefreshControllerProvider.notifier)
+                          .refreshDashboard();
+                    } catch (error) {
+                      if (!context.mounted) {
+                        return;
+                      }
+                      final message = error is Exception
+                          ? error.toString()
+                          : 'Unable to refresh dashboard.';
+                      showAppSnackBar(
+                        context,
+                        message.replaceFirst('Exception: ', ''),
+                        status: AppSnackBarStatus.error,
+                      );
+                    }
+                  },
+            icon: Icon(
+              refreshState.isLoading
+                  ? Icons.sync_rounded
+                  : Icons.refresh_rounded,
+              color: AppColors.primaryTeal,
+              size: 24,
             ),
           ),
         ],
