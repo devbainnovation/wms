@@ -117,6 +117,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
                           hintText: 'Enter email',
                           labelText: 'Email',
                           keyboardType: TextInputType.emailAddress,
+                          capitalizeFirstLetter: false,
                           validator: (v) {
                             final msg = _required(v, 'Email');
                             if (msg != null) {

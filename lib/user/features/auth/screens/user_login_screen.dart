@@ -198,6 +198,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       hintText: 'Enter username',
                       labelText: 'Username',
                       keyboardType: TextInputType.text,
+                      capitalizeFirstLetter: false,
                       prefixIcon: const Icon(Icons.person_outline_rounded),
                       validator: AppValidators.username,
                     ),
@@ -206,6 +207,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       controller: _passwordController,
                       hintText: 'Enter password',
                       labelText: 'Password',
+                      capitalizeFirstLetter: false,
                       obscureText: obscurePassword,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(

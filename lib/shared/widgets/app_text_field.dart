@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:wms/shared/theme/theme.dart';
 
 class AppTextField extends StatelessWidget {
@@ -14,6 +15,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.capitalizeFirstLetter = true,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
   final AutovalidateMode autovalidateMode;
+  final bool capitalizeFirstLetter;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +46,9 @@ class AppTextField extends StatelessWidget {
         validator: validator,
         onChanged: onChanged,
         autovalidateMode: autovalidateMode,
+        inputFormatters: capitalizeFirstLetter
+            ? const [_CapitalizeFirstLetterFormatter()]
+            : null,
         style: const TextStyle(fontSize: 16),
         strutStyle: const StrutStyle(fontSize: 16, height: 1.2),
         textAlignVertical: TextAlignVertical.center,
@@ -77,6 +83,45 @@ class AppTextField extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CapitalizeFirstLetterFormatter extends TextInputFormatter {
+  const _CapitalizeFirstLetterFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) {
+      return newValue;
+    }
+
+    final firstLetterIndex = text.indexOf(RegExp(r'[a-zA-Z]'));
+    if (firstLetterIndex == -1) {
+      return newValue;
+    }
+
+    final currentCharacter = text[firstLetterIndex];
+    final uppercasedCharacter = currentCharacter.toUpperCase();
+    if (currentCharacter == uppercasedCharacter) {
+      return newValue;
+    }
+
+    final updatedText = text.replaceRange(
+      firstLetterIndex,
+      firstLetterIndex + 1,
+      uppercasedCharacter,
+    );
+    return newValue.copyWith(
+      text: updatedText,
+      selection: TextSelection.collapsed(
+        offset: newValue.selection.extentOffset,
+      ),
+      composing: TextRange.empty,
     );
   }
 }

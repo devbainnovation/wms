@@ -186,6 +186,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
             controller: _searchController,
             hintText: 'Search customer by text',
             labelText: 'Search',
+            capitalizeFirstLetter: false,
             prefixIcon: const Icon(Icons.search_rounded),
             onChanged: (value) {
               final normalized = value.trim();

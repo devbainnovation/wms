@@ -78,6 +78,7 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
                   hintText: 'Enter email',
                   labelText: 'Email',
                   keyboardType: TextInputType.emailAddress,
+                  capitalizeFirstLetter: false,
                   validator: (v) {
                     final requiredMsg = _required(v, 'Email');
                     if (requiredMsg != null) {

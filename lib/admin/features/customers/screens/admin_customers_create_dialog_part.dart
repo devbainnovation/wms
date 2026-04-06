@@ -118,6 +118,7 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                   controller: _usernameController,
                   hintText: 'Enter username',
                   labelText: 'Username',
+                  capitalizeFirstLetter: false,
                   validator: (v) => _required(v, 'Username'),
                 ),
                 const SizedBox(height: 12),
@@ -125,6 +126,7 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                   controller: _passwordController,
                   hintText: 'Enter password',
                   labelText: 'Password',
+                  capitalizeFirstLetter: false,
                   obscureText: uiState.obscurePassword,
                   suffixIcon: IconButton(
                     tooltip: uiState.obscurePassword
@@ -156,6 +158,7 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                   hintText: 'Enter email',
                   labelText: 'Email',
                   keyboardType: TextInputType.emailAddress,
+                  capitalizeFirstLetter: false,
                   validator: (v) {
                     final requiredMsg = _required(v, 'Email');
                     if (requiredMsg != null) {

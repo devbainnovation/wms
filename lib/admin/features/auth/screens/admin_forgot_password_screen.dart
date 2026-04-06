@@ -103,6 +103,7 @@ class _AdminForgotPasswordScreenState extends State<AdminForgotPasswordScreen> {
                       hintText: 'Enter email address',
                       labelText: 'Email',
                       keyboardType: TextInputType.emailAddress,
+                      capitalizeFirstLetter: false,
                       prefixIcon: const Icon(Icons.email_outlined),
                       validator: AppValidators.email,
                     ),

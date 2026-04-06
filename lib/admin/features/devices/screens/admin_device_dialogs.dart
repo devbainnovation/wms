@@ -133,6 +133,7 @@ class _AdminDeviceUpsertDialogState
                   controller: _macController,
                   hintText: 'Enter MAC address',
                   labelText: 'MAC Address',
+                  capitalizeFirstLetter: false,
                   onChanged: (value) {
                     final uppercaseValue = value.toUpperCase();
                     if (value == uppercaseValue) {
@@ -160,6 +161,7 @@ class _AdminDeviceUpsertDialogState
                   controller: _fwController,
                   hintText: 'Enter firmware version',
                   labelText: 'FW Version',
+                  capitalizeFirstLetter: false,
                   validator: (v) => _required(v, 'FW version'),
                 ),
                 const SizedBox(height: 12),
@@ -188,20 +190,6 @@ class _AdminDeviceUpsertDialogState
                   hintText: 'Enter network provider',
                   labelText: 'Network Provider',
                   textCapitalization: TextCapitalization.sentences,
-                  onChanged: (value) {
-                    final capitalizedValue = _capitalizeFirstLetter(value);
-                    if (value == capitalizedValue) {
-                      return;
-                    }
-                    _networkProviderController.value =
-                        _networkProviderController.value.copyWith(
-                          text: capitalizedValue,
-                          selection: TextSelection.collapsed(
-                            offset: capitalizedValue.length,
-                          ),
-                          composing: TextRange.empty,
-                        );
-                  },
                 ),
                 const SizedBox(height: 12),
                 AppTextField(

@@ -103,6 +103,7 @@ class _UserForgotPasswordScreenState extends State<UserForgotPasswordScreen> {
                       hintText: 'Enter email address',
                       labelText: 'Email',
                       keyboardType: TextInputType.emailAddress,
+                      capitalizeFirstLetter: false,
                       prefixIcon: const Icon(Icons.email_outlined),
                       validator: AppValidators.email,
                     ),
