@@ -268,6 +268,13 @@ class _ValveSettingView extends ConsumerWidget {
         }
       },
       onDelete: () async {
+        if (hasRunningScheduleNow(valve)) {
+          showValveSettingSnackBar(
+            context,
+            "This schedule can't be deleted while the valve is running. Please stop the valve and try again.",
+          );
+          return;
+        }
         final confirmed = await confirmValveScheduleDelete(context);
         if (confirmed != true || !context.mounted) {
           return;
