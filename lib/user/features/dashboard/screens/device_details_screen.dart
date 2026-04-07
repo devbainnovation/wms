@@ -11,6 +11,10 @@ class DeviceDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sortedComponents = device.componentDetails.isNotEmpty
+        ? _sortedComponentNames(device.componentDetails)
+        : device.components;
+
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -127,7 +131,7 @@ class DeviceDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (device.components.isEmpty)
+                  if (sortedComponents.isEmpty)
                     const Text(
                       'No components available',
                       style: TextStyle(color: AppColors.greyText),
@@ -137,7 +141,7 @@ class DeviceDetailsScreen extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final component in device.components)
+                        for (final component in sortedComponents)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -202,6 +206,16 @@ class DeviceDetailsScreen extends StatelessWidget {
 
   String _formatDateTime(String value) {
     return AppDateTimeFormatter.formatString(value);
+  }
+
+  List<String> _sortedComponentNames(List<CustomerDeviceComponent> components) {
+    final sortedComponents = List.of(components)
+      ..sort((left, right) => left.gpioPin.compareTo(right.gpioPin));
+
+    return sortedComponents
+        .map((component) => component.displayName)
+        .where((name) => name.trim().isNotEmpty)
+        .toList();
   }
 
   Widget _settingsTile({
