@@ -1,0 +1,19 @@
+flutter_native_splash:
+  color: "#F1F5F3"
+  background_image: assets/images/splash_background.png
+  image: assets/images/devbaa_logo.png
+  branding: assets/images/splash_branding.png
+  branding_mode: 
+  branding_bottom_padding: 32
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
+  android: true
+  ios: true
+  web: false
+  fullscreen: true
+
+  android_12:
+    color: "#F1F5F3"
+    image: assets/images/devbaa_logo_android12.png
+    branding: assets/images/splash_branding.png
+    branding_bottom_padding: 32

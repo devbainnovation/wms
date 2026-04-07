@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:wms/admin/admin.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/firebase_options.dart';
@@ -52,7 +53,10 @@ final _appLaunchProvider = FutureProvider<_AppLaunchState>((ref) async {
 });
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb) {
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: WmsApp()));
 }
@@ -478,6 +482,18 @@ class _AppLaunchGate extends ConsumerStatefulWidget {
 
 class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
   bool _didRestoreLaunchSession = false;
+  bool _didRemoveNativeSplash = false;
+
+  void _removeNativeSplashIfNeeded() {
+    if (kIsWeb || _didRemoveNativeSplash) {
+      return;
+    }
+
+    _didRemoveNativeSplash = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,9 +501,11 @@ class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
     final currentSession = ref.watch(currentAuthSessionProvider);
 
     return launchAsync.when(
-      loading: () => const _SplashScreen(),
-      error: (_, _) =>
-          kIsWeb ? const AdminLoginScreen() : const UserLoginScreen(),
+      loading: () => kIsWeb ? const _SplashScreen() : const SizedBox.shrink(),
+      error: (_, _) {
+        _removeNativeSplashIfNeeded();
+        return kIsWeb ? const AdminLoginScreen() : const UserLoginScreen();
+      },
       data: (state) {
         if (!_didRestoreLaunchSession && state.session != null) {
           final session = state.session!;
@@ -502,17 +520,19 @@ class _AppLaunchGateState extends ConsumerState<_AppLaunchGate> {
             Future<void>(() {
               ref.read(currentAuthSessionProvider.notifier).setSession(session);
             });
-            return const _SplashScreen();
+            return kIsWeb ? const _SplashScreen() : const SizedBox.shrink();
           }
         }
 
         if (currentSession != null) {
+          _removeNativeSplashIfNeeded();
           if (kIsWeb) {
             return const AdminDashboardScreen();
           }
           return const UserDashboardScreen();
         }
 
+        _removeNativeSplashIfNeeded();
         return switch (state.target) {
           _AppLaunchTarget.webAdmin => const AdminLoginScreen(),
           _AppLaunchTarget.userLogin => const UserLoginScreen(),
