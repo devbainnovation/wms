@@ -8,6 +8,7 @@ class AdminDeviceTile extends StatelessWidget {
     required this.isMobile,
     required this.onOpenComponents,
     required this.onEdit,
+    required this.onReset,
     required this.onDelete,
     super.key,
   });
@@ -16,6 +17,7 @@ class AdminDeviceTile extends StatelessWidget {
   final bool isMobile;
   final VoidCallback onOpenComponents;
   final VoidCallback onEdit;
+  final VoidCallback onReset;
   final VoidCallback onDelete;
 
   @override
@@ -86,6 +88,14 @@ class AdminDeviceTile extends StatelessWidget {
               icon: const Icon(Icons.edit_rounded, color: AppColors.blue),
             ),
             IconButton(
+              tooltip: 'Reset Schedules',
+              onPressed: onReset,
+              icon: const Icon(
+                Icons.restart_alt_rounded,
+                color: AppColors.orange,
+              ),
+            ),
+            IconButton(
               tooltip: 'Delete',
               onPressed: onDelete,
               icon: const Icon(Icons.delete_rounded, color: AppColors.red),
@@ -145,6 +155,14 @@ class AdminDeviceTile extends StatelessWidget {
               tooltip: 'Edit',
               onPressed: onEdit,
               icon: const Icon(Icons.edit_rounded, color: AppColors.blue),
+            ),
+            IconButton(
+              tooltip: 'Reset Schedules',
+              onPressed: onReset,
+              icon: const Icon(
+                Icons.restart_alt_rounded,
+                color: AppColors.orange,
+              ),
             ),
             IconButton(
               tooltip: 'Delete',

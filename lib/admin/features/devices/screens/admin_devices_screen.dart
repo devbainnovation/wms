@@ -199,7 +199,84 @@ class AdminDevicesScreen extends ConsumerWidget {
                                   );
                                 }
                               },
+                              onReset: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    backgroundColor: AppColors.lightBackground,
+                                    title: const Text('Reset Schedules'),
+                                    content: Text(
+                                      'Are you sure you want to reset schedules for "${item.displayName}"?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      FilledButton(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: AppColors.orange,
+                                          foregroundColor: AppColors.white,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text('Reset'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed != true) {
+                                  return;
+                                }
+                                try {
+                                  final message = await ref
+                                      .read(
+                                        adminResetDeviceSchedulesControllerProvider
+                                            .notifier,
+                                      )
+                                      .reset(item.id);
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                } catch (error) {
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  final message = error is ApiException
+                                      ? error.message
+                                      : error.toString();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                }
+                              },
                               onDelete: () async {
+                                try {
+                                  await ref
+                                      .read(
+                                        adminResetDeviceSchedulesControllerProvider
+                                            .notifier,
+                                      )
+                                      .reset(item.id);
+                                } catch (error) {
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  final message = error is ApiException
+                                      ? error.message
+                                      : error.toString();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                  return;
+                                }
+                                if (!context.mounted) {
+                                  return;
+                                }
                                 final deleted = await showDialog<bool>(
                                   context: context,
                                   builder: (_) => AdminDeleteDeviceDialog(

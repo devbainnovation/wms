@@ -22,6 +22,8 @@ class ApiEndpoints {
 
   static String authLogout(String sessionId) => '/api/auth/logout/$sessionId';
   static String adminDeviceById(String id) => '/api/admin/devices/$id';
+  static String adminDeviceSchedules(String espId) =>
+      '/api/admin/devices/$espId/schedules';
   static String adminDeviceUnassign(String espId) =>
       '/api/admin/devices/$espId/unassign';
   static String adminCustomerById(String id) => '/api/admin/customers/$id';

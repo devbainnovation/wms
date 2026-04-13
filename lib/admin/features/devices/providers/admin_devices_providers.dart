@@ -12,14 +12,15 @@ final adminDevicesPageProvider =
       AdminDevicesPageNotifier.new,
     );
 
-final adminDevicesShowUnassignedOnlyProvider =
-    Provider.autoDispose<bool>((ref) {
-      final route = ref.watch(appRouteProvider);
-      if (route.section != AppRouteSection.devices) {
-        return false;
-      }
-      return route.queryParameters['filter'] == 'unassigned';
-    });
+final adminDevicesShowUnassignedOnlyProvider = Provider.autoDispose<bool>((
+  ref,
+) {
+  final route = ref.watch(appRouteProvider);
+  if (route.section != AppRouteSection.devices) {
+    return false;
+  }
+  return route.queryParameters['filter'] == 'unassigned';
+});
 
 class AdminDevicesPageNotifier extends Notifier<int> {
   @override
@@ -167,6 +168,37 @@ class AdminDeleteDeviceController extends Notifier<AsyncValue<void>> {
 
       await service.deleteDevice(bearerToken: token, id: id);
       state = const AsyncData<void>(null);
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+final adminResetDeviceSchedulesControllerProvider =
+    NotifierProvider<AdminResetDeviceSchedulesController, AsyncValue<void>>(
+      AdminResetDeviceSchedulesController.new,
+    );
+
+class AdminResetDeviceSchedulesController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData<void>(null);
+
+  Future<String> reset(String espId) async {
+    state = const AsyncLoading<void>();
+    try {
+      final service = ref.read(adminDeviceServiceProvider);
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      final message = await service.resetDeviceSchedules(
+        bearerToken: token,
+        espId: espId,
+      );
+      state = const AsyncData<void>(null);
+      return message;
     } catch (error, stackTrace) {
       state = AsyncError<void>(error, stackTrace);
       rethrow;

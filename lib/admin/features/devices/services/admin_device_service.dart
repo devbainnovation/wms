@@ -337,4 +337,41 @@ class AdminDeviceService {
       statusCode: response.statusCode,
     );
   }
+
+  Future<String> resetDeviceSchedules({
+    required String bearerToken,
+    required String espId,
+  }) async {
+    final response = await _apiClient.delete(
+      ApiEndpoints.adminDeviceSchedules(espId),
+      bearerToken: bearerToken,
+    );
+
+    if (response.isSuccess) {
+      final body = response.data;
+      if (body is String && body.trim().isNotEmpty) {
+        return body.trim();
+      }
+      if (body is Map<String, dynamic>) {
+        final msg = body['message'] ?? body['success'] ?? body['detail'];
+        if (msg != null && msg.toString().trim().isNotEmpty) {
+          return msg.toString().trim();
+        }
+      }
+      return 'Device schedules reset successfully.';
+    }
+
+    final body = response.data;
+    if (body is Map<String, dynamic>) {
+      final msg = body['message'] ?? body['error'] ?? body['detail'];
+      if (msg != null && msg.toString().trim().isNotEmpty) {
+        throw ApiException(msg.toString(), statusCode: response.statusCode);
+      }
+    }
+
+    throw ApiException(
+      'Schedule reset failed. Please try again.',
+      statusCode: response.statusCode,
+    );
+  }
 }
