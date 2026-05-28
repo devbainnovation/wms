@@ -71,13 +71,9 @@ class DashboardTabView extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const _AlertMarquee(
-                    message:
-                        'Recharge expires in 15 days   •   AMC expires in 10 days',
-                  ),
-                  const SizedBox(height: 14),
                   devicesAsync.when(
                     data: (devices) {
+                      final expiryMessage = _buildExpiryAlertMessage(devices);
                       final filteredDevices = devices.where((device) {
                         if (searchQuery.isEmpty) {
                           return true;
@@ -88,19 +84,27 @@ class DashboardTabView extends ConsumerWidget {
                             espId.contains(searchQuery);
                       }).toList();
 
-                      if (filteredDevices.isEmpty) {
-                        return const _DeviceEmptyCard();
-                      }
+                      final deviceSection = filteredDevices.isEmpty
+                          ? const [_DeviceEmptyCard()]
+                          : <Widget>[
+                              for (var i = 0; i < filteredDevices.length; i++) ...[
+                                _statusCard(
+                                  context: context,
+                                  device: filteredDevices[i],
+                                ),
+                                if (i < filteredDevices.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            ];
+
                       return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (var i = 0; i < filteredDevices.length; i++) ...[
-                            _statusCard(
-                              context: context,
-                              device: filteredDevices[i],
-                            ),
-                            if (i < filteredDevices.length - 1)
-                              const SizedBox(height: 12),
+                          if (expiryMessage != null) ...[
+                            _AlertMarquee(message: expiryMessage),
+                            const SizedBox(height: 14),
                           ],
+                          ...deviceSection,
                         ],
                       );
                     },
@@ -724,6 +728,78 @@ String _formatTimeOnly(String raw) {
   final month = local.month.toString().padLeft(2, '0');
   final year = local.year.toString().padLeft(4, '0');
   return '$day/$month/$year $timeText';
+}
+
+String? _buildExpiryAlertMessage(List<CustomerDeviceSummary> devices) {
+  int? minRechargeDays;
+  int? minAmcDays;
+
+  for (final device in devices) {
+    final rechargeDays = _daysUntilExpiry(device.rechargeExpiry);
+    if (rechargeDays != null &&
+        (minRechargeDays == null || rechargeDays < minRechargeDays)) {
+      minRechargeDays = rechargeDays;
+    }
+
+    final amcDays = _daysUntilExpiry(device.amcExpiry);
+    if (amcDays != null && (minAmcDays == null || amcDays < minAmcDays)) {
+      minAmcDays = amcDays;
+    }
+  }
+
+  final parts = <String>[];
+  if (minRechargeDays != null) {
+    parts.add(_formatExpiryText(label: 'Recharge', days: minRechargeDays));
+  }
+  if (minAmcDays != null) {
+    parts.add(_formatExpiryText(label: 'AMC', days: minAmcDays));
+  }
+
+  if (parts.isEmpty) {
+    return null;
+  }
+
+  if (parts.length == 2 && minRechargeDays != null && minAmcDays != null) {
+    if (minRechargeDays != minAmcDays) {
+      return '${parts[0]}. ${parts[1]}.';
+    }
+    return '${parts[0]}   •   ${parts[1]}';
+  }
+
+  return parts.first;
+}
+
+int? _daysUntilExpiry(String rawDate) {
+  final value = rawDate.trim();
+  if (value.isEmpty || value.toLowerCase() == 'null') {
+    return null;
+  }
+
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) {
+    return null;
+  }
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final expiryDay = DateTime(parsed.year, parsed.month, parsed.day);
+  final days = expiryDay.difference(today).inDays;
+
+  if (days > 30) {
+    return null;
+  }
+  return days;
+}
+
+String _formatExpiryText({required String label, required int days}) {
+  if (days < 0) {
+    final absDays = days.abs();
+    return '$label expired $absDays day${absDays == 1 ? '' : 's'} ago';
+  }
+  if (days == 0) {
+    return '$label expires today';
+  }
+  return '$label expires in $days day${days == 1 ? '' : 's'}';
 }
 
 class _DeviceEmptyCard extends StatelessWidget {

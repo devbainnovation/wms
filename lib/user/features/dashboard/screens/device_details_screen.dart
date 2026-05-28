@@ -148,8 +148,11 @@ class DeviceDetailsScreen extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.lightBlue.withValues(
-                                alpha: 0.25,
+                              color: AppColors.lightTeal,
+                              border: Border.all(
+                                color: AppColors.primaryTeal.withValues(
+                                  alpha: 0.28,
+                                ),
                               ),
                               borderRadius: BorderRadius.circular(999),
                             ),
