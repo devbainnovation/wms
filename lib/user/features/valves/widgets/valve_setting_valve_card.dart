@@ -67,12 +67,23 @@ class ValveSettingValveCard extends StatelessWidget {
                   ),
                   if (valve.componentName.trim().isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      valve.componentName,
-                      style: const TextStyle(
-                        color: AppColors.greyText,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            valve.componentName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.greyText,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _ScheduleSummaryBadge(valve: valve),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 4),
@@ -161,6 +172,69 @@ class ValveSettingValveCard extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduleSummaryBadge extends StatelessWidget {
+  const _ScheduleSummaryBadge({required this.valve});
+
+  final ValveComponentModel valve;
+
+  @override
+  Widget build(BuildContext context) {
+    if (valve.isLoadingSchedules && !valve.hasLoadedSchedules) {
+      return const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primaryTeal,
+        ),
+      );
+    }
+
+    final savedScheduleCount = valve.savedScheduleCount;
+    if (!valve.hasLoadedSchedules && savedScheduleCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    if (savedScheduleCount == 0) {
+      return const Text(
+        'No schedule',
+        style: TextStyle(
+          color: AppColors.greyText,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreen,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 14,
+            color: AppColors.accentGreen,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$savedScheduleCount schedule${savedScheduleCount == 1 ? '' : 's'}',
+            style: const TextStyle(
+              color: AppColors.darkTeal,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );

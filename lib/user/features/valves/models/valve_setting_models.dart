@@ -141,6 +141,8 @@ class ValveComponentModel {
   final List<ScheduleCardModel> schedules;
   final DateTime lastUpdated;
 
+  int get savedScheduleCount => schedules.where((item) => item.persisted).length;
+
   ValveComponentModel copyWith({
     String? valveLabel,
     String? componentName,

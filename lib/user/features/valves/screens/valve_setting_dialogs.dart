@@ -18,7 +18,12 @@ Future<TimeOfDay?> pickValveScheduleTime({
             onSurface: AppColors.darkText,
           ),
         ),
-        child: child!,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            alwaysUse24HourFormat: true,
+          ),
+          child: child!,
+        ),
       );
     },
   );

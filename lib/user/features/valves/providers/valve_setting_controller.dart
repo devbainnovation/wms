@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
@@ -349,6 +351,7 @@ class ValveSettingController extends ChangeNotifier {
         isRefreshingComponents: false,
       );
       notifyListeners();
+      unawaited(_preloadAllValveSchedules());
       return null;
     } catch (error) {
       debugPrint('VALVE_SETTING loadDeviceComponents:error $error');
@@ -384,6 +387,16 @@ class ValveSettingController extends ChangeNotifier {
       showLoader: showLoader,
       showErrors: showErrors,
     );
+  }
+
+  Future<void> _preloadAllValveSchedules() async {
+    for (var valveIndex = 0; valveIndex < _state.valves.length; valveIndex++) {
+      await _ensureSchedulesLoaded(
+        valveIndex,
+        showLoader: true,
+        showErrors: false,
+      );
+    }
   }
 
   Future<void> _refreshSchedules(

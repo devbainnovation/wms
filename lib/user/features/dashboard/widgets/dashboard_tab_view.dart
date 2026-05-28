@@ -448,18 +448,22 @@ String _buildMotorStatusText({
 }) {
   final normalizedMode = mode.trim();
   final normalizedTime = timeValue.trim();
-  final timePart = normalizedTime.isEmpty || normalizedTime == '-'
+  final timePart =
+      normalizedTime.isEmpty ||
+          normalizedTime == '-' ||
+          normalizedTime.toLowerCase() == 'null'
       ? null
       : normalizedTime;
   final modePart = normalizedMode.isEmpty ? null : normalizedMode;
 
   final suffixParts = [timePart, modePart == null ? null : '($modePart)'];
 
-  if (suffixParts.isEmpty) {
+  if (suffixParts.every((part) => part == null)) {
     return isOn ? 'ON' : 'OFF';
   }
 
-  return '${isOn ? 'ON' : 'OFF'} ${suffixParts.join(' ')}';
+  final suffix = suffixParts.whereType<String>().join(' ');
+  return suffix.isEmpty ? (isOn ? 'ON' : 'OFF') : '${isOn ? 'ON' : 'OFF'} $suffix';
 }
 
 class _ValvesSection extends ConsumerWidget {
