@@ -84,9 +84,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
     try {
       final appDeviceInfoService = ref.read(appDeviceInfoServiceProvider);
       final deviceInfo = await appDeviceInfoService.buildDeviceInfo();
-      final fcmToken = appDeviceInfoService.shouldAttachFcmToken
-          ? await ref.read(pushNotificationServiceProvider).getToken()
-          : null;
+      final fcmToken = await _readFcmTokenSafely(appDeviceInfoService);
 
       await ref
           .read(authLoginControllerProvider.notifier)
@@ -105,6 +103,21 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
           ? error.message
           : 'Login failed. Please try again.';
       showAppSnackBar(context, message, status: AppSnackBarStatus.error);
+    }
+  }
+
+  Future<String?> _readFcmTokenSafely(
+    AppDeviceInfoService appDeviceInfoService,
+  ) async {
+    if (!appDeviceInfoService.shouldAttachFcmToken) {
+      return null;
+    }
+
+    try {
+      return await ref.read(pushNotificationServiceProvider).getToken();
+    } catch (error) {
+      debugPrint('FCM token unavailable during login: $error');
+      return null;
     }
   }
 
