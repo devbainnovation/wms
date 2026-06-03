@@ -104,10 +104,11 @@ class TankTabView extends ConsumerWidget {
               child: tankAsync.when(
                 data: (list) {
                   final filtered = list.where((tank) {
-                    final searchableName = (tank.espDisplayName.isEmpty
-                            ? tank.espId
-                            : tank.espDisplayName)
-                        .toLowerCase();
+                    final searchableName =
+                        (tank.espDisplayName.isEmpty
+                                ? tank.espId
+                                : tank.espDisplayName)
+                            .toLowerCase();
                     final matchName = searchableName.contains(searchQuery);
                     final byFilter = switch (selectedFilter) {
                       TankFilter.all => true,
@@ -229,7 +230,7 @@ class _TankLevelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final percentText = '${(data.levelPercent * 100).round()}%';
     final levelColor = data.levelPercent >= 0.7
-        ? AppColors.accentGreen
+        ? AppColors.blue
         : data.levelPercent >= 0.35
         ? AppColors.warning
         : AppColors.red;
@@ -260,7 +261,9 @@ class _TankLevelCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data.espDisplayName.isEmpty ? data.espId : data.espDisplayName,
+                  data.espDisplayName.isEmpty
+                      ? data.espId
+                      : data.espDisplayName,
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
