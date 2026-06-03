@@ -9,8 +9,11 @@ class _ValvesSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final valves = device.valves;
     final activeValveCount = valves.where((valve) => valve.isOn).length;
+    final valveNames = valves
+        .where((valve) => valve.status.toUpperCase() == 'ON')
+        .map((valve) => valve.name)
+        .join(', ');
     final showAllValvesOff = device.allValvesOff;
-    final showActiveCount = activeValveCount > 0;
     final expandKey = device.espId.isNotEmpty
         ? device.espId
         : device.displayName;
@@ -55,7 +58,7 @@ class _ValvesSection extends ConsumerWidget {
                         Text(
                           showAllValvesOff
                               ? 'All valves are off'
-                              : '$activeValveCount valve${activeValveCount == 1 ? '' : 's'} on',
+                              : '$valveNames valve${activeValveCount == 1 ? '' : 's'} on',
                           style: TextStyle(
                             fontSize: 13,
                             color: showAllValvesOff
@@ -69,25 +72,6 @@ class _ValvesSection extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // if (showActiveCount)
-                  //   Container(
-                  //     padding: const EdgeInsets.symmetric(
-                  //       horizontal: 10,
-                  //       vertical: 6,
-                  //     ),
-                  //     decoration: BoxDecoration(
-                  //       color: AppColors.lightBlue.withValues(alpha: 0.18),
-                  //       borderRadius: BorderRadius.circular(999),
-                  //     ),
-                  //     child: Text(
-                  //       '$activeValveCount',
-                  //       style: const TextStyle(
-                  //         fontSize: 16,
-                  //         fontWeight: FontWeight.w600,
-                  //         color: AppColors.primaryTeal,
-                  //       ),
-                  //     ),
-                  //   ),
                   if (!showAllValvesOff && valves.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Icon(
@@ -191,16 +175,14 @@ class _ValveRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                _DetailLine(label: 'Location', value: valve.installedArea),
-                const SizedBox(height: 6),
                 _DetailLine(
-                  label: 'ON Time',
-                  value: _formatTimeOnly(valve.onTime),
+                  iconData: Icons.location_on_rounded,
+                  value: valve.installedArea,
                 ),
                 const SizedBox(height: 6),
                 _DetailLine(
-                  label: 'OFF Time',
-                  value: _formatTimeOnly(valve.offTime),
+                  iconData: Icons.schedule_sharp,
+                  value: _formatDateTimeRange(valve.onTime, valve.offTime),
                 ),
               ],
             ),
@@ -292,9 +274,9 @@ class _ValveRemainingClockState extends State<_ValveRemainingClock> {
 }
 
 class _DetailLine extends StatelessWidget {
-  const _DetailLine({required this.label, required this.value});
+  const _DetailLine({required this.iconData, required this.value});
 
-  final String label;
+  final IconData iconData;
   final String value;
 
   @override
@@ -303,25 +285,18 @@ class _DetailLine extends StatelessWidget {
 
     return Row(
       children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.greyText,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        Icon(
+          iconData,
+          size: 20,
+          color: AppColors.greyText.withValues(alpha: 0.6),
         ),
-        Expanded(
-          child: Text(
-            normalized,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.darkText,
-              fontWeight: FontWeight.w600,
-            ),
+        const SizedBox(width: 8),
+        Text(
+          normalized,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.darkText,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],

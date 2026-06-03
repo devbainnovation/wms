@@ -89,35 +89,40 @@ class UserDashboardScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(top: false, child: pages[selectedTab]),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedTab,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.white,
-        elevation: 10,
-        selectedItemColor: AppColors.primaryTeal,
-        unselectedItemColor: AppColors.greyText,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        showUnselectedLabels: true,
-        onTap: (value) {
-          ref.read(userDashboardTabProvider.notifier).setTab(value);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.water_drop_sharp),
-            label: 'Tank',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFE0E0E0), width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: selectedTab,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.white,
+          elevation: 0, // Remove shadow if using border
+          selectedItemColor: AppColors.primaryTeal,
+          unselectedItemColor: AppColors.greyText,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          showUnselectedLabels: true,
+          onTap: (value) {
+            ref.read(userDashboardTabProvider.notifier).setTab(value);
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.water_drop_sharp),
+              label: 'Tank',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -31,6 +31,48 @@ String _formatTimeOnly(String raw) {
   return '$day/$month/$year $timeText';
 }
 
+String _formatDateTimeRange(String from, String to) {
+  final fromDate = DateTime.tryParse(from)?.toLocal();
+  final toDate = DateTime.tryParse(to)?.toLocal();
+
+  if (fromDate == null || toDate == null) {
+    return '${_formatTimeOnly(from)} to ${_formatTimeOnly(to)}';
+  }
+
+  final sameDate =
+      fromDate.year == toDate.year &&
+      fromDate.month == toDate.month &&
+      fromDate.day == toDate.day;
+
+  final fromTime = _formatClockTime(
+    hour: fromDate.hour,
+    minute: fromDate.minute,
+  );
+
+  final toTime = _formatClockTime(hour: toDate.hour, minute: toDate.minute);
+
+  final now = DateTime.now();
+
+  final isToday =
+      fromDate.year == now.year &&
+      fromDate.month == now.month &&
+      fromDate.day == now.day;
+
+  if (sameDate) {
+    if (isToday) {
+      return 'Today, $fromTime to $toTime';
+    }
+
+    final day = fromDate.day.toString().padLeft(2, '0');
+    final month = fromDate.month.toString().padLeft(2, '0');
+    final year = fromDate.year.toString();
+
+    return '$day/$month/$year, $fromTime to $toTime';
+  }
+
+  return '${_formatTimeOnly(from)} to ${_formatTimeOnly(to)}';
+}
+
 Duration? _remainingValveTime({
   required String onTime,
   required String offTime,
