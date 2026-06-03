@@ -66,6 +66,8 @@ class CustomerValveSummary {
     required this.installedArea,
     required this.startedAt,
     required this.estimatedOffAt,
+    required this.onTime,
+    required this.offTime,
   });
 
   final String componentId;
@@ -75,18 +77,47 @@ class CustomerValveSummary {
   final String installedArea;
   final String startedAt;
   final String estimatedOffAt;
+  final String onTime;
+  final String offTime;
 
   bool get isOn => status.trim().toUpperCase() == 'ON';
 
   factory CustomerValveSummary.fromJson(Map<String, dynamic> json) {
+    final startedAt = _readTextFromJson(json, const ['startedAt']);
+    final estimatedOffAt = _readTextFromJson(json, const ['estimatedOffAt']);
+    final onTime = _readValveTimerText(json, const [
+      'onTime',
+      'onAt',
+      'startTime',
+      'scheduledOnTime',
+      'scheduledOnAt',
+      'scheduleStartTime',
+      'timerOnTime',
+      'timerOnAt',
+      'valveOnTime',
+    ], fallback: startedAt);
+    final offTime = _readValveTimerText(json, const [
+      'offTime',
+      'offAt',
+      'endTime',
+      'scheduledOffTime',
+      'scheduledOffAt',
+      'scheduleEndTime',
+      'timerOffTime',
+      'timerOffAt',
+      'valveOffTime',
+    ], fallback: estimatedOffAt);
+
     return CustomerValveSummary(
       componentId: _readTextFromJson(json, const ['componentId', 'id']),
       name: _readTextFromJson(json, const ['name', 'displayName']),
       status: _readTextFromJson(json, const ['status']),
       mode: _readTextFromJson(json, const ['mode']),
       installedArea: _readTextFromJson(json, const ['installedArea']),
-      startedAt: _readTextFromJson(json, const ['startedAt']),
-      estimatedOffAt: _readTextFromJson(json, const ['estimatedOffAt']),
+      startedAt: startedAt,
+      estimatedOffAt: estimatedOffAt,
+      onTime: onTime,
+      offTime: offTime,
     );
   }
 }
@@ -492,6 +523,59 @@ String _readTextFromJson(Map<String, dynamic> json, List<String> keys) {
     }
   }
   return '';
+}
+
+String _readValveTimerText(
+  Map<String, dynamic> json,
+  List<String> keys, {
+  required String fallback,
+}) {
+  final direct = _readTimerTextFromMap(json, keys);
+  if (direct.isNotEmpty) {
+    return direct;
+  }
+
+  for (final nestedKey in const [
+    'schedule',
+    'currentSchedule',
+    'runningSchedule',
+    'timer',
+  ]) {
+    final raw = json[nestedKey];
+    if (raw is Map<String, dynamic>) {
+      final nested = _readTimerTextFromMap(raw, keys);
+      if (nested.isNotEmpty) {
+        return nested;
+      }
+    }
+  }
+
+  return fallback;
+}
+
+String _readTimerTextFromMap(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final raw = json[key];
+    final value = _timerValueToText(raw);
+    if (value.isNotEmpty && value.toLowerCase() != 'null') {
+      return value;
+    }
+  }
+  return '';
+}
+
+String _timerValueToText(dynamic raw) {
+  if (raw == null) {
+    return '';
+  }
+  if (raw is Map<String, dynamic>) {
+    return CustomerScheduleTime.fromJson(raw).toFormattedString();
+  }
+  final value = raw.toString().trim();
+  if (value.isEmpty || value.toLowerCase() == 'null') {
+    return '';
+  }
+  return value;
 }
 
 int? _normalizeScheduleDay(int? day) {

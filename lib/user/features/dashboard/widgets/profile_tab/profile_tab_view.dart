@@ -4,8 +4,8 @@ import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab_screens.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab_sections.dart';
+import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_screens.dart';
+import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_sections.dart';
 
 class ProfileTabView extends ConsumerWidget {
   const ProfileTabView({super.key});

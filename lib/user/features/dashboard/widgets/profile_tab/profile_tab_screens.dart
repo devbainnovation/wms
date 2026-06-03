@@ -4,7 +4,7 @@ import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
 import 'package:wms/user/features/dashboard/services/services.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab_sections.dart';
+import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_sections.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({required this.profile, super.key});
@@ -234,11 +234,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final message = error is ApiException
           ? error.message
           : 'Unable to update profile.';
-      showAppSnackBar(
-        context,
-        message,
-        status: AppSnackBarStatus.error,
-      );
+      showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
 
@@ -417,11 +413,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final message = error is ApiException
           ? error.message
           : 'Unable to update password.';
-      showAppSnackBar(
-        context,
-        message,
-        status: AppSnackBarStatus.error,
-      );
+      showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
 
