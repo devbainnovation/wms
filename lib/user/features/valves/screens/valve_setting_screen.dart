@@ -6,6 +6,7 @@ import 'package:wms/user/features/dashboard/services/customer_devices_service.da
 import 'package:wms/user/features/dashboard/services/user_profile_service.dart';
 import 'package:wms/user/features/valves/models/valve_setting_models.dart';
 import 'package:wms/user/features/valves/providers/valve_setting_controller.dart';
+import 'package:wms/user/features/valves/screens/valve_schedule_editor_screen.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
 import 'package:wms/user/features/valves/widgets/valve_setting_widgets.dart';
 
@@ -213,155 +214,86 @@ class _ValveSettingView extends ConsumerWidget {
   }) {
     final notifier = ref.read(valveSettingProvider(args));
     final schedule = valve.schedules[scheduleIndex];
-    final isAllSelected = schedule.selectedDays.length == 7;
     final canEditSchedule = schedule.persisted
         ? access.canUpdateSchedules
         : access.canCreateSchedules;
-    final validationMessage = _scheduleValidationMessage(
-      valve: valve,
-      scheduleIndex: scheduleIndex,
-    );
-    final canSave = canEditSchedule && _canSaveSchedule(valve, scheduleIndex);
-    final canAddSchedule =
-        access.canCreateSchedules && _canAddSchedule(valve, scheduleIndex);
 
     return ValveSettingScheduleCard(
-      contextForTimeFormat: context,
       schedule: schedule,
       scheduleIndex: scheduleIndex,
-      isAllSelected: isAllSelected,
       canEditSchedule: canEditSchedule,
-      canDeleteSchedule: access.canDeleteSchedules,
-      validationMessage: validationMessage,
-      canSave: canSave,
-      canAddSchedule: canAddSchedule,
-      onToggleExpanded: () =>
-          notifier.toggleScheduleExpanded(valveIndex, scheduleIndex),
-      onToggleAllDays: () => notifier.toggleAllDays(valveIndex, scheduleIndex),
-      onToggleDay: (day) => notifier.toggleDay(valveIndex, scheduleIndex, day),
-      onPickFromTime: () async {
-        final picked = await pickValveScheduleTime(
-          context: context,
-          initial: schedule.fromTime ?? const TimeOfDay(hour: 8, minute: 0),
-        );
-        if (picked != null) {
-          notifier.updateScheduleTime(
-            valveIndex,
-            scheduleIndex,
-            isStart: true,
-            value: picked,
-          );
-        }
-      },
-      onPickToTime: () async {
-        final picked = await pickValveScheduleTime(
-          context: context,
-          initial: schedule.toTime ?? const TimeOfDay(hour: 9, minute: 0),
-        );
-        if (picked != null) {
-          notifier.updateScheduleTime(
-            valveIndex,
-            scheduleIndex,
-            isStart: false,
-            value: picked,
-          );
-        }
-      },
-      onDelete: () async {
-        if (hasRunningScheduleNow(valve)) {
-          showValveSettingSnackBar(
-            context,
-            "This schedule can't be deleted while the valve is running. Please stop the valve and try again.",
-          );
-          return;
-        }
-        final confirmed = await confirmValveScheduleDelete(context);
-        if (confirmed != true || !context.mounted) {
-          return;
-        }
-        final error = await notifier.deleteSchedule(valveIndex, scheduleIndex);
-        if (error != null && context.mounted) {
-          showValveSettingSnackBar(context, error);
-          return;
-        }
-        if (context.mounted) {
-          showValveSettingSnackBar(context, 'Schedule deleted.');
-        }
-      },
-      onAddSchedule: () async {
-        final error = await notifier.submitSchedule(
-          valveIndex,
-          scheduleIndex,
-          addAnotherCard: true,
-        );
-        if (error != null && context.mounted) {
-          showValveSettingSnackBar(context, error);
-          return;
-        }
-        if (context.mounted) {
-          showValveSettingSnackBar(context, 'Schedule added successfully.');
-        }
-      },
-      onSave: () async {
-        final error = await notifier.submitSchedule(
-          valveIndex,
-          scheduleIndex,
-          addAnotherCard: false,
-        );
-        if (error != null && context.mounted) {
-          showValveSettingSnackBar(context, error);
-          return;
-        }
-        if (context.mounted) {
-          showValveSettingSnackBar(
-            context,
-            schedule.persisted ? 'Schedule updated.' : 'Schedule saved.',
-          );
-        }
-      },
-    );
-  }
+      onOpenEditor: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ValveScheduleEditorScreen(
+            valveLabel: valve.valveLabel,
+            schedule: schedule,
+            canEditSchedule: canEditSchedule,
+            canDeleteSchedule: access.canDeleteSchedules,
+            onSave: (updatedSchedule) async {
+              if (updatedSchedule.fromTime != null &&
+                  updatedSchedule.fromTime != schedule.fromTime) {
+                notifier.updateScheduleTime(
+                  valveIndex,
+                  scheduleIndex,
+                  isStart: true,
+                  value: updatedSchedule.fromTime!,
+                );
+              }
+              if (updatedSchedule.toTime != null &&
+                  updatedSchedule.toTime != schedule.toTime) {
+                notifier.updateScheduleTime(
+                  valveIndex,
+                  scheduleIndex,
+                  isStart: false,
+                  value: updatedSchedule.toTime!,
+                );
+              }
 
-  bool _canAddSchedule(ValveComponentModel valve, int scheduleIndex) {
-    final schedule = valve.schedules[scheduleIndex];
-    if (schedule.isSubmitting || valve.componentId.trim().isEmpty) {
-      return false;
-    }
-    if (scheduleIndex != valve.schedules.length - 1 || schedule.persisted) {
-      return false;
-    }
-    if (valve.schedules.length >= 3) {
-      return false;
-    }
-    return _scheduleValidationMessage(
-          valve: valve,
-          scheduleIndex: scheduleIndex,
-        ) ==
-        null;
-  }
+              final currentDays = schedule.selectedDays;
+              final nextDays = updatedSchedule.selectedDays;
+              for (var day = 1; day <= 7; day++) {
+                final isCurrentlySelected = currentDays.contains(day);
+                final shouldBeSelected = nextDays.contains(day);
+                if (isCurrentlySelected != shouldBeSelected) {
+                  notifier.toggleDay(valveIndex, scheduleIndex, day);
+                }
+              }
 
-  bool _canSaveSchedule(ValveComponentModel valve, int scheduleIndex) {
-    final schedule = valve.schedules[scheduleIndex];
-    if (schedule.isSubmitting || valve.componentId.trim().isEmpty) {
-      return false;
-    }
-    if (_scheduleValidationMessage(
-          valve: valve,
-          scheduleIndex: scheduleIndex,
-        ) !=
-        null) {
-      return false;
-    }
-    return schedule.hasChanges;
-  }
-
-  String? _scheduleValidationMessage({
-    required ValveComponentModel valve,
-    required int scheduleIndex,
-  }) {
-    return scheduleValidationMessage(
-      valve: valve,
-      scheduleIndex: scheduleIndex,
+              final error = await notifier.submitSchedule(
+                valveIndex,
+                scheduleIndex,
+                addAnotherCard: !schedule.persisted,
+              );
+              if (error == null && context.mounted) {
+                showValveSettingSnackBar(
+                  context,
+                  schedule.persisted ? 'Schedule updated.' : 'Schedule saved.',
+                );
+              }
+              return error;
+            },
+            onDelete: schedule.persisted
+                ? () async {
+                    if (hasRunningScheduleNow(valve)) {
+                      return "This schedule can't be deleted while the valve is running. Please stop the valve and try again.";
+                    }
+                    final confirmed = await confirmValveScheduleDelete(context);
+                    if (confirmed != true || !context.mounted) {
+                      return '__cancelled__';
+                    }
+                    final error = await notifier.deleteSchedule(
+                      valveIndex,
+                      scheduleIndex,
+                    );
+                    if (error == null && context.mounted) {
+                      showValveSettingSnackBar(context, 'Schedule deleted.');
+                    }
+                    return error;
+                  }
+                : null,
+          ),
+        ),
+      ),
     );
   }
 }
