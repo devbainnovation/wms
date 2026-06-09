@@ -129,6 +129,15 @@ class ValveSettingScheduleCard extends StatelessWidget {
 }
 
 String _scheduleDaysLabel(ScheduleCardModel schedule) {
+  if (schedule.alternateMode) {
+    final start = schedule.alternateStartDate != null
+        ? _formatDate(schedule.alternateStartDate!)
+        : 'Start';
+    final end = schedule.alternateEndDate != null
+        ? _formatDate(schedule.alternateEndDate!)
+        : 'End';
+    return 'Alternate every ${schedule.alternateInterval} day(s) $start - $end';
+  }
   if (schedule.selectedDays.length == 7) {
     return 'All days';
   }
@@ -140,4 +149,8 @@ String _scheduleDaysLabel(ScheduleCardModel schedule) {
       .where((item) => schedule.selectedDays.contains(item.apiDay))
       .map((item) => item.shortLabel)
       .join(', ');
+}
+
+String _formatDate(DateTime date) {
+  return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }

@@ -145,6 +145,50 @@ class ValveSettingController extends ChangeNotifier {
     );
   }
 
+  void updateAlternateMode(
+    int valveIndex,
+    int scheduleIndex,
+    bool alternateMode,
+  ) {
+    _updateSchedule(
+      valveIndex,
+      scheduleIndex,
+      (item) => item.copyWith(alternateMode: alternateMode),
+    );
+  }
+
+  void updateAlternateStartDate(
+    int valveIndex,
+    int scheduleIndex,
+    DateTime? value,
+  ) {
+    _updateSchedule(
+      valveIndex,
+      scheduleIndex,
+      (item) => item.copyWith(alternateStartDate: value),
+    );
+  }
+
+  void updateAlternateEndDate(
+    int valveIndex,
+    int scheduleIndex,
+    DateTime? value,
+  ) {
+    _updateSchedule(
+      valveIndex,
+      scheduleIndex,
+      (item) => item.copyWith(alternateEndDate: value),
+    );
+  }
+
+  void updateAlternateInterval(int valveIndex, int scheduleIndex, int value) {
+    _updateSchedule(
+      valveIndex,
+      scheduleIndex,
+      (item) => item.copyWith(alternateInterval: value),
+    );
+  }
+
   Future<String?> setManualToggleAndTrigger(
     int valveIndex,
     bool value, {

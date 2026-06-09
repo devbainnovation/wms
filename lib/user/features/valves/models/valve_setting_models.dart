@@ -141,7 +141,8 @@ class ValveComponentModel {
   final List<ScheduleCardModel> schedules;
   final DateTime lastUpdated;
 
-  int get savedScheduleCount => schedules.where((item) => item.persisted).length;
+  int get savedScheduleCount =>
+      schedules.where((item) => item.persisted).length;
 
   ValveComponentModel copyWith({
     String? valveLabel,
@@ -192,6 +193,10 @@ class ScheduleCardModel {
     required this.toTime,
     required this.initialToTime,
     required this.isSubmitting,
+    required this.alternateMode,
+    required this.alternateStartDate,
+    required this.alternateEndDate,
+    required this.alternateInterval,
   });
 
   final String cardKey;
@@ -205,6 +210,10 @@ class ScheduleCardModel {
   final TimeOfDay? toTime;
   final TimeOfDay? initialToTime;
   final bool isSubmitting;
+  final bool alternateMode;
+  final DateTime? alternateStartDate;
+  final DateTime? alternateEndDate;
+  final int alternateInterval;
 
   factory ScheduleCardModel.createDraft() {
     return ScheduleCardModel(
@@ -219,6 +228,10 @@ class ScheduleCardModel {
       toTime: null,
       initialToTime: null,
       isSubmitting: false,
+      alternateMode: false,
+      alternateStartDate: null,
+      alternateEndDate: null,
+      alternateInterval: 1,
     );
   }
 
@@ -246,6 +259,10 @@ class ScheduleCardModel {
       toTime: to,
       initialToTime: to,
       isSubmitting: false,
+      alternateMode: false,
+      alternateStartDate: null,
+      alternateEndDate: null,
+      alternateInterval: 1,
     );
   }
 
@@ -261,6 +278,12 @@ class ScheduleCardModel {
     TimeOfDay? toTime,
     Object? initialToTime = _marker,
     bool? isSubmitting,
+    bool? alternateMode,
+    DateTime? alternateStartDate,
+    Object? initialAlternateStartDate = _marker,
+    DateTime? alternateEndDate,
+    Object? initialAlternateEndDate = _marker,
+    int? alternateInterval,
   }) {
     return ScheduleCardModel(
       cardKey: cardKey ?? this.cardKey,
@@ -278,6 +301,14 @@ class ScheduleCardModel {
           ? this.initialToTime
           : initialToTime as TimeOfDay?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      alternateMode: alternateMode ?? this.alternateMode,
+      alternateStartDate: identical(initialAlternateStartDate, _marker)
+          ? this.alternateStartDate
+          : alternateStartDate,
+      alternateEndDate: identical(initialAlternateEndDate, _marker)
+          ? this.alternateEndDate
+          : alternateEndDate,
+      alternateInterval: alternateInterval ?? this.alternateInterval,
     );
   }
 
@@ -362,6 +393,28 @@ String? scheduleValidationMessage({
   required int scheduleIndex,
 }) {
   final schedule = valve.schedules[scheduleIndex];
+  if (schedule.alternateMode) {
+    if (schedule.alternateStartDate == null ||
+        schedule.alternateEndDate == null) {
+      return 'Select both start and end date.';
+    }
+    if (schedule.fromTime == null || schedule.toTime == null) {
+      return 'Select both From and To time.';
+    }
+    if (schedule.alternateStartDate!.isAfter(schedule.alternateEndDate!)) {
+      return 'End date must be after start date.';
+    }
+    if (schedule.alternateInterval < 1 || schedule.alternateInterval > 6) {
+      return 'Select a valid alternate interval.';
+    }
+    final fromMinutes = toMinutes(schedule.fromTime!);
+    final toMinutesValue = toMinutes(schedule.toTime!);
+    if (fromMinutes >= toMinutesValue) {
+      return '"To" time must be greater than "From" time.';
+    }
+    return null;
+  }
+
   if (schedule.selectedDays.isEmpty) {
     return 'Select at least one day.';
   }

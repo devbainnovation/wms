@@ -28,6 +28,46 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
     final titleText = valveLabel.trim().isEmpty ? 'Valve Schedule' : valveLabel;
 
     final editorController = ref.watch(valveScheduleEditorProvider(schedule));
+    final timeDurationText =
+        editorController.state.timeTouchEnabled &&
+            editorController.state.fromTime != null &&
+            editorController.state.toTime != null
+        ? () {
+            final duration = durationInMinutes(
+              editorController.state.fromTime!,
+              editorController.state.toTime!,
+            );
+            return duration > 0
+                ? 'Time: $duration min'
+                : 'Time: invalid time range';
+          }()
+        : null;
+    final timeDurationIsValid =
+        editorController.state.timeTouchEnabled &&
+        editorController.state.fromTime != null &&
+        editorController.state.toTime != null &&
+        durationInMinutes(
+              editorController.state.fromTime!,
+              editorController.state.toTime!,
+            ) >
+            0;
+    final intervalDateErrorText =
+        !editorController.state.allMode &&
+            editorController.state.alternateStartDate != null &&
+            editorController.state.alternateEndDate != null
+        ? () {
+            final start = editorController.state.alternateStartDate!;
+            final end = editorController.state.alternateEndDate!;
+            final delta = end.difference(start).inDays;
+            if (end.isBefore(start)) {
+              return 'End date must be after start date';
+            }
+            if (delta < editorController.state.alternateInterval) {
+              return 'End date must be at least ${editorController.state.alternateInterval} day(s) after start date';
+            }
+            return null;
+          }()
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -52,7 +92,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Use the toggle below to switch between all days and alternate days.',
+              'Use the toggle below to switch between weekly and interval mode.',
               style: const TextStyle(color: AppColors.greyText, fontSize: 13),
             ),
             const SizedBox(height: 20),
@@ -78,7 +118,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                       elevation: 0,
                     ),
                     onPressed: () => editorController.selectAllMode(),
-                    child: const Text('All'),
+                    child: const Text('WEEKLY'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -101,7 +141,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                       ),
                     ),
                     onPressed: () => editorController.selectAlternateMode(),
-                    child: const Text('Alternate'),
+                    child: const Text('INTERVAL'),
                   ),
                 ),
               ],
@@ -133,42 +173,211 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: dayChips.map((item) {
-                final selected = editorController.state.selectedDays.contains(
-                  item.apiDay,
-                );
-                return _SmallDayChip(
-                  label: item.shortLabel,
-                  selected: selected,
-                  enabled: !editorController.state.allMode && canEditSchedule,
-                  onTap: () => editorController.toggleDay(item.apiDay),
-                );
-              }).toList(),
-            ),
+            if (editorController.state.allMode)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      <DayChipData>[
+                        const DayChipData(
+                          apiDay: 0,
+                          shortLabel: 'All',
+                          fullLabel: 'All',
+                        ),
+                        ...dayChips,
+                      ].map((item) {
+                        final selected = item.apiDay == 0
+                            ? editorController.state.selectedDays.length == 7
+                            : editorController.state.selectedDays.contains(
+                                item.apiDay,
+                              );
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: _SmallDayChip(
+                            label: item.shortLabel,
+                            selected: selected,
+                            enabled: canEditSchedule,
+                            onTap: () =>
+                                editorController.toggleDay(item.apiDay),
+                          ),
+                        );
+                      }).toList(),
+                ),
+              )
+            else ...[
+              Text(
+                'Select alternate interval',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkText,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: List<Widget>.generate(6, (index) {
+                  final value = index + 1;
+                  final isSelected =
+                      editorController.state.alternateInterval == value;
+                  return SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: InkWell(
+                      onTap: canEditSchedule
+                          ? () => editorController.setAlternateInterval(value)
+                          : null,
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? AppColors.primaryTeal
+                              : AppColors.white,
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primaryTeal
+                                : AppColors.lightGreyText,
+                            width: 1.4,
+                          ),
+                        ),
+                        child: Text(
+                          '$value',
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppColors.white
+                                : AppColors.darkText,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _EditorDateField(
+                      label: 'Start',
+                      value: editorController.state.alternateStartDate,
+                      onTap: canEditSchedule
+                          ? () => _pickAlternateStartDate(
+                              context,
+                              editorController,
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _EditorDateField(
+                      label: 'End',
+                      value: editorController.state.alternateEndDate,
+                      onTap: canEditSchedule
+                          ? () =>
+                                _pickAlternateEndDate(context, editorController)
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+              if (intervalDateErrorText != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_month_rounded,
+                      size: 18,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      intervalDateErrorText,
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
             const SizedBox(height: 24),
-            _EditorTimeField(
-              label: 'From',
-              value: editorController.state.fromTime,
-              onTap: canEditSchedule
-                  ? () => _pickFromTime(context, ref, editorController)
-                  : null,
+            Row(
+              children: [
+                Expanded(
+                  child: _EditorTimeField(
+                    label: 'From',
+                    value: editorController.state.fromTime,
+                    onTap: canEditSchedule
+                        ? () => _pickFromTime(context, ref, editorController)
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _EditorTimeField(
+                    label: 'To',
+                    value: editorController.state.toTime,
+                    onTap: canEditSchedule
+                        ? () => _pickToTime(context, ref, editorController)
+                        : null,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 14),
-            _EditorTimeField(
-              label: 'To',
-              value: editorController.state.toTime,
-              onTap: canEditSchedule
-                  ? () => _pickToTime(context, ref, editorController)
-                  : null,
-            ),
+            if (timeDurationText != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: timeDurationIsValid
+                        ? AppColors.greenSecondary
+                        : AppColors.error,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.timelapse,
+                      size: 18,
+                      color: AppColors.greenSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      timeDurationText,
+                      style: TextStyle(
+                        color: timeDurationIsValid
+                            ? AppColors.greyText
+                            : AppColors.error,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             if (!editorController.hasValidSchedule)
-              const Text(
-                'Select at least one day and choose a valid from/to time range.',
-                style: TextStyle(
+              Text(
+                editorController.state.allMode
+                    ? 'Select at least one day and choose a valid from/to time range.'
+                    : 'Select a date range, alternate interval, and choose valid from/to times.',
+                style: const TextStyle(
                   color: AppColors.error,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -260,6 +469,39 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
     );
     if (picked != null) {
       controller.setToTime(picked);
+    }
+  }
+
+  Future<void> _pickAlternateStartDate(
+    BuildContext context,
+    ValveScheduleEditorController controller,
+  ) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: controller.state.alternateStartDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      controller.setAlternateStartDate(picked);
+    }
+  }
+
+  Future<void> _pickAlternateEndDate(
+    BuildContext context,
+    ValveScheduleEditorController controller,
+  ) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate:
+          controller.state.alternateEndDate ??
+          controller.state.alternateStartDate ??
+          DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      controller.setAlternateEndDate(picked);
     }
   }
 
@@ -417,4 +659,71 @@ class _EditorTimeField extends StatelessWidget {
       ),
     );
   }
+}
+
+class _EditorDateField extends StatelessWidget {
+  const _EditorDateField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime? value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.lightBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.lightGreyText),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.greyText,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value == null ? 'Select date' : _formatDate(value!),
+                    style: TextStyle(
+                      color: value == null
+                          ? AppColors.greyText
+                          : AppColors.darkText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.calendar_month_rounded,
+              color: AppColors.primaryTeal,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatDate(DateTime date) {
+  return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }

@@ -9,6 +9,10 @@ class ValveScheduleEditorState {
     required this.fromTime,
     required this.toTime,
     required this.isSubmitting,
+    required this.alternateStartDate,
+    required this.alternateEndDate,
+    required this.alternateInterval,
+    required this.timeTouchEnabled,
   });
 
   final bool allMode;
@@ -16,6 +20,10 @@ class ValveScheduleEditorState {
   final TimeOfDay? fromTime;
   final TimeOfDay? toTime;
   final bool isSubmitting;
+  final DateTime? alternateStartDate;
+  final DateTime? alternateEndDate;
+  final int alternateInterval;
+  final bool timeTouchEnabled;
 
   ValveScheduleEditorState copyWith({
     bool? allMode,
@@ -23,6 +31,10 @@ class ValveScheduleEditorState {
     TimeOfDay? fromTime,
     TimeOfDay? toTime,
     bool? isSubmitting,
+    DateTime? alternateStartDate,
+    DateTime? alternateEndDate,
+    int? alternateInterval,
+    bool? timeTouchEnabled,
   }) {
     return ValveScheduleEditorState(
       allMode: allMode ?? this.allMode,
@@ -30,6 +42,10 @@ class ValveScheduleEditorState {
       fromTime: fromTime ?? this.fromTime,
       toTime: toTime ?? this.toTime,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      alternateStartDate: alternateStartDate ?? this.alternateStartDate,
+      alternateEndDate: alternateEndDate ?? this.alternateEndDate,
+      alternateInterval: alternateInterval ?? this.alternateInterval,
+      timeTouchEnabled: timeTouchEnabled ?? this.timeTouchEnabled,
     );
   }
 }
@@ -42,11 +58,15 @@ final valveScheduleEditorProvider = legacy.ChangeNotifierProvider.autoDispose
 class ValveScheduleEditorController extends ChangeNotifier {
   ValveScheduleEditorController(ScheduleCardModel schedule)
     : _state = ValveScheduleEditorState(
-        allMode: schedule.selectedDays.length == 7,
+        allMode: !schedule.alternateMode && schedule.selectedDays.length == 7,
         selectedDays: Set<int>.from(schedule.selectedDays),
         fromTime: schedule.fromTime,
         toTime: schedule.toTime,
         isSubmitting: false,
+        alternateStartDate: schedule.alternateStartDate,
+        alternateEndDate: schedule.alternateEndDate,
+        alternateInterval: schedule.alternateInterval,
+        timeTouchEnabled: false,
       );
 
   late ValveScheduleEditorState _state;
@@ -54,18 +74,38 @@ class ValveScheduleEditorController extends ChangeNotifier {
   ValveScheduleEditorState get state => _state;
 
   bool get hasValidSchedule {
-    return _state.selectedDays.isNotEmpty &&
+    if (_state.allMode) {
+      return _state.selectedDays.isNotEmpty &&
+          _state.fromTime != null &&
+          _state.toTime != null &&
+          durationInMinutes(_state.fromTime!, _state.toTime!) > 0;
+    }
+    return _state.alternateStartDate != null &&
+        _state.alternateEndDate != null &&
+        !_state.alternateStartDate!.isAfter(_state.alternateEndDate!) &&
+        _state.alternateEndDate!
+                .difference(_state.alternateStartDate!)
+                .inDays >=
+            _state.alternateInterval &&
+        _state.alternateInterval >= 1 &&
+        _state.alternateInterval <= 6 &&
         _state.fromTime != null &&
         _state.toTime != null &&
         durationInMinutes(_state.fromTime!, _state.toTime!) > 0;
   }
 
-  String get modeLabel => _state.allMode ? 'All days' : 'Alternate days';
+  String get modeLabel => _state.allMode ? 'Weekly' : 'Interval';
 
   void selectAllMode() {
     _state = _state.copyWith(
       allMode: true,
-      selectedDays: dayChips.map((item) => item.apiDay).toSet(),
+      selectedDays: <int>{},
+      fromTime: null,
+      toTime: null,
+      alternateStartDate: null,
+      alternateEndDate: null,
+      alternateInterval: 1,
+      timeTouchEnabled: false,
     );
     notifyListeners();
   }
@@ -73,17 +113,26 @@ class ValveScheduleEditorController extends ChangeNotifier {
   void selectAlternateMode() {
     _state = _state.copyWith(
       allMode: false,
-      selectedDays: _state.selectedDays.length == 7
-          ? <int>{}
-          : _state.selectedDays,
+      selectedDays: <int>{},
+      fromTime: null,
+      toTime: null,
+      alternateStartDate: null,
+      alternateEndDate: null,
+      alternateInterval: 1,
+      timeTouchEnabled: false,
     );
     notifyListeners();
   }
 
   void toggleDay(int apiDay) {
-    if (_state.allMode) {
+    if (apiDay == 0) {
+      final allDays = dayChips.map((item) => item.apiDay).toSet();
+      final nextDays = _state.selectedDays.length == 7 ? <int>{} : allDays;
+      _state = _state.copyWith(selectedDays: nextDays);
+      notifyListeners();
       return;
     }
+
     final nextDays = Set<int>.from(_state.selectedDays);
     if (!nextDays.add(apiDay)) {
       nextDays.remove(apiDay);
@@ -93,12 +142,27 @@ class ValveScheduleEditorController extends ChangeNotifier {
   }
 
   void setFromTime(TimeOfDay time) {
-    _state = _state.copyWith(fromTime: time);
+    _state = _state.copyWith(fromTime: time, timeTouchEnabled: true);
     notifyListeners();
   }
 
   void setToTime(TimeOfDay time) {
-    _state = _state.copyWith(toTime: time);
+    _state = _state.copyWith(toTime: time, timeTouchEnabled: true);
+    notifyListeners();
+  }
+
+  void setAlternateStartDate(DateTime date) {
+    _state = _state.copyWith(alternateStartDate: date);
+    notifyListeners();
+  }
+
+  void setAlternateEndDate(DateTime date) {
+    _state = _state.copyWith(alternateEndDate: date);
+    notifyListeners();
+  }
+
+  void setAlternateInterval(int interval) {
+    _state = _state.copyWith(alternateInterval: interval);
     notifyListeners();
   }
 
@@ -112,6 +176,10 @@ class ValveScheduleEditorController extends ChangeNotifier {
       selectedDays: Set<int>.from(_state.selectedDays),
       fromTime: _state.fromTime,
       toTime: _state.toTime,
+      alternateMode: !_state.allMode,
+      alternateStartDate: _state.alternateStartDate,
+      alternateEndDate: _state.alternateEndDate,
+      alternateInterval: _state.alternateInterval,
     );
   }
 }

@@ -236,6 +236,27 @@ class _ValveSettingView extends ConsumerWidget {
                                           );
                                         }
 
+                                        notifier.updateAlternateMode(
+                                          index,
+                                          newScheduleIndex,
+                                          updatedSchedule.alternateMode,
+                                        );
+                                        notifier.updateAlternateStartDate(
+                                          index,
+                                          newScheduleIndex,
+                                          updatedSchedule.alternateStartDate,
+                                        );
+                                        notifier.updateAlternateEndDate(
+                                          index,
+                                          newScheduleIndex,
+                                          updatedSchedule.alternateEndDate,
+                                        );
+                                        notifier.updateAlternateInterval(
+                                          index,
+                                          newScheduleIndex,
+                                          updatedSchedule.alternateInterval,
+                                        );
+
                                         for (var day = 1; day <= 7; day++) {
                                           if (updatedSchedule.selectedDays
                                               .contains(day)) {
@@ -365,6 +386,38 @@ class _ValveSettingView extends ConsumerWidget {
                   scheduleIndex,
                   isStart: false,
                   value: updatedSchedule.toTime!,
+                );
+              }
+
+              if (updatedSchedule.alternateMode != schedule.alternateMode) {
+                notifier.updateAlternateMode(
+                  valveIndex,
+                  scheduleIndex,
+                  updatedSchedule.alternateMode,
+                );
+              }
+              if (updatedSchedule.alternateStartDate !=
+                  schedule.alternateStartDate) {
+                notifier.updateAlternateStartDate(
+                  valveIndex,
+                  scheduleIndex,
+                  updatedSchedule.alternateStartDate,
+                );
+              }
+              if (updatedSchedule.alternateEndDate !=
+                  schedule.alternateEndDate) {
+                notifier.updateAlternateEndDate(
+                  valveIndex,
+                  scheduleIndex,
+                  updatedSchedule.alternateEndDate,
+                );
+              }
+              if (updatedSchedule.alternateInterval !=
+                  schedule.alternateInterval) {
+                notifier.updateAlternateInterval(
+                  valveIndex,
+                  scheduleIndex,
+                  updatedSchedule.alternateInterval,
                 );
               }
 
