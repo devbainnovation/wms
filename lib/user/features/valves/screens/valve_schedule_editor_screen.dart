@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/valves/models/valve_setting_models.dart';
+import 'package:wms/user/features/valves/providers/valve_schedule_editor_controller.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
 
-class ValveScheduleEditorScreen extends StatefulWidget {
+class ValveScheduleEditorScreen extends ConsumerWidget {
   const ValveScheduleEditorScreen({
     required this.valveLabel,
     required this.schedule,
@@ -22,153 +24,11 @@ class ValveScheduleEditorScreen extends StatefulWidget {
   final Future<String?> Function()? onDelete;
 
   @override
-  State<ValveScheduleEditorScreen> createState() =>
-      _ValveScheduleEditorScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final titleText = valveLabel.trim().isEmpty ? 'Valve Schedule' : valveLabel;
 
-class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
-  late bool _allMode;
-  late Set<int> _selectedDays;
-  late TimeOfDay? _fromTime;
-  late TimeOfDay? _toTime;
-  bool _isSubmitting = false;
+    final editorController = ref.watch(valveScheduleEditorProvider(schedule));
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedDays = Set<int>.from(widget.schedule.selectedDays);
-    _allMode = _selectedDays.length == 7;
-    if (_allMode) {
-      _selectedDays = dayChips.map((item) => item.apiDay).toSet();
-    }
-    _fromTime = widget.schedule.fromTime;
-    _toTime = widget.schedule.toTime;
-  }
-
-  bool get _hasValidSchedule {
-    return _selectedDays.isNotEmpty &&
-        _fromTime != null &&
-        _toTime != null &&
-        durationInMinutes(_fromTime!, _toTime!) > 0;
-  }
-
-  Future<void> _pickFromTime() async {
-    final picked = await pickValveScheduleTime(
-      context: context,
-      initial: _fromTime ?? const TimeOfDay(hour: 8, minute: 0),
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        _fromTime = picked;
-      });
-    }
-  }
-
-  Future<void> _pickToTime() async {
-    final picked = await pickValveScheduleTime(
-      context: context,
-      initial: _toTime ?? const TimeOfDay(hour: 9, minute: 0),
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        _toTime = picked;
-      });
-    }
-  }
-
-  void _selectAllMode() {
-    setState(() {
-      _allMode = true;
-      _selectedDays = dayChips.map((item) => item.apiDay).toSet();
-    });
-  }
-
-  void _selectAlternateMode() {
-    setState(() {
-      _allMode = false;
-      if (_selectedDays.length == 7) {
-        _selectedDays = <int>{};
-      }
-    });
-  }
-
-  void _toggleDay(int apiDay) {
-    if (_allMode) {
-      return;
-    }
-    setState(() {
-      if (_selectedDays.contains(apiDay)) {
-        _selectedDays.remove(apiDay);
-      } else {
-        _selectedDays.add(apiDay);
-      }
-    });
-  }
-
-  String get _modeLabel => _allMode ? 'All days' : 'Alternate days';
-
-  Future<void> _handleSave() async {
-    if (!_hasValidSchedule || !widget.canEditSchedule) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final schedule = widget.schedule.copyWith(
-      selectedDays: Set<int>.from(_selectedDays),
-      fromTime: _fromTime,
-      toTime: _toTime,
-    );
-
-    final error = await widget.onSave(schedule);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    if (error != null) {
-      showAppSnackBar(context, error, status: AppSnackBarStatus.error);
-      return;
-    }
-
-    Navigator.of(context).pop();
-  }
-
-  Future<void> _handleDelete() async {
-    if (widget.onDelete == null) {
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-    });
-    final error = await widget.onDelete!();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _isSubmitting = false;
-    });
-    if (error != null) {
-      if (error == '__cancelled__') {
-        return;
-      }
-      showAppSnackBar(context, error, status: AppSnackBarStatus.error);
-      return;
-    }
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final titleText = widget.valveLabel.trim().isEmpty
-        ? 'Valve Schedule'
-        : widget.valveLabel;
     return Scaffold(
       appBar: AppBar(
         title: Text(titleText),
@@ -183,7 +43,7 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              widget.schedule.persisted ? 'Edit schedule' : 'Create schedule',
+              schedule.persisted ? 'Edit schedule' : 'Create schedule',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -201,23 +61,23 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                 Expanded(
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: _allMode
+                      backgroundColor: editorController.state.allMode
                           ? AppColors.primaryTeal
                           : AppColors.lightBackground,
-                      foregroundColor: _allMode
+                      foregroundColor: editorController.state.allMode
                           ? AppColors.white
                           : AppColors.darkText,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                         side: BorderSide(
-                          color: _allMode
+                          color: editorController.state.allMode
                               ? AppColors.primaryTeal
                               : AppColors.lightGreyText,
                         ),
                       ),
                       elevation: 0,
                     ),
-                    onPressed: _selectAllMode,
+                    onPressed: () => editorController.selectAllMode(),
                     child: const Text('All'),
                   ),
                 ),
@@ -225,14 +85,14 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: !_allMode
+                      backgroundColor: !editorController.state.allMode
                           ? AppColors.primaryTeal
                           : AppColors.lightBackground,
-                      foregroundColor: !_allMode
+                      foregroundColor: !editorController.state.allMode
                           ? AppColors.white
                           : AppColors.darkText,
                       side: BorderSide(
-                        color: !_allMode
+                        color: !editorController.state.allMode
                             ? AppColors.primaryTeal
                             : AppColors.lightGreyText,
                       ),
@@ -240,7 +100,7 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: _selectAlternateMode,
+                    onPressed: () => editorController.selectAlternateMode(),
                     child: const Text('Alternate'),
                   ),
                 ),
@@ -265,7 +125,7 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                 border: Border.all(color: AppColors.lightGreyText),
               ),
               child: Text(
-                _modeLabel,
+                editorController.modeLabel,
                 style: const TextStyle(
                   color: AppColors.darkText,
                   fontWeight: FontWeight.w700,
@@ -277,29 +137,35 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
               spacing: 10,
               runSpacing: 10,
               children: dayChips.map((item) {
-                final selected = _selectedDays.contains(item.apiDay);
+                final selected = editorController.state.selectedDays.contains(
+                  item.apiDay,
+                );
                 return _SmallDayChip(
                   label: item.shortLabel,
                   selected: selected,
-                  enabled: !_allMode && widget.canEditSchedule,
-                  onTap: () => _toggleDay(item.apiDay),
+                  enabled: !editorController.state.allMode && canEditSchedule,
+                  onTap: () => editorController.toggleDay(item.apiDay),
                 );
               }).toList(),
             ),
             const SizedBox(height: 24),
             _EditorTimeField(
               label: 'From',
-              value: _fromTime,
-              onTap: widget.canEditSchedule ? _pickFromTime : null,
+              value: editorController.state.fromTime,
+              onTap: canEditSchedule
+                  ? () => _pickFromTime(context, ref, editorController)
+                  : null,
             ),
             const SizedBox(height: 14),
             _EditorTimeField(
               label: 'To',
-              value: _toTime,
-              onTap: widget.canEditSchedule ? _pickToTime : null,
+              value: editorController.state.toTime,
+              onTap: canEditSchedule
+                  ? () => _pickToTime(context, ref, editorController)
+                  : null,
             ),
             const SizedBox(height: 16),
-            if (!_hasValidSchedule)
+            if (!editorController.hasValidSchedule)
               const Text(
                 'Select at least one day and choose a valid from/to time range.',
                 style: TextStyle(
@@ -317,10 +183,12 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(
             children: [
-              if (widget.schedule.persisted && widget.canDeleteSchedule)
+              if (schedule.persisted && canDeleteSchedule)
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isSubmitting ? null : _handleDelete,
+                    onPressed: editorController.state.isSubmitting
+                        ? null
+                        : () => _handleDelete(context, ref, editorController),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                       side: const BorderSide(color: AppColors.error),
@@ -332,23 +200,23 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                     child: const Text('Delete'),
                   ),
                 ),
-              if (widget.schedule.persisted && widget.canDeleteSchedule)
+              if (schedule.persisted && canDeleteSchedule)
                 const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed:
-                      (!widget.canEditSchedule ||
-                          !_hasValidSchedule ||
-                          _isSubmitting)
+                      (!canEditSchedule ||
+                          !editorController.hasValidSchedule ||
+                          editorController.state.isSubmitting)
                       ? null
-                      : _handleSave,
+                      : () => _handleSave(context, ref, editorController),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: _isSubmitting
+                  child: editorController.state.isSubmitting
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -357,7 +225,7 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
                             color: AppColors.white,
                           ),
                         )
-                      : Text(widget.schedule.persisted ? 'Update' : 'Add'),
+                      : Text(schedule.persisted ? 'Update' : 'Add'),
                 ),
               ),
             ],
@@ -365,6 +233,86 @@ class _ValveScheduleEditorScreenState extends State<ValveScheduleEditorScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickFromTime(
+    BuildContext context,
+    WidgetRef ref,
+    ValveScheduleEditorController controller,
+  ) async {
+    final picked = await pickValveScheduleTime(
+      context: context,
+      initial: controller.state.fromTime ?? const TimeOfDay(hour: 8, minute: 0),
+    );
+    if (picked != null) {
+      controller.setFromTime(picked);
+    }
+  }
+
+  Future<void> _pickToTime(
+    BuildContext context,
+    WidgetRef ref,
+    ValveScheduleEditorController controller,
+  ) async {
+    final picked = await pickValveScheduleTime(
+      context: context,
+      initial: controller.state.toTime ?? const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (picked != null) {
+      controller.setToTime(picked);
+    }
+  }
+
+  Future<void> _handleSave(
+    BuildContext context,
+    WidgetRef ref,
+    ValveScheduleEditorController controller,
+  ) async {
+    if (!controller.hasValidSchedule || !canEditSchedule) {
+      return;
+    }
+
+    controller.setIsSubmitting(true);
+
+    final updatedSchedule = controller.buildSchedule(schedule);
+    final error = await onSave(updatedSchedule);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    controller.setIsSubmitting(false);
+
+    if (error != null) {
+      showAppSnackBar(context, error, status: AppSnackBarStatus.error);
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _handleDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ValveScheduleEditorController controller,
+  ) async {
+    if (onDelete == null) {
+      return;
+    }
+    controller.setIsSubmitting(true);
+    final error = await onDelete!();
+    if (!context.mounted) {
+      return;
+    }
+    controller.setIsSubmitting(false);
+    if (error != null) {
+      if (error == '__cancelled__') {
+        return;
+      }
+      showAppSnackBar(context, error, status: AppSnackBarStatus.error);
+      return;
+    }
+    Navigator.of(context).pop();
   }
 }
 

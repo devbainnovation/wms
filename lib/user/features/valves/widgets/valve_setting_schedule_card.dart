@@ -7,118 +7,120 @@ class ValveSettingScheduleCard extends StatelessWidget {
     required this.schedule,
     required this.scheduleIndex,
     required this.canEditSchedule,
+    required this.canDeleteSchedule,
     required this.onOpenEditor,
+    required this.onDelete,
     super.key,
   });
 
   final ScheduleCardModel schedule;
   final int scheduleIndex;
   final bool canEditSchedule;
+  final bool canDeleteSchedule;
   final VoidCallback onOpenEditor;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.lightBackground,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.lightGreyText),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Schedule ${scheduleIndex + 1}',
-                  style: const TextStyle(
-                    color: AppColors.darkText,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (schedule.persisted)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGreen,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Saved',
-                    style: TextStyle(
-                      color: AppColors.darkTeal,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_month_rounded,
-                size: 16,
-                color: AppColors.greyText,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _scheduleDaysLabel(schedule),
-                  style: const TextStyle(
-                    color: AppColors.darkText,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            'Schedule ${scheduleIndex + 1}',
+            style: const TextStyle(
+              color: AppColors.darkText,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.access_time_rounded,
-                size: 16,
-                color: AppColors.greyText,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_month_rounded,
+                          size: 14,
+                          color: AppColors.greyText,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _scheduleDaysLabel(schedule),
+                          style: const TextStyle(
+                            color: AppColors.darkText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time_rounded,
+                          size: 14,
+                          color: AppColors.greyText,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          schedule.fromTime == null || schedule.toTime == null
+                              ? 'Not set'
+                              : '${schedule.fromTime!.format(context)} - ${schedule.toTime!.format(context)}',
+                          style: const TextStyle(
+                            color: AppColors.darkText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  schedule.fromTime == null || schedule.toTime == null
-                      ? 'Tap to edit schedule details'
-                      : '${schedule.fromTime!.format(context)} - ${schedule.toTime!.format(context)}',
-                  style: const TextStyle(
-                    color: AppColors.greyText,
-                    fontSize: 13,
-                  ),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (canEditSchedule)
+                    IconButton(
+                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      padding: EdgeInsets.zero,
+                      splashRadius: 16,
+                      color: AppColors.primaryTeal,
+                      onPressed: onOpenEditor,
+                    ),
+                  if (canDeleteSchedule)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      padding: EdgeInsets.zero,
+                      splashRadius: 16,
+                      color: AppColors.error,
+                      onPressed: onDelete,
+                    ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: canEditSchedule ? onOpenEditor : null,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: Text(
-                schedule.persisted ? 'Edit schedule' : 'Add schedule',
-              ),
-            ),
           ),
         ],
       ),

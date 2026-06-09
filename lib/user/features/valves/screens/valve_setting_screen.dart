@@ -175,23 +175,108 @@ class _ValveSettingView extends ConsumerWidget {
                       }
                     },
                     scheduleChildren: [
-                      for (
-                        var scheduleIndex = 0;
-                        scheduleIndex < state.valves[index].schedules.length;
-                        scheduleIndex++
-                      ) ...[
-                        _buildScheduleCard(
-                          context: context,
-                          ref: ref,
-                          valveIndex: index,
-                          scheduleIndex: scheduleIndex,
-                          valve: state.valves[index],
-                          access: access,
+                      ..._buildSavedScheduleCards(
+                        context: context,
+                        ref: ref,
+                        valveIndex: index,
+                        valve: state.valves[index],
+                        access: access,
+                      ),
+                      if (state.valves[index].savedScheduleCount > 0)
+                        const SizedBox(height: 12),
+                      if (state.valves[index].savedScheduleCount < 3 &&
+                          access.canCreateSchedules)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                final newSchedule =
+                                    ScheduleCardModel.createDraft();
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ValveScheduleEditorScreen(
+                                      valveLabel:
+                                          state.valves[index].valveLabel,
+                                      schedule: newSchedule,
+                                      canEditSchedule: true,
+                                      canDeleteSchedule: false,
+                                      onSave: (updatedSchedule) async {
+                                        final notifier = ref.read(
+                                          valveSettingProvider(args),
+                                        );
+                                        final newScheduleIndex = state
+                                            .valves[index]
+                                            .schedules
+                                            .length;
+                                        notifier.toggleScheduleExpanded(
+                                          index,
+                                          newScheduleIndex,
+                                        );
+                                        await Future.delayed(
+                                          const Duration(milliseconds: 100),
+                                        );
+
+                                        if (updatedSchedule.fromTime != null) {
+                                          notifier.updateScheduleTime(
+                                            index,
+                                            newScheduleIndex,
+                                            isStart: true,
+                                            value: updatedSchedule.fromTime!,
+                                          );
+                                        }
+                                        if (updatedSchedule.toTime != null) {
+                                          notifier.updateScheduleTime(
+                                            index,
+                                            newScheduleIndex,
+                                            isStart: false,
+                                            value: updatedSchedule.toTime!,
+                                          );
+                                        }
+
+                                        for (var day = 1; day <= 7; day++) {
+                                          if (updatedSchedule.selectedDays
+                                              .contains(day)) {
+                                            notifier.toggleDay(
+                                              index,
+                                              newScheduleIndex,
+                                              day,
+                                            );
+                                          }
+                                        }
+
+                                        final error = await notifier
+                                            .submitSchedule(
+                                              index,
+                                              newScheduleIndex,
+                                              addAnotherCard: false,
+                                            );
+                                        if (error == null && context.mounted) {
+                                          showValveSettingSnackBar(
+                                            context,
+                                            'Schedule saved.',
+                                          );
+                                          Navigator.of(context).pop();
+                                        }
+                                        return error;
+                                      },
+                                      onDelete: null,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.add_rounded, size: 18),
+                              label: const Text('Add Schedule'),
+                              style: FilledButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        if (scheduleIndex <
-                            state.valves[index].schedules.length - 1)
-                          const SizedBox(height: 12),
-                      ],
                     ],
                   ),
                   if (index < state.valves.length - 1)
@@ -202,6 +287,39 @@ class _ValveSettingView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildSavedScheduleCards({
+    required BuildContext context,
+    required WidgetRef ref,
+    required int valveIndex,
+    required ValveComponentModel valve,
+    required _ValveSettingAccess access,
+  }) {
+    final savedSchedules = valve.schedules.where((s) => s.persisted).toList();
+    final widgets = <Widget>[];
+
+    for (var i = 0; i < savedSchedules.length; i++) {
+      final schedule = savedSchedules[i];
+      final scheduleIndex = valve.schedules.indexOf(schedule);
+
+      widgets.add(
+        _buildScheduleCard(
+          context: context,
+          ref: ref,
+          valveIndex: valveIndex,
+          scheduleIndex: scheduleIndex,
+          valve: valve,
+          access: access,
+        ),
+      );
+
+      if (i < savedSchedules.length - 1) {
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    return widgets;
   }
 
   Widget _buildScheduleCard({
@@ -222,6 +340,7 @@ class _ValveSettingView extends ConsumerWidget {
       schedule: schedule,
       scheduleIndex: scheduleIndex,
       canEditSchedule: canEditSchedule,
+      canDeleteSchedule: access.canDeleteSchedules && schedule.persisted,
       onOpenEditor: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ValveScheduleEditorScreen(
@@ -294,6 +413,23 @@ class _ValveSettingView extends ConsumerWidget {
           ),
         ),
       ),
+      onDelete: () async {
+        if (hasRunningScheduleNow(valve)) {
+          showValveSettingSnackBar(
+            context,
+            "This schedule can't be deleted while the valve is running. Please stop the valve and try again.",
+          );
+          return;
+        }
+        final confirmed = await confirmValveScheduleDelete(context);
+        if (confirmed != true || !context.mounted) {
+          return;
+        }
+        await notifier.deleteSchedule(valveIndex, scheduleIndex);
+        if (context.mounted) {
+          showValveSettingSnackBar(context, 'Schedule deleted.');
+        }
+      },
     );
   }
 }
