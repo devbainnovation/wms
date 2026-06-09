@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/providers/providers.dart';
@@ -96,6 +97,27 @@ class UserDrawer extends ConsumerWidget {
               await ref
                   .read(authLogoutControllerProvider.notifier)
                   .logout(sessionId: sessionId);
+            },
+          ),
+          const Spacer(),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final versionText = snapshot.hasData
+                  ? 'Version ${snapshot.data!.version}${snapshot.data!.buildNumber.isNotEmpty ? ' (${snapshot.data!.buildNumber})' : ''}'
+                  : 'Version';
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                child: Center(
+                  child: Text(
+                    versionText,
+                    style: const TextStyle(
+                      color: AppColors.greyText,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ],
