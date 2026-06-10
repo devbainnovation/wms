@@ -9,9 +9,7 @@ class _MotorSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final motor = device.motor;
     final isOn = motor?.isOn ?? false;
-    final motorLocation = motor?.installedArea.trim().isNotEmpty == true
-        ? motor!.installedArea
-        : '';
+    final motorLocation = motor?.installedArea.trim() ?? '';
     final motorTitle = motorLocation.isEmpty
         ? 'Motor'
         : 'Motor - $motorLocation';
@@ -77,7 +75,6 @@ class _MotorSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 if (motor != null) ...[
-                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: TextStyle(

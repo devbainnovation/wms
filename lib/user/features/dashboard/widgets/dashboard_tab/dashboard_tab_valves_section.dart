@@ -8,11 +8,10 @@ class _ValvesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final valves = device.valves;
-    final activeValveCount = valves.where((valve) => valve.isOn).length;
-    final valveNames = valves
-        .where((valve) => valve.status.toUpperCase() == 'ON')
-        .map((valve) => valve.name)
-        .join(', ');
+    final activeValves = valves.where((v) => v.isOn).toList();
+    final activeValveCount = activeValves.length;
+    final valveNames = activeValves.map((v) => v.name).join(', ');
+
     final showAllValvesOff = device.allValvesOff;
     final expandKey = device.espId.isNotEmpty
         ? device.espId
@@ -38,50 +37,53 @@ class _ValvesSection extends ConsumerWidget {
                         .read(dashboardValvesExpandedProvider.notifier)
                         .toggle(expandKey);
                   },
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Valves',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkText,
+            child: Opacity(
+              opacity: (showAllValvesOff || valves.isEmpty) ? 0.7 : 1.0,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Valves',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkText,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          showAllValvesOff
-                              ? 'All valves are off'
-                              : '$valveNames valve${activeValveCount == 1 ? '' : 's'} on',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: showAllValvesOff
-                                ? AppColors.red
-                                : AppColors.accentGreen,
-                            fontWeight: showAllValvesOff
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                          const SizedBox(height: 4),
+                          Text(
+                            showAllValvesOff
+                                ? 'All valves are off'
+                                : '$valveNames valve${activeValveCount == 1 ? '' : 's'} on',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: showAllValvesOff
+                                  ? AppColors.red
+                                  : AppColors.accentGreen,
+                              fontWeight: showAllValvesOff
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  if (!showAllValvesOff && valves.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      expanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.greyText,
-                    ),
+                    if (!showAllValvesOff && valves.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.greyText,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -123,9 +125,7 @@ class _ValveRow extends StatelessWidget {
         ? valveName
         : '$valveName ($normalizedMode)';
 
-    return Theme(
-      data: Theme.of(context),
-      child: Row(
+    return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -188,8 +188,7 @@ class _ValveRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
