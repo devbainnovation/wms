@@ -144,6 +144,11 @@ class ValveComponentModel {
   int get savedScheduleCount =>
       schedules.where((item) => item.persisted).length;
 
+  bool get hasRunningScheduleNow {
+    final now = DateTime.now();
+    return schedules.any((schedule) => schedule.isRunningAt(now));
+  }
+
   ValveComponentModel copyWith({
     String? valveLabel,
     String? componentName,
@@ -324,6 +329,87 @@ class ScheduleCardModel {
     }
     return !persisted;
   }
+
+  bool isRunningAt(DateTime now) {
+    if (!persisted ||
+        selectedDays.isEmpty ||
+        fromTime == null ||
+        toTime == null) {
+      return false;
+    }
+
+    if (!selectedDays.contains(now.weekday)) {
+      return false;
+    }
+
+    final currentMinutes = now.hour * 60 + now.minute;
+    final fromMinutes = toMinutes(fromTime!);
+    final toMinutesValue = toMinutes(toTime!);
+    return currentMinutes >= fromMinutes && currentMinutes < toMinutesValue;
+  }
+
+  String? validationMessage({
+    required List<ScheduleCardModel> otherSchedules,
+  }) {
+    if (alternateMode) {
+      if (alternateStartDate == null || alternateEndDate == null) {
+        return 'Select both start and end date.';
+      }
+      if (fromTime == null || toTime == null) {
+        return 'Select both From and To time.';
+      }
+      if (alternateStartDate!.isAfter(alternateEndDate!)) {
+        return 'End date must be after start date.';
+      }
+      if (alternateInterval < 1 || alternateInterval > 6) {
+        return 'Select a valid alternate interval.';
+      }
+      final fromMinutes = toMinutes(fromTime!);
+      final toMinutesValue = toMinutes(toTime!);
+      if (fromMinutes >= toMinutesValue) {
+        return '"To" time must be greater than "From" time.';
+      }
+      return null;
+    }
+
+    if (selectedDays.isEmpty) {
+      return 'Select at least one day.';
+    }
+    if (fromTime == null || toTime == null) {
+      return 'Select both From and To time.';
+    }
+
+    final fromMinutes = toMinutes(fromTime!);
+    final toMinutesValue = toMinutes(toTime!);
+    if (fromMinutes >= toMinutesValue) {
+      return '"To" time must be greater than "From" time.';
+    }
+
+    for (final other in otherSchedules) {
+      if (identical(this, other)) {
+        continue;
+      }
+      if (other.selectedDays.isEmpty ||
+          other.fromTime == null ||
+          other.toTime == null) {
+        continue;
+      }
+
+      final sharedDays = selectedDays.intersection(other.selectedDays).isNotEmpty;
+      if (!sharedDays) {
+        continue;
+      }
+
+      final otherStart = toMinutes(other.fromTime!);
+      final otherEnd = toMinutes(other.toTime!);
+      final overlaps = fromMinutes < otherEnd && otherStart < toMinutesValue;
+      if (overlaps) {
+        return 'Schedule time overlaps another card for the selected day.';
+      }
+    }
+
+    return null;
+  }
 }
 
 bool sameTimeOfDay(TimeOfDay? left, TimeOfDay? right) {
@@ -359,103 +445,6 @@ int durationInMinutes(TimeOfDay from, TimeOfDay to) {
 }
 
 int toMinutes(TimeOfDay value) => value.hour * 60 + value.minute;
-
-bool isScheduleRunningAt({
-  required ScheduleCardModel schedule,
-  required DateTime now,
-}) {
-  if (!schedule.persisted ||
-      schedule.selectedDays.isEmpty ||
-      schedule.fromTime == null ||
-      schedule.toTime == null) {
-    return false;
-  }
-
-  if (!schedule.selectedDays.contains(now.weekday)) {
-    return false;
-  }
-
-  final currentMinutes = now.hour * 60 + now.minute;
-  final fromMinutes = toMinutes(schedule.fromTime!);
-  final toMinutesValue = toMinutes(schedule.toTime!);
-  return currentMinutes >= fromMinutes && currentMinutes < toMinutesValue;
-}
-
-bool hasRunningScheduleNow(ValveComponentModel valve, {DateTime? now}) {
-  final current = now ?? DateTime.now();
-  return valve.schedules.any(
-    (schedule) => isScheduleRunningAt(schedule: schedule, now: current),
-  );
-}
-
-String? scheduleValidationMessage({
-  required ValveComponentModel valve,
-  required int scheduleIndex,
-}) {
-  final schedule = valve.schedules[scheduleIndex];
-  if (schedule.alternateMode) {
-    if (schedule.alternateStartDate == null ||
-        schedule.alternateEndDate == null) {
-      return 'Select both start and end date.';
-    }
-    if (schedule.fromTime == null || schedule.toTime == null) {
-      return 'Select both From and To time.';
-    }
-    if (schedule.alternateStartDate!.isAfter(schedule.alternateEndDate!)) {
-      return 'End date must be after start date.';
-    }
-    if (schedule.alternateInterval < 1 || schedule.alternateInterval > 6) {
-      return 'Select a valid alternate interval.';
-    }
-    final fromMinutes = toMinutes(schedule.fromTime!);
-    final toMinutesValue = toMinutes(schedule.toTime!);
-    if (fromMinutes >= toMinutesValue) {
-      return '"To" time must be greater than "From" time.';
-    }
-    return null;
-  }
-
-  if (schedule.selectedDays.isEmpty) {
-    return 'Select at least one day.';
-  }
-  if (schedule.fromTime == null || schedule.toTime == null) {
-    return 'Select both From and To time.';
-  }
-
-  final fromMinutes = toMinutes(schedule.fromTime!);
-  final toMinutesValue = toMinutes(schedule.toTime!);
-  if (fromMinutes >= toMinutesValue) {
-    return '"To" time must be greater than "From" time.';
-  }
-
-  for (var index = 0; index < valve.schedules.length; index++) {
-    if (index == scheduleIndex) {
-      continue;
-    }
-    final other = valve.schedules[index];
-    if (other.selectedDays.isEmpty ||
-        other.fromTime == null ||
-        other.toTime == null) {
-      continue;
-    }
-
-    final sharedDays = schedule.selectedDays
-        .intersection(other.selectedDays)
-        .isNotEmpty;
-    if (!sharedDays) {
-      continue;
-    }
-
-    final otherStart = toMinutes(other.fromTime!);
-    final otherEnd = toMinutes(other.toTime!);
-    final overlaps = fromMinutes < otherEnd && otherStart < toMinutesValue;
-    if (overlaps) {
-      return 'Schedule time overlaps another card for the selected day.';
-    }
-  }
-
-  return null;
-}
 
 const List<DayChipData> dayChips = <DayChipData>[
   DayChipData(apiDay: 1, shortLabel: 'M', fullLabel: 'Monday'),

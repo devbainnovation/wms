@@ -21,10 +21,6 @@ class ValveSettingController extends ChangeNotifier {
         isLoadingComponents: args.components.isEmpty,
         isRefreshingComponents: false,
       ) {
-    debugPrint(
-      'VALVE_SETTING init: valves=${args.components.length}, firstValveComponentId='
-      '${args.components.isNotEmpty ? args.components.first.componentId : 'n/a'}',
-    );
     Future<void>.microtask(reloadDeviceComponents);
   }
 
@@ -37,12 +33,14 @@ class ValveSettingController extends ChangeNotifier {
   static List<ValveComponentModel> _buildValves(
     List<CustomerDeviceComponent> components,
   ) {
-    final sortedComponents = List<CustomerDeviceComponent>.from(components)
+    final sorted = List<CustomerDeviceComponent>.from(components)
       ..sort((left, right) => left.gpioPin.compareTo(right.gpioPin));
 
-    return List<ValveComponentModel>.generate(sortedComponents.length, (index) {
-      final component = sortedComponents[index];
+    return sorted.asMap().entries.map((entry) {
+      final index = entry.key;
+      final component = entry.value;
       final currentState = component.currentState.trim().toUpperCase();
+
       return ValveComponentModel(
         valveLabel: component.installedArea.trim().isEmpty
             ? 'Valve ${index + 1}'
@@ -54,10 +52,10 @@ class ValveSettingController extends ChangeNotifier {
         manualActionOn: currentState == 'ON',
         isLoadingSchedules: false,
         hasLoadedSchedules: false,
-        schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
+        schedules: [ScheduleCardModel.createDraft()],
         lastUpdated: component.stateChangedAt ?? DateTime.now(),
       );
-    });
+    }).toList();
   }
 
   void markLeaving() {
@@ -67,10 +65,6 @@ class ValveSettingController extends ChangeNotifier {
 
   Future<void> toggleExpanded(int valveIndex) async {
     final shouldExpand = !_state.valves[valveIndex].isExpanded;
-    debugPrint(
-      'VALVE_SETTING toggleExpanded: valveIndex=$valveIndex, '
-      'shouldExpand=$shouldExpand, componentId=${_state.valves[valveIndex].componentId}',
-    );
     _state = _state.copyWith(
       valves: List<ValveComponentModel>.generate(_state.valves.length, (index) {
         final current = _state.valves[index];
@@ -232,7 +226,7 @@ class ValveSettingController extends ChangeNotifier {
     }
 
     final valve = _state.valves[valveIndex];
-    if (hasRunningScheduleNow(valve)) {
+    if (valve.hasRunningScheduleNow) {
       return 'A schedule is already running for the current day and time.';
     }
     return null;
@@ -245,9 +239,8 @@ class ValveSettingController extends ChangeNotifier {
   }) async {
     final valve = _state.valves[valveIndex];
     final schedule = valve.schedules[scheduleIndex];
-    final validationError = scheduleValidationMessage(
-      valve: valve,
-      scheduleIndex: scheduleIndex,
+    final validationError = schedule.validationMessage(
+      otherSchedules: valve.schedules,
     );
     if (validationError != null) {
       return validationError;
@@ -398,7 +391,6 @@ class ValveSettingController extends ChangeNotifier {
       unawaited(_preloadAllValveSchedules());
       return null;
     } catch (error) {
-      debugPrint('VALVE_SETTING loadDeviceComponents:error $error');
       _state = _state.copyWith(
         isLoadingComponents: false,
         isRefreshingComponents: false,
@@ -415,15 +407,7 @@ class ValveSettingController extends ChangeNotifier {
     required bool showErrors,
   }) async {
     final valve = _state.valves[valveIndex];
-    debugPrint(
-      'VALVE_SETTING ensureSchedulesLoaded: valveIndex=$valveIndex, '
-      'componentId=${valve.componentId}, hasLoaded=${valve.hasLoadedSchedules}, '
-      'isLoading=${valve.isLoadingSchedules}, showLoader=$showLoader',
-    );
     if (valve.hasLoadedSchedules || valve.isLoadingSchedules) {
-      debugPrint(
-        'VALVE_SETTING ensureSchedulesLoaded: skipped valveIndex=$valveIndex',
-      );
       return;
     }
     await _refreshSchedules(
@@ -450,14 +434,7 @@ class ValveSettingController extends ChangeNotifier {
   }) async {
     final valve = _state.valves[valveIndex];
     final componentId = valve.componentId.trim();
-    debugPrint(
-      'VALVE_SETTING refreshSchedules:start valveIndex=$valveIndex, '
-      'componentId=$componentId, showLoader=$showLoader, showErrors=$showErrors',
-    );
     if (componentId.isEmpty) {
-      debugPrint(
-        'VALVE_SETTING refreshSchedules: empty componentId for valveIndex=$valveIndex',
-      );
       _updateValve(
         valveIndex,
         (item) => item.copyWith(
@@ -481,17 +458,10 @@ class ValveSettingController extends ChangeNotifier {
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
-      debugPrint(
-        'VALVE_SETTING refreshSchedules: token resolved for valveIndex=$valveIndex',
-      );
 
       final schedules = await ref
           .read(customerDevicesServiceProvider)
           .getComponentSchedules(bearerToken: token, componentId: componentId);
-      debugPrint(
-        'VALVE_SETTING refreshSchedules: received ${schedules.length} schedules '
-        'for valveIndex=$valveIndex, componentId=$componentId',
-      );
 
       final nextCards = schedules
           .take(3)
@@ -511,10 +481,6 @@ class ValveSettingController extends ChangeNotifier {
         ),
       );
     } catch (error) {
-      debugPrint(
-        'VALVE_SETTING refreshSchedules:error valveIndex=$valveIndex, '
-        'componentId=$componentId, error=$error',
-      );
       _updateValve(
         valveIndex,
         (item) => item.copyWith(
@@ -534,20 +500,77 @@ class ValveSettingController extends ChangeNotifier {
   Future<String> _resolveToken() async {
     final session = ref.read(currentAuthSessionProvider);
     var token = (session?.token ?? '').trim();
-    debugPrint(
-      'VALVE_SETTING resolveToken: sessionTokenPresent=${token.isNotEmpty}',
-    );
     if (token.isEmpty) {
-      final remembered = await ref
-          .read(authLocalStorageProvider)
-          .loadLoginData();
+      final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
       token = (remembered?.token ?? '').trim();
-      debugPrint(
-        'VALVE_SETTING resolveToken: storageTokenPresent=${token.isNotEmpty}',
+    }
+    return token;
+  }
+
+  Future<String?> saveScheduleFromEditor({
+    required int valveIndex,
+    required int scheduleIndex,
+    required ScheduleCardModel updated,
+  }) async {
+    final schedule = _state.valves[valveIndex].schedules[scheduleIndex];
+
+    if (updated.fromTime != null && updated.fromTime != schedule.fromTime) {
+      updateScheduleTime(
+        valveIndex,
+        scheduleIndex,
+        isStart: true,
+        value: updated.fromTime!,
       );
     }
-    debugPrint('VALVE_SETTING LOGIN TOKEN: $token');
-    return token;
+    if (updated.toTime != null && updated.toTime != schedule.toTime) {
+      updateScheduleTime(
+        valveIndex,
+        scheduleIndex,
+        isStart: false,
+        value: updated.toTime!,
+      );
+    }
+
+    if (updated.alternateMode != schedule.alternateMode) {
+      updateAlternateMode(valveIndex, scheduleIndex, updated.alternateMode);
+    }
+    if (updated.alternateStartDate != schedule.alternateStartDate) {
+      updateAlternateStartDate(
+        valveIndex,
+        scheduleIndex,
+        updated.alternateStartDate,
+      );
+    }
+    if (updated.alternateEndDate != schedule.alternateEndDate) {
+      updateAlternateEndDate(
+        valveIndex,
+        scheduleIndex,
+        updated.alternateEndDate,
+      );
+    }
+    if (updated.alternateInterval != schedule.alternateInterval) {
+      updateAlternateInterval(
+        valveIndex,
+        scheduleIndex,
+        updated.alternateInterval,
+      );
+    }
+
+    final currentDays = schedule.selectedDays;
+    final nextDays = updated.selectedDays;
+    for (var day = 1; day <= 7; day++) {
+      final isCurrentlySelected = currentDays.contains(day);
+      final shouldBeSelected = nextDays.contains(day);
+      if (isCurrentlySelected != shouldBeSelected) {
+        toggleDay(valveIndex, scheduleIndex, day);
+      }
+    }
+
+    return submitSchedule(
+      valveIndex,
+      scheduleIndex,
+      addAnotherCard: !schedule.persisted,
+    );
   }
 
   void _updateValve(
