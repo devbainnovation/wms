@@ -110,9 +110,27 @@ class _DashboardDeviceCard extends StatelessWidget {
               const SizedBox(height: 8),
               const Divider(height: 1),
               const SizedBox(height: 14),
-              _MotorSection(device: device),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MotorSettingScreen(device: device),
+                    ),
+                  );
+                },
+                child: _MotorSection(device: device),
+              ),
               const SizedBox(height: 12),
-              _ValvesSection(device: device),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ValveSettingScreen(device: device),
+                    ),
+                  );
+                },
+                child: _ValvesSection(device: device),
+              ),
             ],
           ),
         ),

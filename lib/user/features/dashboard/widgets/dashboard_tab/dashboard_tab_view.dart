@@ -11,6 +11,9 @@ import 'package:wms/user/features/dashboard/services/customer_devices_service.da
 import 'package:wms/user/features/dashboard/services/weather_service.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
 
+import '../../../valves/screens/valve_setting_screen.dart';
+import '../../screens/motor_setting_screen.dart';
+
 part 'dashboard_tab_alerts.dart';
 part 'dashboard_tab_device_card.dart';
 part 'dashboard_tab_helpers.dart';

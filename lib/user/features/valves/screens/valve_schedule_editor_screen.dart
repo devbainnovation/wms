@@ -479,7 +479,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: controller.state.alternateStartDate ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      firstDate: DateTime.now().subtract(const Duration(days: 0)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
@@ -497,8 +497,8 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
           controller.state.alternateEndDate ??
           controller.state.alternateStartDate ??
           DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: DateTime.now().subtract(const Duration(days: 0)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
     if (picked != null) {
       controller.setAlternateEndDate(picked);
