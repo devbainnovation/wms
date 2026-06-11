@@ -56,12 +56,16 @@ class ValveSettingScheduleCard extends StatelessWidget {
                           color: AppColors.greyText,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          _scheduleDaysLabel(schedule),
-                          style: const TextStyle(
-                            color: AppColors.darkText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            _scheduleDaysLabel(schedule),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.darkText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -75,14 +79,18 @@ class ValveSettingScheduleCard extends StatelessWidget {
                           color: AppColors.greyText,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          schedule.fromTime == null || schedule.toTime == null
-                              ? 'Not set'
-                              : '${schedule.fromTime!.format(context)} - ${schedule.toTime!.format(context)}',
-                          style: const TextStyle(
-                            color: AppColors.darkText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            schedule.fromTime == null || schedule.toTime == null
+                                ? 'Not set'
+                                : '${schedule.fromTime!.format(context)} - ${schedule.toTime!.format(context)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.darkText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -96,7 +104,7 @@ class ValveSettingScheduleCard extends StatelessWidget {
                 children: [
                   if (canEditSchedule)
                     IconButton(
-                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      icon: const Icon(Icons.edit_rounded, size: 22),
                       constraints: const BoxConstraints(
                         minWidth: 32,
                         minHeight: 32,
@@ -108,7 +116,7 @@ class ValveSettingScheduleCard extends StatelessWidget {
                     ),
                   if (canDeleteSchedule)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 22),
                       constraints: const BoxConstraints(
                         minWidth: 32,
                         minHeight: 32,

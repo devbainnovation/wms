@@ -187,6 +187,10 @@ class CustomerComponentScheduleRequest {
     required this.endTime,
     required this.durationMins,
     required this.enabled,
+    required this.scheduleType,
+    this.startDate,
+    this.endDate,
+    this.intervalDays,
   });
 
   final List<int> days;
@@ -194,15 +198,28 @@ class CustomerComponentScheduleRequest {
   final CustomerScheduleTime endTime;
   final int durationMins;
   final bool enabled;
+  final String scheduleType; // WEEKLY, INTERVAL
+  final String? startDate;
+  final String? endDate;
+  final int? intervalDays;
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = <String, dynamic>{
       'days': days,
       'startTime': startTime.toFormattedString(),
       'endTime': endTime.toFormattedString(),
       'durationMins': durationMins,
-      'isEnabled': enabled,
+      'enabled': enabled,
+      'scheduleType': scheduleType,
     };
+
+    if (scheduleType == 'INTERVAL') {
+      data['startDate'] = startDate;
+      data['endDate'] = endDate;
+      data['intervalDays'] = intervalDays;
+    }
+
+    return data;
   }
 }
 
@@ -214,6 +231,10 @@ class CustomerComponentSchedule {
     required this.endTime,
     required this.durationMins,
     required this.enabled,
+    required this.scheduleType,
+    this.startDate,
+    this.endDate,
+    this.intervalDays,
   });
 
   final String scheduleId;
@@ -222,6 +243,10 @@ class CustomerComponentSchedule {
   final CustomerScheduleTime endTime;
   final int durationMins;
   final bool enabled;
+  final String scheduleType;
+  final String? startDate;
+  final String? endDate;
+  final int? intervalDays;
 
   factory CustomerComponentSchedule.fromJson(Map<String, dynamic> json) {
     final rawDays = json['days'];
@@ -238,7 +263,11 @@ class CustomerComponentSchedule {
       startTime: CustomerScheduleTime.fromValue(json['startTime']),
       endTime: CustomerScheduleTime.fromValue(json['endTime']),
       durationMins: (json['durationMins'] as num?)?.toInt() ?? 0,
-      enabled: (json['isEnabled'] ?? json['enabled']) != false,
+      enabled: (json['enabled'] ?? json['isEnabled']) != false,
+      scheduleType: (json['scheduleType'] ?? 'WEEKLY').toString().toUpperCase(),
+      startDate: json['startDate']?.toString(),
+      endDate: json['endDate']?.toString(),
+      intervalDays: (json['intervalDays'] as num?)?.toInt(),
     );
   }
 }

@@ -250,6 +250,8 @@ class ScheduleCardModel {
       minute: schedule.endTime.minute,
     );
     final days = schedule.days.toSet();
+    final isInterval = schedule.scheduleType == 'INTERVAL';
+    
     return ScheduleCardModel(
       cardKey: schedule.scheduleId.isEmpty
           ? DateTime.now().microsecondsSinceEpoch.toString()
@@ -264,10 +266,10 @@ class ScheduleCardModel {
       toTime: to,
       initialToTime: to,
       isSubmitting: false,
-      alternateMode: false,
-      alternateStartDate: null,
-      alternateEndDate: null,
-      alternateInterval: 1,
+      alternateMode: isInterval,
+      alternateStartDate: schedule.startDate != null ? DateTime.tryParse(schedule.startDate!) : null,
+      alternateEndDate: schedule.endDate != null ? DateTime.tryParse(schedule.endDate!) : null,
+      alternateInterval: schedule.intervalDays ?? 1,
     );
   }
 

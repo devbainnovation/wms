@@ -28,27 +28,33 @@ class ValveScheduleEditorState {
   ValveScheduleEditorState copyWith({
     bool? allMode,
     Set<int>? selectedDays,
-    TimeOfDay? fromTime,
-    TimeOfDay? toTime,
+    Object? fromTime = _marker,
+    Object? toTime = _marker,
     bool? isSubmitting,
-    DateTime? alternateStartDate,
-    DateTime? alternateEndDate,
+    Object? alternateStartDate = _marker,
+    Object? alternateEndDate = _marker,
     int? alternateInterval,
     bool? timeTouchEnabled,
   }) {
     return ValveScheduleEditorState(
       allMode: allMode ?? this.allMode,
       selectedDays: selectedDays ?? this.selectedDays,
-      fromTime: fromTime ?? this.fromTime,
-      toTime: toTime ?? this.toTime,
+      fromTime: identical(fromTime, _marker) ? this.fromTime : fromTime as TimeOfDay?,
+      toTime: identical(toTime, _marker) ? this.toTime : toTime as TimeOfDay?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      alternateStartDate: alternateStartDate ?? this.alternateStartDate,
-      alternateEndDate: alternateEndDate ?? this.alternateEndDate,
+      alternateStartDate: identical(alternateStartDate, _marker)
+          ? this.alternateStartDate
+          : alternateStartDate as DateTime?,
+      alternateEndDate: identical(alternateEndDate, _marker)
+          ? this.alternateEndDate
+          : alternateEndDate as DateTime?,
       alternateInterval: alternateInterval ?? this.alternateInterval,
       timeTouchEnabled: timeTouchEnabled ?? this.timeTouchEnabled,
     );
   }
 }
+
+const Object _marker = Object();
 
 final valveScheduleEditorProvider = legacy.ChangeNotifierProvider.autoDispose
     .family<ValveScheduleEditorController, ScheduleCardModel>(
@@ -58,7 +64,7 @@ final valveScheduleEditorProvider = legacy.ChangeNotifierProvider.autoDispose
 class ValveScheduleEditorController extends ChangeNotifier {
   ValveScheduleEditorController(ScheduleCardModel schedule)
     : _state = ValveScheduleEditorState(
-        allMode: !schedule.alternateMode && schedule.selectedDays.length == 7,
+        allMode: !schedule.alternateMode,
         selectedDays: Set<int>.from(schedule.selectedDays),
         fromTime: schedule.fromTime,
         toTime: schedule.toTime,
@@ -66,7 +72,7 @@ class ValveScheduleEditorController extends ChangeNotifier {
         alternateStartDate: schedule.alternateStartDate,
         alternateEndDate: schedule.alternateEndDate,
         alternateInterval: schedule.alternateInterval,
-        timeTouchEnabled: false,
+        timeTouchEnabled: schedule.fromTime != null && schedule.toTime != null,
       );
 
   late ValveScheduleEditorState _state;

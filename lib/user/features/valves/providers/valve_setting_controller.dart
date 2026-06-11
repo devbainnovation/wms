@@ -269,6 +269,14 @@ class ValveSettingController extends ChangeNotifier {
         endTime: scheduleTimeFrom(schedule.toTime!),
         durationMins: durationInMinutes(schedule.fromTime!, schedule.toTime!),
         enabled: true,
+        scheduleType: schedule.alternateMode ? 'INTERVAL' : 'WEEKLY',
+        startDate: schedule.alternateMode && schedule.alternateStartDate != null
+            ? _formatDateToApi(schedule.alternateStartDate!)
+            : null,
+        endDate: schedule.alternateMode && schedule.alternateEndDate != null
+            ? _formatDateToApi(schedule.alternateEndDate!)
+            : null,
+        intervalDays: schedule.alternateMode ? schedule.alternateInterval : null,
       );
 
       if (schedule.persisted) {
@@ -348,7 +356,23 @@ class ValveSettingController extends ChangeNotifier {
             scheduleId: schedule.scheduleId,
           );
 
-      await _refreshSchedules(valveIndex, showLoader: false, showErrors: false);
+      // Manually remove the deleted schedule from local state immediately
+      final currentSchedules = List<ScheduleCardModel>.from(_state.valves[valveIndex].schedules);
+      if (scheduleIndex < currentSchedules.length) {
+        currentSchedules.removeAt(scheduleIndex);
+        // Ensure there's always at least one draft slot if space allows
+        if (currentSchedules.isEmpty || !currentSchedules.any((s) => !s.persisted)) {
+          if (currentSchedules.where((s) => s.persisted).length < 3) {
+            currentSchedules.add(ScheduleCardModel.createDraft());
+          }
+        }
+        _updateValve(
+          valveIndex,
+          (item) => item.copyWith(schedules: currentSchedules),
+        );
+      }
+
+      // DO NOT call _refreshSchedules here to avoid pulling stale data from server
       return null;
     } catch (error) {
       _updateSchedule(
@@ -434,13 +458,14 @@ class ValveSettingController extends ChangeNotifier {
   }) async {
     final valve = _state.valves[valveIndex];
     final componentId = valve.componentId.trim();
+
     if (componentId.isEmpty) {
       _updateValve(
         valveIndex,
         (item) => item.copyWith(
           isLoadingSchedules: false,
           hasLoadedSchedules: true,
-          schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
+          schedules: [ScheduleCardModel.createDraft()],
         ),
       );
       return;
@@ -463,10 +488,7 @@ class ValveSettingController extends ChangeNotifier {
           .read(customerDevicesServiceProvider)
           .getComponentSchedules(bearerToken: token, componentId: componentId);
 
-      final nextCards = schedules
-          .take(3)
-          .map(ScheduleCardModel.fromRemote)
-          .toList();
+      final nextCards = schedules.take(3).map(ScheduleCardModel.fromRemote).toList();
       if (nextCards.length < 3) {
         nextCards.add(ScheduleCardModel.createDraft());
       }
@@ -485,10 +507,8 @@ class ValveSettingController extends ChangeNotifier {
         valveIndex,
         (item) => item.copyWith(
           isLoadingSchedules: false,
-          hasLoadedSchedules: false,
-          schedules: item.schedules.isEmpty
-              ? <ScheduleCardModel>[ScheduleCardModel.createDraft()]
-              : item.schedules,
+          hasLoadedSchedules: true, // Mark as loaded even on error to stop spinner
+          schedules: <ScheduleCardModel>[ScheduleCardModel.createDraft()],
         ),
       );
       if (showErrors) {
@@ -592,5 +612,9 @@ class ValveSettingController extends ChangeNotifier {
       valveIndex,
       (valve) => valve.updateSchedule(scheduleIndex, update),
     );
+  }
+
+  String _formatDateToApi(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

@@ -397,7 +397,7 @@ class _AddScheduleButton extends ConsumerWidget {
         height: 44,
         child: FilledButton.icon(
           onPressed: () => _openEditor(context, ref),
-          icon: const Icon(Icons.add_rounded, size: 18),
+          icon: const Icon(Icons.add_rounded, size: 22),
           label: const Text('Add Schedule'),
           style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
@@ -438,7 +438,6 @@ class _AddScheduleButton extends ConsumerWidget {
 
             if (error == null && context.mounted) {
               showValveSettingSnackBar(context, 'Schedule saved.');
-              Navigator.of(context).pop();
             }
             return error;
           },

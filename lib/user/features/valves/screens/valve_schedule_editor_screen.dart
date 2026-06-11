@@ -117,7 +117,9 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () => editorController.selectAllMode(),
+                    onPressed: schedule.persisted
+                        ? null
+                        : () => editorController.selectAllMode(),
                     child: const Text('WEEKLY'),
                   ),
                 ),
@@ -140,7 +142,9 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () => editorController.selectAlternateMode(),
+                    onPressed: schedule.persisted
+                        ? null
+                        : () => editorController.selectAlternateMode(),
                     child: const Text('INTERVAL'),
                   ),
                 ),
