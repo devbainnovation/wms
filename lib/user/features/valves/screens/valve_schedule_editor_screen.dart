@@ -181,34 +181,33 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children:
-                      <DayChipData>[
-                        const DayChipData(
-                          apiDay: 0,
-                          shortLabel: 'All',
-                          fullLabel: 'All',
-                        ),
-                        ...dayChips,
-                      ].map((item) {
-                        final selected = item.apiDay == 0
-                            ? editorController.state.selectedDays.length == 7
-                            : editorController.state.selectedDays.contains(
-                                item.apiDay,
-                              );
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: _SmallDayChip(
-                            label: item.shortLabel,
-                            selected: selected,
-                            enabled: canEditSchedule,
-                            onTap: () =>
-                                editorController.toggleDay(item.apiDay),
-                          ),
-                        );
-                      }).toList(),
+                  children: <DayChipData>[
+                    const DayChipData(
+                      apiDay: 0,
+                      shortLabel: 'All',
+                      fullLabel: 'All',
+                    ),
+                    ...dayChips,
+                  ].map((item) {
+                    final selected = item.apiDay == 0
+                        ? editorController.state.selectedDays.length == 7
+                        : editorController.state.selectedDays.contains(
+                            item.apiDay,
+                          );
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: _SmallDayChip(
+                        label: item.shortLabel,
+                        selected: selected,
+                        enabled: canEditSchedule,
+                        onTap: () => editorController.toggleDay(item.apiDay),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              )
-            else ...[
+              ),
+            const SizedBox(height: 20),
+            if (!editorController.state.allMode) ...[
               Text(
                 'Select alternate interval',
                 style: const TextStyle(
@@ -221,8 +220,8 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
-                children: List<Widget>.generate(6, (index) {
-                  final value = index + 1;
+                children: List<Widget>.generate(5, (index) {
+                  final value = index + 2;
                   final isSelected =
                       editorController.state.alternateInterval == value;
                   return SizedBox(

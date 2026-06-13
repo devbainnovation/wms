@@ -110,7 +110,7 @@ class ValveScheduleEditorController extends ChangeNotifier {
       toTime: null,
       alternateStartDate: null,
       alternateEndDate: null,
-      alternateInterval: 1,
+      alternateInterval: 2,
       timeTouchEnabled: false,
     );
     notifyListeners();
@@ -124,7 +124,7 @@ class ValveScheduleEditorController extends ChangeNotifier {
       toTime: null,
       alternateStartDate: null,
       alternateEndDate: null,
-      alternateInterval: 1,
+      alternateInterval: 2,
       timeTouchEnabled: false,
     );
     notifyListeners();

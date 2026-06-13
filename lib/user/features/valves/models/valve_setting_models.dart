@@ -200,8 +200,11 @@ class ScheduleCardModel {
     required this.isSubmitting,
     required this.alternateMode,
     required this.alternateStartDate,
+    required this.initialAlternateStartDate,
     required this.alternateEndDate,
+    required this.initialAlternateEndDate,
     required this.alternateInterval,
+    required this.initialAlternateInterval,
   });
 
   final String cardKey;
@@ -217,8 +220,11 @@ class ScheduleCardModel {
   final bool isSubmitting;
   final bool alternateMode;
   final DateTime? alternateStartDate;
+  final DateTime? initialAlternateStartDate;
   final DateTime? alternateEndDate;
+  final DateTime? initialAlternateEndDate;
   final int alternateInterval;
+  final int initialAlternateInterval;
 
   factory ScheduleCardModel.createDraft() {
     return ScheduleCardModel(
@@ -235,8 +241,11 @@ class ScheduleCardModel {
       isSubmitting: false,
       alternateMode: false,
       alternateStartDate: null,
+      initialAlternateStartDate: null,
       alternateEndDate: null,
-      alternateInterval: 1,
+      initialAlternateEndDate: null,
+      alternateInterval: 2,
+      initialAlternateInterval: 2,
     );
   }
 
@@ -268,8 +277,11 @@ class ScheduleCardModel {
       isSubmitting: false,
       alternateMode: isInterval,
       alternateStartDate: schedule.startDate != null ? DateTime.tryParse(schedule.startDate!) : null,
+      initialAlternateStartDate: schedule.startDate != null ? DateTime.tryParse(schedule.startDate!) : null,
       alternateEndDate: schedule.endDate != null ? DateTime.tryParse(schedule.endDate!) : null,
+      initialAlternateEndDate: schedule.endDate != null ? DateTime.tryParse(schedule.endDate!) : null,
       alternateInterval: schedule.intervalDays ?? 1,
+      initialAlternateInterval: schedule.intervalDays ?? 1,
     );
   }
 
@@ -280,17 +292,18 @@ class ScheduleCardModel {
     bool? isExpanded,
     Set<int>? selectedDays,
     Set<int>? initialSelectedDays,
-    TimeOfDay? fromTime,
+    Object? fromTime = _marker,
     Object? initialFromTime = _marker,
-    TimeOfDay? toTime,
+    Object? toTime = _marker,
     Object? initialToTime = _marker,
     bool? isSubmitting,
     bool? alternateMode,
-    DateTime? alternateStartDate,
+    Object? alternateStartDate = _marker,
     Object? initialAlternateStartDate = _marker,
-    DateTime? alternateEndDate,
+    Object? alternateEndDate = _marker,
     Object? initialAlternateEndDate = _marker,
     int? alternateInterval,
+    int? initialAlternateInterval,
   }) {
     return ScheduleCardModel(
       cardKey: cardKey ?? this.cardKey,
@@ -299,23 +312,30 @@ class ScheduleCardModel {
       isExpanded: isExpanded ?? this.isExpanded,
       selectedDays: selectedDays ?? this.selectedDays,
       initialSelectedDays: initialSelectedDays ?? this.initialSelectedDays,
-      fromTime: fromTime ?? this.fromTime,
+      fromTime: identical(fromTime, _marker) ? this.fromTime : fromTime as TimeOfDay?,
       initialFromTime: identical(initialFromTime, _marker)
           ? this.initialFromTime
           : initialFromTime as TimeOfDay?,
-      toTime: toTime ?? this.toTime,
+      toTime: identical(toTime, _marker) ? this.toTime : toTime as TimeOfDay?,
       initialToTime: identical(initialToTime, _marker)
           ? this.initialToTime
           : initialToTime as TimeOfDay?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       alternateMode: alternateMode ?? this.alternateMode,
-      alternateStartDate: identical(initialAlternateStartDate, _marker)
+      alternateStartDate: identical(alternateStartDate, _marker)
           ? this.alternateStartDate
-          : alternateStartDate,
-      alternateEndDate: identical(initialAlternateEndDate, _marker)
+          : alternateStartDate as DateTime?,
+      initialAlternateStartDate: identical(initialAlternateStartDate, _marker)
+          ? this.initialAlternateStartDate
+          : initialAlternateStartDate as DateTime?,
+      alternateEndDate: identical(alternateEndDate, _marker)
           ? this.alternateEndDate
-          : alternateEndDate,
+          : alternateEndDate as DateTime?,
+      initialAlternateEndDate: identical(initialAlternateEndDate, _marker)
+          ? this.initialAlternateEndDate
+          : initialAlternateEndDate as DateTime?,
       alternateInterval: alternateInterval ?? this.alternateInterval,
+      initialAlternateInterval: initialAlternateInterval ?? this.initialAlternateInterval,
     );
   }
 
@@ -327,6 +347,15 @@ class ScheduleCardModel {
       return true;
     }
     if (!_sameTimeOfDay(toTime, initialToTime)) {
+      return true;
+    }
+    if (alternateStartDate != initialAlternateStartDate) {
+      return true;
+    }
+    if (alternateEndDate != initialAlternateEndDate) {
+      return true;
+    }
+    if (alternateInterval != initialAlternateInterval) {
       return true;
     }
     return !persisted;

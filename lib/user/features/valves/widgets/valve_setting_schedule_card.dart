@@ -49,18 +49,20 @@ class ValveSettingScheduleCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.calendar_month_rounded,
-                          size: 14,
-                          color: AppColors.greyText,
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(
+                            Icons.calendar_month_rounded,
+                            size: 14,
+                            color: AppColors.greyText,
+                          ),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             _scheduleDaysLabel(schedule),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.darkText,
                               fontSize: 12,
@@ -84,8 +86,6 @@ class ValveSettingScheduleCard extends StatelessWidget {
                             schedule.fromTime == null || schedule.toTime == null
                                 ? 'Not set'
                                 : '${schedule.fromTime!.format(context)} - ${schedule.toTime!.format(context)}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.darkText,
                               fontSize: 12,
@@ -144,8 +144,21 @@ String _scheduleDaysLabel(ScheduleCardModel schedule) {
     final end = schedule.alternateEndDate != null
         ? _formatDate(schedule.alternateEndDate!)
         : 'End';
-    return 'Alternate every ${schedule.alternateInterval} day(s) $start - $end';
+    
+    String label = 'Every ${schedule.alternateInterval} day(s) This Week';
+    if (schedule.selectedDays.isNotEmpty) {
+      final daysPart = schedule.selectedDays.length == 7
+          ? 'All days'
+          : dayChips
+              .where((item) => schedule.selectedDays.contains(item.apiDay))
+              .map((item) => item.shortLabel)
+              .join(', ');
+      label += ': $daysPart';
+    }
+    
+    return '$label\n($start to $end)';
   }
+
   if (schedule.selectedDays.length == 7) {
     return 'All days';
   }
