@@ -399,6 +399,45 @@ class CustomerDevicesService {
     return response;
   }
 
+  Future<ApiResponse> renameComponent({
+    required String bearerToken,
+    required String espId,
+    required String componentId,
+    required String newName,
+  }) async {
+    final normalizedEspId = espId.trim();
+    final normalizedComponentId = componentId.trim();
+    final normalizedName = newName.trim();
+
+    if (normalizedEspId.isEmpty) {
+      throw const ApiException('Device ID is missing.');
+    }
+    if (normalizedComponentId.isEmpty) {
+      throw const ApiException('Component ID is missing.');
+    }
+    if (normalizedName.isEmpty) {
+      throw const ApiException('New name cannot be empty.');
+    }
+
+    final response = await _apiClient.patch(
+      ApiEndpoints.customerDeviceComponentRename(
+        normalizedEspId,
+        normalizedComponentId,
+      ),
+      bearerToken: bearerToken,
+      queryParameters: {'installedArea': normalizedName},
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to rename component.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return response;
+  }
+
   String? _extractMessage(dynamic body) {
     if (body is! Map<String, dynamic>) {
       return null;

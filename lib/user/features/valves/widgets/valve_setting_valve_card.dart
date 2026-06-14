@@ -9,6 +9,7 @@ class ValveSettingValveCard extends StatelessWidget {
     required this.onToggleExpanded,
     required this.onToggleManual,
     required this.scheduleChildren,
+    this.onRename,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class ValveSettingValveCard extends StatelessWidget {
   final VoidCallback onToggleExpanded;
   final ValueChanged<bool> onToggleManual;
   final List<Widget> scheduleChildren;
+  final VoidCallback? onRename;
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +42,30 @@ class ValveSettingValveCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(
-                          valve.valveLabel,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkText,
-                          ),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                valve.valveLabel,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.darkText,
+                                ),
+                              ),
+                            ),
+                            if (onRename != null) ...[
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: onRename,
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  size: 16,
+                                  color: AppColors.primaryTeal,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                       const SizedBox(width: 8),

@@ -593,6 +593,33 @@ class ValveSettingController extends ChangeNotifier {
     );
   }
 
+  Future<String?> renameValve(int valveIndex, String newName) async {
+    final valve = _state.valves[valveIndex];
+    final componentId = valve.componentId.trim();
+    if (componentId.isEmpty) {
+      return 'Component ID missing.';
+    }
+
+    try {
+      final token = await _resolveToken();
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+
+      await ref.read(customerDevicesServiceProvider).renameComponent(
+        bearerToken: token,
+        espId: args.espId,
+        componentId: componentId,
+        newName: newName,
+      );
+
+      _updateValve(valveIndex, (item) => item.copyWith(valveLabel: newName));
+      return null;
+    } catch (error) {
+      return error.toString();
+    }
+  }
+
   void _updateValve(
     int index,
     ValveComponentModel Function(ValveComponentModel item) update,

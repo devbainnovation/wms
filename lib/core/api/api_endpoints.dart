@@ -33,6 +33,8 @@ class ApiEndpoints {
       '/api/admin/customers/$id/devices';
   static String customerDeviceComponents(String espId) =>
       '/api/customer/devices/$espId/components';
+  static String customerDeviceComponentRename(String espId, String compId) =>
+      '/api/customer/devices/$espId/components/$compId/rename';
   static String customerUserById(String userId) =>
       '/api/customer/users/$userId';
   static String customerUserPermissions(String userId) =>

@@ -157,6 +157,12 @@ class _ValvesListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profileState = ref.watch(userProfileProvider);
+    final isAdmin = profileState.maybeWhen(
+      data: (profile) => profile.isAdmin,
+      orElse: () => false,
+    );
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: state.valves.length,
@@ -175,6 +181,9 @@ class _ValvesListView extends ConsumerWidget {
             value,
             valve,
           ),
+          onRename: isAdmin
+              ? () => _handleRename(context, ref, index, valve.valveLabel)
+              : null,
           scheduleChildren: [
             _SavedSchedulesList(
               args: args,
@@ -192,6 +201,34 @@ class _ValvesListView extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _handleRename(
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+    String currentName,
+  ) async {
+    final newName = await showRenameComponentDialog(
+      context: context,
+      currentName: currentName,
+    );
+
+    if (newName == null || newName == currentName || !context.mounted) {
+      return;
+    }
+
+    final error = await ref
+        .read(valveSettingProvider(args))
+        .renameValve(index, newName);
+
+    if (!context.mounted) return;
+
+    if (error != null) {
+      showValveSettingSnackBar(context, error);
+    } else {
+      showValveSettingSnackBar(context, 'Valve renamed successfully.');
+    }
   }
 
   Future<void> _handleManualToggle(
@@ -221,11 +258,14 @@ class _ValvesListView extends ConsumerWidget {
       if (validationError != null) {
         if (validationError ==
             'A schedule is already running for the current day and time.') {
-          await showManualScheduleRunningDialog(context);
+          final startAnyway = await showManualScheduleRunningDialog(context);
+          if (startAnyway != true || !context.mounted) {
+            return;
+          }
         } else {
           showValveSettingSnackBar(context, validationError);
+          return;
         }
-        return;
       }
       duration = await showManualDurationDialog(context);
       if (duration == null || !context.mounted) {

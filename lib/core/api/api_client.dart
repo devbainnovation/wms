@@ -79,6 +79,26 @@ class ApiClient {
       queryParameters: queryParameters,
       headers: headers,
       bearerToken: bearerToken,
+      showGlobalLoader: showGlobalLoader, reportUnauthorized: reportUnauthorized,
+    );
+  }
+
+  Future<ApiResponse> patch(
+    String endpoint, {
+    Object? body,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    String? bearerToken,
+    bool showGlobalLoader = true,
+    bool reportUnauthorized = true,
+  }) {
+    return _request(
+      method: 'PATCH',
+      endpoint: endpoint,
+      body: body,
+      queryParameters: queryParameters,
+      headers: headers,
+      bearerToken: bearerToken,
       showGlobalLoader: showGlobalLoader,
       reportUnauthorized: reportUnauthorized,
     );

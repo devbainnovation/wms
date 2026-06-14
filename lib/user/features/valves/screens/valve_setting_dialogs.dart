@@ -144,25 +144,81 @@ Future<int?> showManualDurationDialog(BuildContext context) async {
   return result;
 }
 
-Future<void> showManualScheduleRunningDialog(BuildContext context) {
-  return showDialog<void>(
+Future<bool?> showManualScheduleRunningDialog(BuildContext context) {
+  return showDialog<bool>(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: const Text('Schedule Running'),
+        title: const Text('Schedule Active'),
         content: const Text(
-          'A schedule is already running for the current day and time. '
-          'Please try manual mode after the running schedule ends.',
+          'A schedule is currently scheduled to run for this valve. '
+          'Would you like to start it manually anyway?',
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('OK'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Start Manually'),
           ),
         ],
       );
     },
   );
+}
+
+Future<String?> showRenameComponentDialog({
+  required BuildContext context,
+  required String currentName,
+}) async {
+  final formKey = GlobalKey<FormState>();
+  final controller = TextEditingController(text: currentName);
+
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Rename Valve'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Valve Name',
+              hintText: 'Enter new name',
+            ),
+            validator: (value) {
+              final trimmed = (value ?? '').trim();
+              if (trimmed.isEmpty) {
+                return 'Name is required';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.of(dialogContext).pop(controller.text.trim());
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
+
+  return result;
 }
 
 void showValveSettingSnackBar(BuildContext context, String message) {
