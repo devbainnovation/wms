@@ -7,3 +7,4 @@ export 'app_page_body.dart';
 export 'app_schedule_editor_dialog.dart';
 export 'app_section_card.dart';
 export 'app_status_chip.dart';
+export 'app_splash_screen.dart';

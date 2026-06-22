@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:wms/main.dart';
+import 'package:wms/app.dart';
 
 void main() {
   testWidgets('WMS app shell renders', (WidgetTester tester) async {

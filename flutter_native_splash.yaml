@@ -9,7 +9,7 @@ flutter_native_splash:
   ios_content_mode: scaleAspectFit
   android: true
   ios: true
-  web: false
+  web: true
   fullscreen: true
 
   android_12:
