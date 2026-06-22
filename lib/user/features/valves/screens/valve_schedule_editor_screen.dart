@@ -4,6 +4,7 @@ import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/valves/models/valve_setting_models.dart';
 import 'package:wms/user/features/valves/providers/valve_schedule_editor_controller.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
+import 'package:wms/user/features/valves/widgets/valve_schedule_editor_widgets.dart';
 
 class ValveScheduleEditorScreen extends ConsumerWidget {
   const ValveScheduleEditorScreen({
@@ -196,7 +197,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                           );
                     return Padding(
                       padding: const EdgeInsets.only(right: 10),
-                      child: _SmallDayChip(
+                      child: SmallDayChip(
                         label: item.shortLabel,
                         selected: selected,
                         enabled: canEditSchedule,
@@ -265,7 +266,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _EditorDateField(
+                    child: EditorDateField(
                       label: 'Start',
                       value: editorController.state.alternateStartDate,
                       onTap: canEditSchedule
@@ -278,7 +279,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _EditorDateField(
+                    child: EditorDateField(
                       label: 'End',
                       value: editorController.state.alternateEndDate,
                       onTap: canEditSchedule
@@ -315,7 +316,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: _EditorTimeField(
+                  child: EditorTimeField(
                     label: 'From',
                     value: editorController.state.fromTime,
                     onTap: canEditSchedule
@@ -325,7 +326,7 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _EditorTimeField(
+                  child: EditorTimeField(
                     label: 'To',
                     value: editorController.state.toTime,
                     onTap: canEditSchedule
@@ -559,174 +560,4 @@ class ValveScheduleEditorScreen extends ConsumerWidget {
     }
     Navigator.of(context).pop();
   }
-}
-
-class _SmallDayChip extends StatelessWidget {
-  const _SmallDayChip({
-    required this.label,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        width: 42,
-        height: 42,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: selected ? AppColors.primaryTeal : AppColors.white,
-          border: Border.all(
-            color: selected ? AppColors.primaryTeal : AppColors.lightGreyText,
-            width: 1.4,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? AppColors.white : AppColors.darkText,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EditorTimeField extends StatelessWidget {
-  const _EditorTimeField({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final TimeOfDay? value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.lightBackground,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGreyText),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.greyText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    value == null ? 'Select time' : value!.format(context),
-                    style: TextStyle(
-                      color: value == null
-                          ? AppColors.greyText
-                          : AppColors.darkText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.access_time_rounded, color: AppColors.primaryTeal),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EditorDateField extends StatelessWidget {
-  const _EditorDateField({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final DateTime? value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.lightBackground,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGreyText),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.greyText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    value == null ? 'Select date' : _formatDate(value!),
-                    style: TextStyle(
-                      color: value == null
-                          ? AppColors.greyText
-                          : AppColors.darkText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.calendar_month_rounded,
-              color: AppColors.primaryTeal,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-String _formatDate(DateTime date) {
-  return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }
