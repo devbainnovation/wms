@@ -186,8 +186,30 @@ class _WebSplashScreen extends StatelessWidget {
             colors: [AppColors.lightBlue, AppColors.lightGreen],
           ),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryTeal),
+        child: Stack(
+          children: [
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryTeal),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+                  child: Text(
+                    'Digital Water Management System',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.primaryTeal,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

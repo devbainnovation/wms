@@ -558,24 +558,46 @@ class _SplashScreen extends StatelessWidget {
             colors: [AppColors.lightBlue, AppColors.lightGreen],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                AppAssets.logo,
-                height: 120,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.water_drop_rounded,
-                  size: 72,
-                  color: AppColors.primaryTeal,
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    AppAssets.logo,
+                    height: 120,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.water_drop_rounded,
+                      size: 72,
+                      color: AppColors.primaryTeal,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const CircularProgressIndicator(color: AppColors.primaryTeal),
+                ],
+              ),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+                  child: Text(
+                    'Digital Water Management System',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.primaryTeal,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 18),
-              const CircularProgressIndicator(color: AppColors.primaryTeal),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
