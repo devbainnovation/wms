@@ -85,6 +85,12 @@ class _WmsAppState extends ConsumerState<WmsApp> {
       _routerDelegate.refresh();
     });
     ref.listen<AuthSession?>(currentAuthSessionProvider, (previous, next) {
+      if (next != null && !kIsWeb) {
+        // When a session is established on mobile, clear the navigation stack
+        // (e.g., pop the Phone Login screen) so the AppLaunchGate root
+        // can transition to the Dashboard.
+        _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      }
       _routerDelegate.refresh();
     });
     ref.listen(fcmTokenProvider, (_, next) {
@@ -182,24 +188,22 @@ class _AppLaunchGateState extends ConsumerState<AppLaunchGate> {
       loading: () => kIsWeb ? const AppSplashScreen() : const SizedBox.shrink(),
       error: (_, _) {
         _removeNativeSplashIfNeeded();
-        return kIsWeb ? const AdminLoginScreen() : const UserLoginScreen();
+        return kIsWeb ? const AdminLoginScreen() : const UserPhoneLoginScreen();
       },
       data: (state) {
         if (!_didRestoreLaunchSession && state.session != null) {
           final session = state.session!;
           _didRestoreLaunchSession = true;
-          final isSameSession =
-              currentSession?.token == session.token &&
-              currentSession?.role == session.role &&
-              currentSession?.userId == session.userId &&
-              currentSession?.sessionId == session.sessionId;
-
-          if (!isSameSession) {
-            Future<void>(() {
+          
+          // Use Future.microtask to avoid modifying providers during build
+          Future.microtask(() {
+            final current = ref.read(currentAuthSessionProvider);
+            if (current == null || current.token != session.token) {
               ref.read(currentAuthSessionProvider.notifier).setSession(session);
-            });
-            return kIsWeb ? const AppSplashScreen() : const SizedBox.shrink();
-          }
+            }
+          });
+          
+          return kIsWeb ? const AppSplashScreen() : const SizedBox.shrink();
         }
 
         if (currentSession != null) {
@@ -213,8 +217,9 @@ class _AppLaunchGateState extends ConsumerState<AppLaunchGate> {
         _removeNativeSplashIfNeeded();
         return switch (state.target) {
           AppLaunchTarget.webAdmin => const AdminLoginScreen(),
-          AppLaunchTarget.userLogin => const UserLoginScreen(),
-          AppLaunchTarget.userDashboard => const UserLoginScreen(),
+          AppLaunchTarget.userLogin => const UserPhoneLoginScreen(), // Fallback to Phone Login
+          AppLaunchTarget.userPhoneLogin => const UserPhoneLoginScreen(),
+          AppLaunchTarget.userDashboard => const UserPhoneLoginScreen(), // Fix for logout redirection
           AppLaunchTarget.adminDashboard => const AdminLoginScreen(),
         };
       },

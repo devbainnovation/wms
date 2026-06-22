@@ -38,8 +38,11 @@ dependencies:
   internet_connection_checker_plus: ^2.9.1+2
   google_fonts: ^6.3.2
   firebase_core: ^4.1.0
+  firebase_auth: ^6.1.4
   firebase_messaging: ^16.0.1
   flutter_local_notifications: ^19.4.2
+  intl_phone_field: ^3.2.0
+  pinput: ^5.0.0
   http: ^1.6.0
   package_info_plus: ^8.3.1
   shared_preferences: ^2.5.3

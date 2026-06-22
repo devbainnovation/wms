@@ -67,6 +67,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
         );
   }
 
+  /*
   Future<void> _onLoginTap() async {
     if (ref.read(authLoginControllerProvider).isLoading) {
       return;
@@ -105,7 +106,9 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
+  */
 
+  /*
   Future<String?> _readFcmTokenSafely(
     AppDeviceInfoService appDeviceInfoService,
   ) async {
@@ -120,6 +123,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       return null;
     }
   }
+  */
 
   Future<void> _onForgotPasswordTap() async {
     final result = await Navigator.of(context).push<bool>(
@@ -141,8 +145,8 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
   Widget build(BuildContext context) {
     final obscurePassword = ref.watch(userObscurePasswordProvider);
     final rememberMe = ref.watch(userRememberMeProvider);
-    final loginState = ref.watch(authLoginControllerProvider);
-    final isBusy = loginState.isLoading;
+    // final loginState = ref.watch(authLoginControllerProvider);
+    // final isBusy = loginState.isLoading;
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width > 900 ? 430.0 : 380.0;
 
@@ -284,11 +288,38 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    /*
                     AppButton(
                       text: 'Login',
                       isLoading: isBusy,
                       onPressed: isBusy ? null : _onLoginTap,
                     ),
+                    const SizedBox(height: 16),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('OR', style: TextStyle(color: AppColors.greyText, fontSize: 12)),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: isBusy ? null : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const UserPhoneLoginScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.phone_android_rounded),
+                      label: const Text('Login with Phone'),
+                    ),
+                    */
                   ],
                 ),
               ),

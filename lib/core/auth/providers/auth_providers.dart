@@ -4,6 +4,7 @@ import 'package:wms/core/api/api_client.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
 import 'package:wms/core/auth/services/auth_api_service.dart';
 import 'package:wms/core/auth/services/auth_local_storage.dart';
+import 'package:wms/user/features/auth/providers/login_state_providers.dart';
 
 final authApiServiceProvider = Provider<AuthApiService>((ref) {
   return AuthApiService();
@@ -32,7 +33,7 @@ class CurrentAuthSessionNotifier extends Notifier<AuthSession?> {
 }
 
 final authLoginControllerProvider =
-    NotifierProvider.autoDispose<AuthLoginController, AsyncValue<void>>(
+    NotifierProvider<AuthLoginController, AsyncValue<void>>(
       AuthLoginController.new,
     );
 
@@ -77,6 +78,53 @@ class AuthLoginController extends Notifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  Future<AuthSession> loginWithFirebase({
+    required String firebaseIdToken,
+    required String phoneNumber,
+    String? deviceInfo,
+    String? fcmToken,
+  }) async {
+    if (kDebugMode) {
+      debugPrint('--- loginWithFirebase Parameters ---');
+      debugPrint('firebaseIdToken: $firebaseIdToken');
+      debugPrint('phoneNumber: $phoneNumber');
+      debugPrint('deviceInfo: $deviceInfo');
+      debugPrint('fcmToken: $fcmToken');
+      debugPrint('------------------------------------');
+    }
+    state = const AsyncLoading<void>();
+    try {
+      final authApi = ref.read(authApiServiceProvider);
+      final storage = ref.read(authLocalStorageProvider);
+
+      final session = await authApi.loginWithFirebaseToken(
+        firebaseIdToken: firebaseIdToken,
+        deviceInfo: deviceInfo,
+        fcmToken: fcmToken,
+      );
+
+      if (kDebugMode) {
+        debugPrint('LOGIN TOKEN: ${session.token}');
+      }
+
+      // Phone auth always persists session until logout
+      await storage.saveLoginData(
+        rememberMe: true,
+        username: phoneNumber,
+        password: '', // No password for phone auth
+        session: session,
+      );
+
+      ref.read(currentAuthSessionProvider.notifier).setSession(session);
+
+      state = const AsyncData<void>(null);
+      return session;
+    } catch (error, stackTrace) {
+      state = AsyncError<void>(error, stackTrace);
+      rethrow;
+    }
+  }
 }
 
 final authLogoutControllerProvider =
@@ -110,6 +158,9 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
       // Clear in-memory state after persisted cleanup so listeners can safely
       // redirect to the login screen without bouncing back into the dashboard.
       sessionNotifier.clear();
+      
+      // Reset Phone Login state so it returns to the Phone Number phase
+      ref.read(userPhoneLoginControllerProvider.notifier).reset();
 
       if (activeSessionId.isNotEmpty) {
         try {

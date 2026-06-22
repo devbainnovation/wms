@@ -6,7 +6,7 @@ import 'package:wms/core/auth/models/auth_models.dart';
 import 'package:wms/core/auth/providers/auth_providers.dart';
 import 'package:wms/core/auth/services/auth_local_storage.dart';
 
-enum AppLaunchTarget { webAdmin, userLogin, userDashboard, adminDashboard }
+enum AppLaunchTarget { webAdmin, userLogin, userPhoneLogin, userDashboard, adminDashboard }
 
 class AppLaunchState {
   const AppLaunchState._({required this.target, this.session});
@@ -15,6 +15,9 @@ class AppLaunchState {
 
   const AppLaunchState.userLogin()
     : this._(target: AppLaunchTarget.userLogin);
+
+  const AppLaunchState.userPhoneLogin()
+    : this._(target: AppLaunchTarget.userPhoneLogin);
 
   const AppLaunchState.userDashboard(AuthSession session)
     : this._(target: AppLaunchTarget.userDashboard, session: session);
@@ -31,7 +34,7 @@ final appLaunchProvider = FutureProvider<AppLaunchState>((ref) async {
   if (remembered == null) {
     return kIsWeb
         ? const AppLaunchState.web()
-        : const AppLaunchState.userLogin();
+        : const AppLaunchState.userPhoneLogin();
   }
 
   final hasValidSession =
@@ -43,7 +46,7 @@ final appLaunchProvider = FutureProvider<AppLaunchState>((ref) async {
   if (!hasValidSession) {
     return kIsWeb
         ? const AppLaunchState.web()
-        : const AppLaunchState.userLogin();
+        : const AppLaunchState.userPhoneLogin();
   }
 
   final session = AuthSession(

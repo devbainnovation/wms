@@ -143,4 +143,55 @@ class AuthApiService {
 
     return 'Login failed. Please try again.';
   }
+
+  Future<AuthSession> loginWithFirebaseToken({
+    required String firebaseIdToken,
+    String? deviceInfo,
+    String? fcmToken,
+  }) async {
+    try {
+      final payload = <String, dynamic>{'firebaseIdToken': firebaseIdToken};
+
+      final trimmedDeviceInfo = deviceInfo?.trim();
+      if (trimmedDeviceInfo != null && trimmedDeviceInfo.isNotEmpty) {
+        payload['deviceInfo'] = trimmedDeviceInfo;
+      }
+
+      final trimmedFcmToken = fcmToken?.trim();
+      if (trimmedFcmToken != null && trimmedFcmToken.isNotEmpty) {
+        payload['fcmToken'] = trimmedFcmToken;
+      }
+
+      final response = await _apiClient.post(
+        ApiEndpoints.authVerifyOtp,
+        body: payload,
+        showGlobalLoader: false,
+      );
+
+      if (response.statusCode == 200) {
+        final body = response.dataAsMap;
+        if (body == null) {
+          throw const AuthApiException('Invalid login response from server.');
+        }
+        final session = AuthSession.fromJson(body);
+        if (!session.isValid) {
+          throw const AuthApiException('Invalid login response from server.');
+        }
+        return session;
+      }
+
+      throw AuthApiException(
+        _extractErrorMessage(response.data),
+        statusCode: response.statusCode,
+      );
+    } catch (error) {
+      if (error is ApiException) {
+        throw AuthApiException(error.message, statusCode: error.statusCode);
+      }
+      if (error is AuthApiException) {
+        rethrow;
+      }
+      throw AuthApiException('Firebase token exchange failed: $error');
+    }
+  }
 }
