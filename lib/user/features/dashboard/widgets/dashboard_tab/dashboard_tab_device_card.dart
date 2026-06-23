@@ -83,27 +83,58 @@ class _DashboardDeviceCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: device.isOnline
-                          ? AppColors.accentGreen.withValues(alpha: 0.12)
-                          : AppColors.lightGreyText.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      modeLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: device.isOnline
-                            ? AppColors.accentGreen
-                            : AppColors.greyText,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: device.isOnline
+                              ? AppColors.accentGreen.withValues(alpha: 0.12)
+                              : AppColors.lightGreyText.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          modeLabel,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: device.isOnline
+                                ? AppColors.accentGreen
+                                : AppColors.greyText,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (device.batteryPercentage >= 0) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getBatteryIcon(device.batteryPercentage),
+                              size: 14,
+                              color: device.batteryPercentage <= 10
+                                  ? AppColors.error
+                                  : AppColors.accentGreen,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${device.batteryPercentage.toInt()}%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: device.batteryPercentage <= 10
+                                    ? AppColors.error
+                                    : AppColors.accentGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -142,4 +173,13 @@ class _DashboardDeviceCard extends StatelessWidget {
 String _formatFullDateTime(String primary, String fallback) {
   final source = primary.isNotEmpty ? primary : fallback;
   return AppDateTimeFormatter.formatString(source);
+}
+
+IconData _getBatteryIcon(double percentage) {
+  if (percentage >= 90) return Icons.battery_full_rounded;
+  if (percentage >= 70) return Icons.battery_6_bar_rounded;
+  if (percentage >= 50) return Icons.battery_4_bar_rounded;
+  if (percentage >= 30) return Icons.battery_2_bar_rounded;
+  if (percentage >= 10) return Icons.battery_1_bar_rounded;
+  return Icons.battery_0_bar_rounded;
 }

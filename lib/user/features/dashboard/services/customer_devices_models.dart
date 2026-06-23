@@ -324,6 +324,7 @@ class CustomerDeviceSummary {
     required this.allValvesOff,
     required this.isActive,
     required this.isOnline,
+    required this.batteryPercentage,
   });
 
   final String espId;
@@ -344,6 +345,7 @@ class CustomerDeviceSummary {
   final bool allValvesOff;
   final bool isActive;
   final bool isOnline;
+  final double batteryPercentage;
 
   CustomerDeviceSummary mergeWith(CustomerDeviceSummary other) {
     return CustomerDeviceSummary(
@@ -387,6 +389,8 @@ class CustomerDeviceSummary {
       allValvesOff: other.valves.isNotEmpty ? other.allValvesOff : allValvesOff,
       isActive: other.isActive,
       isOnline: other.isOnline,
+      batteryPercentage:
+          other.batteryPercentage != 0 ? other.batteryPercentage : batteryPercentage,
     );
   }
 
@@ -536,6 +540,7 @@ class CustomerDeviceSummary {
           (valves.isEmpty ? true : !valves.any((item) => item.isOn)),
       isActive: resolvedIsActive,
       isOnline: readBool(const ['online', 'isOnline']),
+      batteryPercentage: (json['batteryPercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
