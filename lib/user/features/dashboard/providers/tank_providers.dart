@@ -46,6 +46,35 @@ class TankSearchQueryNotifier extends Notifier<String> {
   }
 }
 
+final tankHistoryDaysProvider =
+    NotifierProvider.autoDispose<TankHistoryDaysNotifier, int>(
+      TankHistoryDaysNotifier.new,
+    );
+
+class TankHistoryDaysNotifier extends Notifier<int> {
+  @override
+  int build() => 7;
+
+  void setDays(int days) {
+    state = days;
+  }
+}
+
+final tankHistoryProvider = FutureProvider.autoDispose
+    .family<List<TankHistoryItem>, String>((ref, componentId) async {
+      final token = await _resolveToken(ref);
+      if (token.isEmpty) {
+        throw const ApiException('Session expired. Please login again.');
+      }
+      final days = ref.watch(tankHistoryDaysProvider);
+      final service = ref.watch(tankServiceProvider);
+      return service.getTankHistory(
+        bearerToken: token,
+        componentId: componentId,
+        days: days,
+      );
+    });
+
 Future<String> _resolveToken(Ref ref) async {
   final session = ref.read(currentAuthSessionProvider);
   return (session?.token ?? '').trim();

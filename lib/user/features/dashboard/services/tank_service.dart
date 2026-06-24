@@ -78,6 +78,21 @@ class TankData {
   }
 }
 
+class TankHistoryItem {
+  const TankHistoryItem({required this.level, required this.timestamp});
+
+  final double level;
+  final DateTime timestamp;
+
+  factory TankHistoryItem.fromJson(Map<String, dynamic> json) {
+    return TankHistoryItem(
+      level: (json['level'] as num?)?.toDouble() ?? 0.0,
+      timestamp: DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
+}
+
 class TankService {
   TankService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
@@ -116,6 +131,36 @@ class TankService {
     }
 
     return const <TankData>[];
+  }
+
+  Future<List<TankHistoryItem>> getTankHistory({
+    required String bearerToken,
+    required String componentId,
+    int days = 7,
+  }) async {
+    final response = await _apiClient.get(
+      ApiEndpoints.appTankHistory(componentId),
+      queryParameters: {'days': days.toString()},
+      bearerToken: bearerToken,
+      showGlobalLoader: false,
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        _extractMessage(response.data) ?? 'Unable to fetch tank history.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final data = response.data;
+    if (data is List) {
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(TankHistoryItem.fromJson)
+          .toList();
+    }
+
+    return const <TankHistoryItem>[];
   }
 
   String? _extractMessage(dynamic body) {

@@ -52,4 +52,6 @@ class ApiEndpoints {
     String scheduleId,
   ) => '/api/app/components/$componentId/schedules/$scheduleId';
   static String appScheduleById(String id) => '/api/app/schedules/$id';
+  static String appTankHistory(String componentId) =>
+      '/api/app/sensor/$componentId/history-compact';
 }

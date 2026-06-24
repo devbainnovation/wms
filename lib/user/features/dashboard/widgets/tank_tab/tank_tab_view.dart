@@ -6,6 +6,7 @@ import 'package:wms/user/features/dashboard/providers/providers.dart';
 import 'package:wms/user/features/dashboard/services/tank_service.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
 import 'package:wms/user/features/dashboard/widgets/tank_tab/tank_visualizer.dart';
+import 'package:wms/user/features/dashboard/screens/tank_history_screen.dart';
 
 class TankTabView extends ConsumerWidget {
   const TankTabView({super.key});
@@ -259,15 +260,42 @@ class _TankLevelCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  data.espDisplayName.isEmpty
-                      ? data.espId
-                      : data.espDisplayName,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkText,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data.espDisplayName.isEmpty
+                            ? data.espId
+                            : data.espDisplayName,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.darkText,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TankHistoryScreen(
+                              componentId: data.id,
+                              tankName: data.espDisplayName.isEmpty
+                                  ? data.espId
+                                  : data.espDisplayName,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.bar_chart_rounded,
+                        color: AppColors.blue,
+                        size: 28,
+                      ),
+                      tooltip: 'View History',
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Text(
