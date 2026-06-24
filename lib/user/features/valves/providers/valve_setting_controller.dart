@@ -499,7 +499,6 @@ class ValveSettingController extends ChangeNotifier {
           schedules: nextCards,
           isLoadingSchedules: false,
           hasLoadedSchedules: true,
-          lastUpdated: DateTime.now(),
         ),
       );
     } catch (error) {
