@@ -11,6 +11,23 @@ part 'admin_customers_create_dialog_part.dart';
 part 'admin_customers_edit_dialog_part.dart';
 part 'admin_customers_assign_delete_part.dart';
 
+const _countryDialCodes = <_CountryDialCode>[
+  _CountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),
+  // _CountryDialCode(isoCode: 'US', name: 'United States', dialCode: '+1'),
+  // _CountryDialCode(isoCode: 'GB', name: 'United Kingdom', dialCode: '+44'),
+  // _CountryDialCode(isoCode: 'AU', name: 'Australia', dialCode: '+61'),
+  // _CountryDialCode(
+  //   isoCode: 'AE',
+  //   name: 'United Arab Emirates',
+  //   dialCode: '+971',
+  // ),
+  // _CountryDialCode(isoCode: 'CA', name: 'Canada', dialCode: '+1'),
+  // _CountryDialCode(isoCode: 'DE', name: 'Germany', dialCode: '+49'),
+  // _CountryDialCode(isoCode: 'FR', name: 'France', dialCode: '+33'),
+  // _CountryDialCode(isoCode: 'SG', name: 'Singapore', dialCode: '+65'),
+  // _CountryDialCode(isoCode: 'SA', name: 'Saudi Arabia', dialCode: '+966'),
+];
+
 final _customerFormUiProvider =
     NotifierProvider.autoDispose<_CustomerFormUiNotifier, _CustomerFormUiState>(
       _CustomerFormUiNotifier.new,
@@ -48,7 +65,7 @@ class _CustomerFormUiNotifier extends Notifier<_CustomerFormUiState> {
   @override
   _CustomerFormUiState build() {
     return _CustomerFormUiState(
-      selectedCountry: _CustomerCreateDialogState._countryDialCodes.first,
+      selectedCountry: _countryDialCodes.first,
       selectedDevices: const <AdminUnassignedDevice>[],
       obscurePassword: true,
       isActive: true,
@@ -64,8 +81,18 @@ class _CustomerFormUiNotifier extends Notifier<_CustomerFormUiState> {
       return;
     }
     final upperIso = isoCode.toUpperCase();
-    final match = _CustomerCreateDialogState._countryDialCodes.where((item) {
+    final match = _countryDialCodes.where((item) {
       return item.isoCode.toUpperCase() == upperIso;
+    });
+    if (match.isEmpty) {
+      return;
+    }
+    state = state.copyWith(selectedCountry: match.first);
+  }
+
+  void setCountryByDialCode(String dialCode) {
+    final match = _countryDialCodes.where((item) {
+      return item.dialCode == dialCode;
     });
     if (match.isEmpty) {
       return;

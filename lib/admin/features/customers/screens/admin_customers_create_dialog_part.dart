@@ -23,19 +23,6 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
   final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
 
-  static const _countryDialCodes = <_CountryDialCode>[
-    _CountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),
-    // _CountryDialCode(isoCode: 'US', name: 'United States', dialCode: '+1'),
-    // _CountryDialCode(isoCode: 'GB', name: 'United Kingdom', dialCode: '+44'),
-    // _CountryDialCode(isoCode: 'AU', name: 'Australia', dialCode: '+61'),
-    // _CountryDialCode(isoCode: 'AE', name: 'United Arab Emirates', dialCode: '+971'),
-    // _CountryDialCode(isoCode: 'CA', name: 'Canada', dialCode: '+1'),
-    // _CountryDialCode(isoCode: 'DE', name: 'Germany', dialCode: '+49'),
-    // _CountryDialCode(isoCode: 'FR', name: 'France', dialCode: '+33'),
-    // _CountryDialCode(isoCode: 'SG', name: 'Singapore', dialCode: '+65'),
-    // _CountryDialCode(isoCode: 'SA', name: 'Saudi Arabia', dialCode: '+966'),
-  ];
-
   @override
   void dispose() {
     _phoneController.dispose();

@@ -68,6 +68,7 @@ class AdminCustomerRequest {
 
 class AdminCustomerUpdateRequest {
   const AdminCustomerUpdateRequest({
+    required this.phoneNumber,
     required this.fullName,
     required this.email,
     required this.village,
@@ -79,6 +80,7 @@ class AdminCustomerUpdateRequest {
     this.taluka,
   });
 
+  final String phoneNumber;
   final String fullName;
   final String email;
   final String village;
@@ -91,6 +93,7 @@ class AdminCustomerUpdateRequest {
 
   Map<String, dynamic> toJson() {
     return {
+      'phoneNumber': phoneNumber,
       'fullName': fullName,
       'email': email,
       'village': village,

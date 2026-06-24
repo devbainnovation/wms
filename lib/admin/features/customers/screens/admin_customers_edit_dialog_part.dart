@@ -12,6 +12,7 @@ class _EditCustomerDialog extends ConsumerStatefulWidget {
 
 class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _phoneController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _villageController = TextEditingController();
@@ -26,6 +27,30 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
   void initState() {
     super.initState();
     final item = widget.customer;
+
+    final phone = item.phoneNumber.trim();
+    _CountryDialCode? matchedCountry;
+    String restOfPhone = phone;
+
+    for (final country in _countryDialCodes) {
+      if (phone.startsWith(country.dialCode)) {
+        matchedCountry = country;
+        restOfPhone = phone.substring(country.dialCode.length);
+        break;
+      }
+    }
+
+    _phoneController.text = restOfPhone;
+    if (matchedCountry != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref
+              .read(_customerFormUiProvider.notifier)
+              .setCountry(matchedCountry!);
+        }
+      });
+    }
+
     _fullNameController.text = item.fullName;
     _emailController.text = item.email;
     _villageController.text = item.village;
@@ -39,6 +64,7 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
 
   @override
   void dispose() {
+    _phoneController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _villageController.dispose();
@@ -54,6 +80,8 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(adminUpdateCustomerControllerProvider);
+    final uiState = ref.watch(_customerFormUiProvider);
+    final isLoading = state.isLoading;
 
     return AlertDialog(
       backgroundColor: AppColors.lightBackground,
@@ -66,6 +94,49 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 210,
+                      child: DropdownButtonFormField<_CountryDialCode>(
+                        initialValue: uiState.selectedCountry,
+                        decoration: const InputDecoration(
+                          labelText: 'Country',
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _countryDialCodes
+                            .map(
+                              (country) => DropdownMenuItem<_CountryDialCode>(
+                                value: country,
+                                child: Text(
+                                  '${country.name} (${country.dialCode})',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: isLoading
+                            ? null
+                            : (value) => ref
+                                  .read(_customerFormUiProvider.notifier)
+                                  .setCountry(value ?? _countryDialCodes.first),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _phoneController,
+                        hintText: 'Mobile number',
+                        labelText: 'Phone Number',
+                        keyboardType: TextInputType.phone,
+                        validator: _validateMobile,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 AppTextField(
                   controller: _fullNameController,
                   hintText: 'Enter full name',
@@ -174,7 +245,10 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
       return;
     }
 
+    final uiState = ref.read(_customerFormUiProvider);
+    final phone = _phoneController.text.trim();
     final request = AdminCustomerUpdateRequest(
+      phoneNumber: '${uiState.selectedCountry.dialCode}$phone',
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       village: _villageController.text.trim(),
@@ -210,6 +284,20 @@ class _EditCustomerDialogState extends ConsumerState<_EditCustomerDialog> {
   String? _required(String? value, String label) {
     if ((value ?? '').trim().isEmpty) {
       return '$label is required';
+    }
+    return null;
+  }
+
+  String? _validateMobile(String? value) {
+    final requiredResult = _required(value, 'Phone number');
+    if (requiredResult != null) {
+      return requiredResult;
+    }
+
+    final input = value!.trim();
+    final phoneRegex = RegExp(r'^[0-9]{10,15}$');
+    if (!phoneRegex.hasMatch(input)) {
+      return 'Enter a valid mobile number';
     }
     return null;
   }

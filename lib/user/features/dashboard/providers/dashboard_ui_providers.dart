@@ -1,5 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/user/features/dashboard/providers/customer_devices_providers.dart';
+
+final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
+  // Emit current time immediately
+  final controller = StreamController<DateTime>();
+  controller.add(DateTime.now());
+
+  final timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    controller.add(DateTime.now());
+  });
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
 
 final userDashboardTabProvider =
     NotifierProvider.autoDispose<UserDashboardTabNotifier, int>(

@@ -192,54 +192,20 @@ class _ValveRow extends StatelessWidget {
   }
 }
 
-class _ValveRemainingClock extends StatefulWidget {
+class _ValveRemainingClock extends ConsumerWidget {
   const _ValveRemainingClock({required this.onTime, required this.offTime});
 
   final String onTime;
   final String offTime;
 
   @override
-  State<_ValveRemainingClock> createState() => _ValveRemainingClockState();
-}
-
-class _ValveRemainingClockState extends State<_ValveRemainingClock> {
-  Timer? _timer;
-  late DateTime _now;
-
-  @override
-  void initState() {
-    super.initState();
-    _now = DateTime.now();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() {
-          _now = DateTime.now();
-        });
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant _ValveRemainingClock oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.onTime != widget.onTime ||
-        oldWidget.offTime != widget.offTime) {
-      _now = DateTime.now();
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nowAsync = ref.watch(currentTimeProvider);
+    final now = nowAsync.value ?? DateTime.now();
     final remaining = _remainingValveTime(
-      onTime: widget.onTime,
-      offTime: widget.offTime,
-      now: _now,
+      onTime: onTime,
+      offTime: offTime,
+      now: now,
     );
     if (remaining == null) {
       return const SizedBox.shrink();
