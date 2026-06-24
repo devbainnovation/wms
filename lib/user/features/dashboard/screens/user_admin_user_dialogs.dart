@@ -18,7 +18,6 @@ final addUserFormUiProvider =
 class AddUserFormUiState {
   const AddUserFormUiState({
     required this.selectedCountry,
-    this.obscurePassword = true,
     this.permissions = const UserAdminUserPermissions(
       canViewDashboard: true,
       canControlValves: true,
@@ -31,17 +30,14 @@ class AddUserFormUiState {
   });
 
   final UserAdminCountryDialCode selectedCountry;
-  final bool obscurePassword;
   final UserAdminUserPermissions permissions;
 
   AddUserFormUiState copyWith({
     UserAdminCountryDialCode? selectedCountry,
-    bool? obscurePassword,
     UserAdminUserPermissions? permissions,
   }) {
     return AddUserFormUiState(
       selectedCountry: selectedCountry ?? this.selectedCountry,
-      obscurePassword: obscurePassword ?? this.obscurePassword,
       permissions: permissions ?? this.permissions,
     );
   }
@@ -55,10 +51,6 @@ class AddUserFormUiNotifier extends Notifier<AddUserFormUiState> {
 
   void setCountry(UserAdminCountryDialCode country) {
     state = state.copyWith(selectedCountry: country);
-  }
-
-  void toggleObscurePassword() {
-    state = state.copyWith(obscurePassword: !state.obscurePassword);
   }
 
   void updatePermissions(UserAdminUserPermissions permissions) {
@@ -139,8 +131,6 @@ class _UserAdminAddUserDialogState
     extends ConsumerState<UserAdminAddUserDialog> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _villageController = TextEditingController();
@@ -154,8 +144,6 @@ class _UserAdminAddUserDialogState
   @override
   void dispose() {
     _phoneController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _villageController.dispose();
@@ -253,37 +241,6 @@ class _UserAdminAddUserDialogState
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                AppTextField(
-                  controller: _usernameController,
-                  hintText: 'Enter username',
-                  labelText: 'Username',
-                  capitalizeFirstLetter: false,
-                  validator: (v) => _required(v, 'Username'),
-                ),
-                const SizedBox(height: 10),
-                AppTextField(
-                  controller: _passwordController,
-                  hintText: 'Enter password',
-                  labelText: 'Password',
-                  capitalizeFirstLetter: false,
-                  obscureText: uiState.obscurePassword,
-                  suffixIcon: IconButton(
-                    onPressed: createState.isLoading
-                        ? null
-                        : () {
-                            ref
-                                .read(addUserFormUiProvider.notifier)
-                                .toggleObscurePassword();
-                          },
-                    icon: Icon(
-                      uiState.obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                  ),
-                  validator: (v) => _required(v, 'Password'),
                 ),
                 const SizedBox(height: 10),
                 AppTextField(
@@ -413,10 +370,9 @@ class _UserAdminAddUserDialogState
 
     final uiState = ref.read(addUserFormUiProvider);
     final phone = _phoneController.text.trim();
+    final fullPhoneNumber = '${uiState.selectedCountry.dialCode}$phone';
     final request = UserAdminUserCreateRequest(
-      phoneNumber: '${uiState.selectedCountry.dialCode}$phone',
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
+      phoneNumber: fullPhoneNumber,
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       village: _villageController.text.trim(),

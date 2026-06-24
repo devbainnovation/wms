@@ -3,8 +3,6 @@ import 'package:wms/core/api/api.dart';
 class AdminCustomerRequest {
   const AdminCustomerRequest({
     required this.phoneNumber,
-    required this.username,
-    required this.password,
     required this.fullName,
     required this.email,
     required this.village,
@@ -18,8 +16,6 @@ class AdminCustomerRequest {
   });
 
   final String phoneNumber;
-  final String username;
-  final String password;
   final String fullName;
   final String email;
   final String village;
@@ -50,8 +46,6 @@ class AdminCustomerRequest {
 
     return {
       'phoneNumber': phoneNumber,
-      'username': username,
-      'password': password,
       'fullName': fullName,
       'email': email,
       'village': village,

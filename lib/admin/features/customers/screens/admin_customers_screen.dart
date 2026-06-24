@@ -37,25 +37,21 @@ class _CustomerFormUiState {
   const _CustomerFormUiState({
     required this.selectedCountry,
     required this.selectedDevices,
-    required this.obscurePassword,
     required this.isActive,
   });
 
   final _CountryDialCode selectedCountry;
   final List<AdminUnassignedDevice> selectedDevices;
-  final bool obscurePassword;
   final bool isActive;
 
   _CustomerFormUiState copyWith({
     _CountryDialCode? selectedCountry,
     List<AdminUnassignedDevice>? selectedDevices,
-    bool? obscurePassword,
     bool? isActive,
   }) {
     return _CustomerFormUiState(
       selectedCountry: selectedCountry ?? this.selectedCountry,
       selectedDevices: selectedDevices ?? this.selectedDevices,
-      obscurePassword: obscurePassword ?? this.obscurePassword,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -67,7 +63,6 @@ class _CustomerFormUiNotifier extends Notifier<_CustomerFormUiState> {
     return _CustomerFormUiState(
       selectedCountry: _countryDialCodes.first,
       selectedDevices: const <AdminUnassignedDevice>[],
-      obscurePassword: true,
       isActive: true,
     );
   }
@@ -113,10 +108,6 @@ class _CustomerFormUiNotifier extends Notifier<_CustomerFormUiState> {
           .where((item) => item.id != id)
           .toList(),
     );
-  }
-
-  void togglePasswordVisibility() {
-    state = state.copyWith(obscurePassword: !state.obscurePassword);
   }
 
   void setActive(bool value) {

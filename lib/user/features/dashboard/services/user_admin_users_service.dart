@@ -65,8 +65,6 @@ class UserAdminUserPermissions {
 class UserAdminUserCreateRequest {
   const UserAdminUserCreateRequest({
     required this.phoneNumber,
-    required this.username,
-    required this.password,
     required this.fullName,
     required this.email,
     required this.village,
@@ -81,8 +79,6 @@ class UserAdminUserCreateRequest {
   });
 
   final String phoneNumber;
-  final String username;
-  final String password;
   final String fullName;
   final String email;
   final String village;
@@ -98,8 +94,6 @@ class UserAdminUserCreateRequest {
   Map<String, dynamic> toJson() {
     return {
       'phoneNumber': phoneNumber.trim(),
-      'username': username.trim(),
-      'password': password,
       'fullName': fullName.trim(),
       'email': email.trim(),
       'village': village.trim(),

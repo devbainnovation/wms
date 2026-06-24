@@ -11,8 +11,6 @@ class _CustomerCreateDialog extends ConsumerStatefulWidget {
 class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _villageController = TextEditingController();
@@ -26,8 +24,6 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
   @override
   void dispose() {
     _phoneController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _villageController.dispose();
@@ -99,38 +95,6 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _usernameController,
-                  hintText: 'Enter username',
-                  labelText: 'Username',
-                  capitalizeFirstLetter: false,
-                  validator: (v) => _required(v, 'Username'),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _passwordController,
-                  hintText: 'Enter password',
-                  labelText: 'Password',
-                  capitalizeFirstLetter: false,
-                  obscureText: uiState.obscurePassword,
-                  suffixIcon: IconButton(
-                    tooltip: uiState.obscurePassword
-                        ? 'Show password'
-                        : 'Hide password',
-                    onPressed: isLoading
-                        ? null
-                        : () => ref
-                              .read(_customerFormUiProvider.notifier)
-                              .togglePasswordVisibility(),
-                    icon: Icon(
-                      uiState.obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                  ),
-                  validator: (v) => _required(v, 'Password'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -396,10 +360,9 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
 
     final uiState = ref.read(_customerFormUiProvider);
     final phone = _phoneController.text.trim();
+    final fullPhoneNumber = '${uiState.selectedCountry.dialCode}$phone';
     final request = AdminCustomerRequest(
-      phoneNumber: '${uiState.selectedCountry.dialCode}$phone',
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
+      phoneNumber: fullPhoneNumber,
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       village: _villageController.text.trim(),
