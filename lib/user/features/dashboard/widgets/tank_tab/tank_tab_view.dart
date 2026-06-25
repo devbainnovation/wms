@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/services/tank_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
-import 'package:wms/user/features/dashboard/widgets/tank_tab/tank_visualizer.dart';
-import 'package:wms/user/features/dashboard/screens/tank_history_screen.dart';
 
 class TankTabView extends ConsumerWidget {
   const TankTabView({super.key});

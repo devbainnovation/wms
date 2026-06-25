@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_user_permissions_editor.dart';
-import 'package:wms/user/features/dashboard/services/user_admin_users_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 const userAdminCountryDialCodes = <UserAdminCountryDialCode>[
   UserAdminCountryDialCode(isoCode: 'IN', name: 'India', dialCode: '+91'),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wms/admin/features/dashboard/providers/providers.dart';
-import 'package:wms/admin/features/dashboard/widgets/admin_profile_dialogs.dart';
-import 'package:wms/admin/features/dashboard/widgets/admin_profile_sections.dart';
+import 'package:wms/admin/features/dashboard/dashboard.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 
@@ -91,7 +89,7 @@ class AdminProfileView extends ConsumerWidget {
               subtitle: 'Update your password for this admin account',
               onTap: () => showDialog<void>(
                 context: context,
-                builder: (_) => const ChangePasswordDialog(),
+                builder: (_) => ChangePasswordDialog(),
               ),
             ),
             const SizedBox(height: 24),

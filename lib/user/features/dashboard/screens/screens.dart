@@ -1,4 +1,11 @@
 // user/features/dashboard/screens/screens.dart
 export 'user_dashboard_screen.dart';
 export 'user_admin_users_screen.dart';
+export 'user_admin_user_details_screen.dart';
 export 'device_details_screen.dart';
+export 'tank_history_screen.dart';
+export 'motor_setting_screen.dart';
+export 'user_admin_user_card.dart';
+export 'user_admin_user_details_form.dart';
+export 'user_admin_user_dialogs.dart';
+export 'user_admin_user_permissions_editor.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/valves/models/valve_setting_models.dart';
+import 'package:wms/user/features/valves/models/models.dart';
 
 class ValveSettingValveCard extends StatelessWidget {
   const ValveSettingValveCard({
@@ -38,51 +38,9 @@ class ValveSettingValveCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                valve.valveLabel,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkText,
-                                ),
-                              ),
-                            ),
-                            if (onRename != null) ...[
-                              const SizedBox(width: 4),
-                              GestureDetector(
-                                onTap: onRename,
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  size: 16,
-                                  color: AppColors.primaryTeal,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Keep the expand affordance visible; active status can be
-                          // reintroduced here if a future feature needs it again.
-                          Icon(
-                            valve.isExpanded
-                                ? Icons.expand_less_rounded
-                                : Icons.expand_more_rounded,
-                            color: AppColors.greyText,
-                          ),
-                        ],
-                      ),
-                    ],
+                  _ValveHeader(
+                    valve: valve,
+                    onRename: onRename,
                   ),
                   if (valve.componentName.trim().isNotEmpty) ...[
                     const SizedBox(height: 2),
@@ -106,65 +64,10 @@ class ValveSettingValveCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.schedule_rounded,
-                              size: 14,
-                              color: AppColors.greyText,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                AppDateTimeFormatter.formatDateTime(
-                                  valve.lastUpdated,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.greyText,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (valve.componentId.trim().isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'Manual',
-                              style: TextStyle(
-                                color: AppColors.darkText,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Transform.scale(
-                              scale: 0.78,
-                              child: Switch(
-                                value: valve.manualActionOn,
-                                activeThumbColor: AppColors.accentGreen,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                onChanged: canControlValves
-                                    ? onToggleManual
-                                    : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
+                  _ValveActionRow(
+                    valve: valve,
+                    canControlValves: canControlValves,
+                    onToggleManual: onToggleManual,
                   ),
                 ],
               ),
@@ -193,6 +96,152 @@ class ValveSettingValveCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _ValveHeader extends StatelessWidget {
+  const _ValveHeader({
+    required this.valve,
+    this.onRename,
+  });
+
+  final ValveComponentModel valve;
+  final VoidCallback? onRename;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  valve.valveLabel,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkText,
+                  ),
+                ),
+              ),
+              if (onRename != null) ...[
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: onRename,
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    size: 16,
+                    color: AppColors.primaryTeal,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(
+          valve.isExpanded
+              ? Icons.expand_less_rounded
+              : Icons.expand_more_rounded,
+          color: AppColors.greyText,
+        ),
+      ],
+    );
+  }
+}
+
+class _ValveActionRow extends StatelessWidget {
+  const _ValveActionRow({
+    required this.valve,
+    required this.canControlValves,
+    required this.onToggleManual,
+  });
+
+  final ValveComponentModel valve;
+  final bool canControlValves;
+  final ValueChanged<bool> onToggleManual;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: _ValveInfoRow(
+            icon: Icons.access_time_rounded,
+            text: AppDateTimeFormatter.formatDateTime(valve.lastUpdated),
+            iconSize: 18,
+            fontSize: 12,
+          ),
+        ),
+        if (valve.componentId.trim().isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Manual',
+                style: TextStyle(
+                  color: AppColors.darkText,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Transform.scale(
+                scale: 0.85, // Increased slightly from 0.78 for better UX
+                child: Switch(
+                  value: valve.manualActionOn,
+                  activeThumbColor: AppColors.accentGreen,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onChanged: canControlValves ? onToggleManual : null,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ValveInfoRow extends StatelessWidget {
+  const _ValveInfoRow({
+    required this.icon,
+    required this.text,
+    this.iconSize = 16,
+    this.fontSize = 13,
+    this.color = AppColors.greyText,
+  });
+
+  final IconData icon;
+  final String text;
+  final double iconSize;
+  final double fontSize;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: iconSize, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: fontSize,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

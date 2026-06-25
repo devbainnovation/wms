@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class MotorSettingScreen extends ConsumerStatefulWidget {
   const MotorSettingScreen({required this.device, super.key});

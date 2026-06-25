@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/admin/features/customers/providers/admin_customers_providers.dart';
-import 'package:wms/admin/features/dashboard/providers/providers.dart';
-import 'package:wms/admin/features/dashboard/services/services.dart';
-import 'package:wms/admin/features/dashboard/widgets/widgets.dart';
+import 'package:wms/admin/features/dashboard/dashboard.dart';
 import 'package:wms/admin/features/customers/screens/admin_customers_screen.dart';
 import 'package:wms/admin/features/devices/screens/admin_devices_screen.dart';
 import 'package:wms/core/core.dart';

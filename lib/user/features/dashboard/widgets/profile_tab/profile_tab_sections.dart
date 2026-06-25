@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/services/services.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class ProfileHeroCard extends StatelessWidget {
   const ProfileHeroCard({

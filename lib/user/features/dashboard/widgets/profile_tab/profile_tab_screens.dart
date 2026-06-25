@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/services/services.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_sections.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {

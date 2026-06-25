@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:wms/core/core.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
-import 'package:wms/user/features/valves/models/valve_setting_models.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
+import 'package:wms/user/features/valves/models/models.dart';
 
 final valveSettingProvider = legacy.ChangeNotifierProvider.autoDispose
     .family<ValveSettingController, ValveSettingArgs>(

@@ -58,6 +58,8 @@ class _WmsAppState extends ConsumerState<WmsApp> {
       }
 
       ref.read(currentAuthSessionProvider.notifier).clear();
+      ref.read(userPhoneLoginControllerProvider.notifier).reset();
+      
       if (!mounted) {
         return;
       }
@@ -85,7 +87,11 @@ class _WmsAppState extends ConsumerState<WmsApp> {
       _routerDelegate.refresh();
     });
     ref.listen<AuthSession?>(currentAuthSessionProvider, (previous, next) {
-      if (next != null && !kIsWeb) {
+      if (next == null) {
+        // Reset phone login state on logout/session expiry so the next login
+        // starts from the mobile number input screen.
+        ref.read(userPhoneLoginControllerProvider.notifier).reset();
+      } else if (!kIsWeb) {
         // When a session is established on mobile, clear the navigation stack
         // (e.g., pop the Phone Login screen) so the AppLaunchGate root
         // can transition to the Dashboard.

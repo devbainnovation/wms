@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_user_details_screen.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_user_dialogs.dart';
-import 'package:wms/user/features/dashboard/services/user_admin_users_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class UserAdminUserCard extends ConsumerWidget {
   const UserAdminUserCard({required this.user, super.key});

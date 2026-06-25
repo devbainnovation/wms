@@ -5,10 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/screens/device_details_screen.dart';
-import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
-import 'package:wms/user/features/dashboard/services/weather_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
 
 import '../../../valves/screens/valve_setting_screen.dart';

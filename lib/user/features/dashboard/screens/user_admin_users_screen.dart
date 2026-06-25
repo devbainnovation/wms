@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_user_dialogs.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_user_card.dart';
-import 'package:wms/user/features/dashboard/providers/user_admin_users_providers.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class UserAdminUsersScreen extends ConsumerWidget {
   const UserAdminUsersScreen({super.key});

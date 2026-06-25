@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/tank_providers.dart';
-import 'package:wms/user/features/dashboard/services/tank_service.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class TankHistoryScreen extends ConsumerWidget {
   const TankHistoryScreen({

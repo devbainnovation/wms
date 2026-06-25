@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/user_profile_providers.dart';
-import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
-import 'package:wms/user/features/dashboard/services/user_profile_service.dart';
-import 'package:wms/user/features/valves/models/valve_setting_models.dart';
-import 'package:wms/user/features/valves/providers/valve_setting_controller.dart';
-import 'package:wms/user/features/valves/screens/valve_schedule_editor_screen.dart';
-import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
-import 'package:wms/user/features/valves/widgets/valve_setting_widgets.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
+import 'package:wms/user/features/valves/valves.dart';
 
 class ValveSettingScreen extends ConsumerWidget {
   const ValveSettingScreen({required this.device, super.key});
@@ -119,22 +113,37 @@ class _EmptyValvesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.lightGreyText),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
-          child: const Text(
-            'No data found.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.greyText,
-              fontWeight: FontWeight.w600,
-            ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inbox_rounded, size: 48, color: AppColors.lightGreyText),
+              SizedBox(height: 16),
+              Text(
+                'No valves found for this device.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.greyText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ),

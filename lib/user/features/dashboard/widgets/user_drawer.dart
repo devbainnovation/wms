@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/screens/user_admin_users_screen.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class UserDrawer extends ConsumerWidget {
   const UserDrawer({super.key});

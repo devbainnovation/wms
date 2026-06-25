@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/auth/screens/session_expiry_navigation.dart';
-import 'package:wms/user/features/dashboard/providers/providers.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_screens.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_sections.dart';
+import 'package:wms/user/features/dashboard/dashboard.dart';
 
 class ProfileTabView extends ConsumerWidget {
   const ProfileTabView({super.key});
@@ -69,7 +67,7 @@ class ProfileTabView extends ConsumerWidget {
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const ChangePasswordScreen(),
+                      builder: (_) => ChangePasswordScreen(),
                     ),
                   );
                 },
@@ -95,7 +93,7 @@ class ProfileTabView extends ConsumerWidget {
                     : () async {
                         final shouldLogout = await showDialog<bool>(
                           context: context,
-                          builder: (_) => const LogoutConfirmDialog(),
+                          builder: (_) => LogoutConfirmDialog(),
                         );
                         if (shouldLogout != true) {
                           return;
