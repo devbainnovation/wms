@@ -46,6 +46,33 @@ class TankSearchQueryNotifier extends Notifier<String> {
   }
 }
 
+final filteredTankListProvider = Provider.autoDispose<AsyncValue<List<TankData>>>((ref) {
+  final tankListAsync = ref.watch(tankListProvider);
+  final filter = ref.watch(tankFilterProvider);
+  final query = ref.watch(tankSearchQueryProvider).toLowerCase();
+
+  return tankListAsync.whenData((list) {
+    return list.where((tank) {
+      final searchableName = (tank.espDisplayName.isEmpty
+              ? tank.espId
+              : tank.espDisplayName)
+          .toLowerCase();
+      
+      final matchName = searchableName.contains(query);
+      
+      final byFilter = switch (filter) {
+        TankFilter.all => true,
+        TankFilter.low => tank.levelPercent < 0.2,
+        TankFilter.normal =>
+          tank.levelPercent >= 0.2 && tank.levelPercent < 0.7,
+        TankFilter.high => tank.levelPercent >= 0.7,
+      };
+      
+      return matchName && byFilter;
+    }).toList();
+  });
+});
+
 final tankHistoryDaysProvider =
     NotifierProvider.autoDispose<TankHistoryDaysNotifier, int>(
       TankHistoryDaysNotifier.new,
