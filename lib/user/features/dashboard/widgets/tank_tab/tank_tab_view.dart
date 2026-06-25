@@ -298,17 +298,31 @@ class _TankLevelCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'Location: ${data.installedArea.isEmpty ? '-' : data.installedArea}',
-                  style: const TextStyle(color: AppColors.greyText),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 22,
+                      color: AppColors.greyText,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        data.installedArea.isEmpty ? '-' : data.installedArea,
+                        style: const TextStyle(color: AppColors.greyText),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Text(
-                      'Level: ',
-                      style: TextStyle(color: AppColors.greyText),
+                    Icon(
+                      Icons.water_drop_rounded,
+                      size: 22,
+                      color: levelColor,
                     ),
+                    const SizedBox(width: 4),
                     Text(
                       percentText,
                       style: TextStyle(
@@ -340,13 +354,23 @@ class _TankLevelCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 6),
-                Text(
-                  'Updated: ${_formatDateTime(data.updatedAt)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.greyText,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 20,
+                      color: AppColors.greyText,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDateTime(data.updatedAt),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.greyText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
