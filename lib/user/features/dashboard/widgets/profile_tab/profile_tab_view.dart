@@ -60,20 +60,6 @@ class ProfileTabView extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               ActionTile(
-                icon: Icons.lock_rounded,
-                iconColor: const Color(0xFF2C6BED),
-                title: 'Change Password',
-                subtitle: 'Protect your account with a new password',
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ChangePasswordScreen(),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              ActionTile(
                 icon: Icons.logout_rounded,
                 iconColor: AppColors.red,
                 title: 'Logout',

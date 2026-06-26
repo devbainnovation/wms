@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/shared/shared.dart';
 import 'package:wms/user/features/dashboard/dashboard.dart';
-import 'package:wms/user/features/dashboard/widgets/profile_tab/profile_tab_sections.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({required this.profile, super.key});
@@ -79,11 +78,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ReadOnlyInfoRow(
                       label: 'Phone Number',
                       value: widget.profile.phoneNumber,
-                    ),
-                    const SizedBox(height: 12),
-                    ReadOnlyInfoRow(
-                      label: 'Username',
-                      value: widget.profile.username,
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
@@ -233,185 +227,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final message = error is ApiException
           ? error.message
           : 'Unable to update profile.';
-      showAppSnackBar(context, message, status: AppSnackBarStatus.error);
-    }
-  }
-
-  String? _required(String? value, String label) {
-    if ((value ?? '').trim().isEmpty) {
-      return '$label is required';
-    }
-    return null;
-  }
-}
-
-class ChangePasswordScreen extends ConsumerStatefulWidget {
-  const ChangePasswordScreen({super.key});
-
-  @override
-  ConsumerState<ChangePasswordScreen> createState() =>
-      _ChangePasswordScreenState();
-}
-
-class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _currentPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-
-  @override
-  void dispose() {
-    _currentPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final updateState = ref.watch(userPasswordUpdateControllerProvider);
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF7FAF9),
-        foregroundColor: AppColors.darkText,
-        elevation: 0,
-        title: const Text('Change Password'),
-      ),
-      body: AppPageBody(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(18),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFD9E5E0)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Secure Your Account',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.darkText,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Use a strong password with letters, numbers and symbols.',
-                      style: TextStyle(
-                        color: AppColors.greyText,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    AppTextField(
-                      controller: _currentPasswordController,
-                      hintText: 'Enter current password',
-                      labelText: 'Current Password',
-                      obscureText: true,
-                      validator: (v) => _required(v, 'Current password'),
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      controller: _newPasswordController,
-                      hintText: 'Enter new password',
-                      labelText: 'New Password',
-                      obscureText: true,
-                      validator: AppValidators.password,
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      controller: _confirmPasswordController,
-                      hintText: 'Confirm new password',
-                      labelText: 'Confirm Password',
-                      obscureText: true,
-                      validator: (v) {
-                        final msg = _required(v, 'Confirm password');
-                        if (msg != null) {
-                          return msg;
-                        }
-                        if (v!.trim() != _newPasswordController.text.trim()) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryTeal,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            onPressed: updateState.isLoading ? null : _submit,
-            child: updateState.isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.white,
-                    ),
-                  )
-                : const Text('Update Password'),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _submit() async {
-    final valid = _formKey.currentState?.validate() ?? false;
-    if (!valid) {
-      return;
-    }
-
-    final request = UserProfilePasswordUpdateRequest(
-      currentPassword: _currentPasswordController.text.trim(),
-      newPassword: _newPasswordController.text.trim(),
-    );
-
-    try {
-      await ref
-          .read(userPasswordUpdateControllerProvider.notifier)
-          .update(request);
-      if (!mounted) {
-        return;
-      }
-      showAppSnackBar(
-        context,
-        'Password updated successfully.',
-        status: AppSnackBarStatus.success,
-      );
-      Navigator.of(context).pop();
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      final message = error is ApiException
-          ? error.message
-          : 'Unable to update password.';
       showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
