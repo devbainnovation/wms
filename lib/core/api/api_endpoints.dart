@@ -3,6 +3,7 @@ class ApiEndpoints {
 
   static const String authLogin = '/api/auth/login';
   static const String authSendOtp = '/api/auth/send-otp';
+  static const String authCheckMobile = '/api/auth/check-mobile';
   static const String authVerifyOtp = '/api/auth/verify-otp';
   static const String adminDevices = '/api/admin/devices';
   static const String adminCustomers = '/api/admin/customers';

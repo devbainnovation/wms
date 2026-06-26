@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:wms/core/api/api.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
 
@@ -142,6 +143,30 @@ class AuthApiService {
     }
 
     return 'Login failed. Please try again.';
+  }
+
+  Future<bool> checkMobileRegistration(String phone) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.authCheckMobile,
+        body: {'phone': phone},
+        headers: {
+          'Username':'watermgmt_client',
+          'Password':'client_secret_xyz_789',
+          'Authorization':
+              'Basic d2F0ZXJtZ210X2NsaWVudDpjbGllbnRfc2VjcmV0X3h5el83ODk=',
+        },
+        showGlobalLoader: false,
+      );
+      if (response.statusCode == 200) {
+        final body = response.dataAsMap;
+        return body?['registered'] ?? false;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Registration check failed: $e');
+      return false;
+    }
   }
 
   Future<AuthSession> loginWithFirebaseToken({

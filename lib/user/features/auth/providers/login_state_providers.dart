@@ -91,6 +91,33 @@ class UserPhoneLoginController extends Notifier<UserPhoneLoginState> {
     state = state.copyWith(isVerifying: true, clearError: true);
 
     try {
+      // 1. Extract 10-digit phone number
+      final rawPhone = state.completePhoneNumber.replaceAll(RegExp(r'\D'), '');
+      final tenDigitPhone =
+          rawPhone.length >= 10
+              ? rawPhone.substring(rawPhone.length - 10)
+              : rawPhone;
+
+      if (tenDigitPhone.length != 10) {
+        state = state.copyWith(isVerifying: false);
+        onError('Invalid phone number format');
+        return;
+      }
+
+      // 2. Check registration
+      final authApi = ref.read(authApiServiceProvider);
+      final isRegistered = await authApi.checkMobileRegistration(tenDigitPhone);
+
+      if (!isRegistered) {
+        state = state.copyWith(
+          isVerifying: false,
+          error: 'Phone number not registered',
+        );
+        onError('This phone number is not registered. Please contact support.');
+        return;
+      }
+
+      // 3. Proceed to Firebase OTP if registered
       await _auth.verifyPhoneNumber(
         phoneNumber: state.completePhoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
