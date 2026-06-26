@@ -126,7 +126,7 @@ class AuthLoginController extends Notifier<AsyncValue<void>> {
 }
 
 final authLogoutControllerProvider =
-    NotifierProvider.autoDispose<AuthLogoutController, AsyncValue<void>>(
+    NotifierProvider<AuthLogoutController, AsyncValue<void>>(
       AuthLogoutController.new,
     );
 
@@ -153,15 +153,15 @@ class AuthLogoutController extends Notifier<AsyncValue<void>> {
         await storage.clear();
       }
 
+      // Reset Phone Login state and invalidate launch state BEFORE clearing
+      // the session, to ensure these operations complete before the UI
+      // transitions away from the dashboard.
+      ref.read(userPhoneLoginControllerProvider.notifier).reset();
+      ref.invalidate(appLaunchProvider);
+
       // Clear in-memory state after persisted cleanup so listeners can safely
       // redirect to the login screen without bouncing back into the dashboard.
       sessionNotifier.clear();
-
-      // Reset Phone Login state so it returns to the Phone Number phase
-      ref.read(userPhoneLoginControllerProvider.notifier).reset();
-      
-      // Invalidate app launch state to ensure the gate rebuilds correctly
-      ref.invalidate(appLaunchProvider);
 
       if (activeSessionId.isNotEmpty) {
         try {
