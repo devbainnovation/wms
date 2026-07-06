@@ -9,9 +9,12 @@ import 'package:wms/core/api/api_exception.dart';
 import 'package:wms/core/api/api_response.dart';
 
 class ApiClient {
-  ApiClient({http.Client? client, this.baseUrl = ApiConfig.baseUrl})
-    : _client = client ?? http.Client(),
-      _ownsClient = client == null;
+  ApiClient({
+    http.Client? client,
+    this.baseUrl = ApiConfig.baseUrl,
+    this.onNewTokenReceived,
+  }) : _client = client ?? http.Client(),
+       _ownsClient = client == null;
 
   static final ValueNotifier<int> inFlightRequestCount = ValueNotifier<int>(0);
   static final ValueNotifier<int> unauthorizedEventCount = ValueNotifier<int>(
@@ -22,6 +25,7 @@ class ApiClient {
   final String baseUrl;
   final http.Client _client;
   final bool _ownsClient;
+  final void Function(String)? onNewTokenReceived;
 
   Future<ApiResponse> get(
     String endpoint, {
@@ -187,6 +191,11 @@ class ApiClient {
 
       if (reportUnauthorized && response.statusCode == 401) {
         _notifyUnauthorized();
+      }
+
+      final newToken = response.headers['x-new-token'];
+      if (newToken != null && newToken.isNotEmpty) {
+        onNewTokenReceived?.call(newToken);
       }
 
       return ApiResponse(

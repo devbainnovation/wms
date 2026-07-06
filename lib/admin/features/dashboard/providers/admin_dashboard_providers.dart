@@ -3,7 +3,7 @@ import 'package:wms/admin/features/dashboard/services/services.dart';
 import 'package:wms/core/core.dart';
 
 final adminDashboardServiceProvider = Provider<AdminDashboardService>((ref) {
-  return AdminDashboardService();
+  return AdminDashboardService(apiClient: ref.watch(apiClientProvider));
 });
 
 final adminDashboardSummaryProvider =

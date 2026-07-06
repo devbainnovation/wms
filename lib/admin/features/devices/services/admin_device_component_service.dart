@@ -103,8 +103,8 @@ class AdminDeviceComponent {
 }
 
 class AdminDeviceComponentService {
-  AdminDeviceComponentService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AdminDeviceComponentService({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

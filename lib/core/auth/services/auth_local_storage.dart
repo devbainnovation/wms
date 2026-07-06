@@ -171,6 +171,26 @@ class AuthLocalStorage {
     await Future.wait(tasks);
   }
 
+  Future<void> updateToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final remember = prefs.getBool(_rememberMeKey) ?? false;
+
+    if (kIsWeb) {
+      await _webStorage.write(_tokenKey, token);
+      if (remember) {
+        await prefs.setString(_tokenKey, token);
+      }
+    } else {
+      await _secureStorage.write(key: _tokenKey, value: token);
+      // Even if rememberMe is false, we might have session keys in SharedPreferences
+      // if it's currently active (though loadLoginData checks rememberMe).
+      // Standard practice is to update both if they exist.
+      if (prefs.containsKey(_tokenKey)) {
+        await prefs.setString(_tokenKey, token);
+      }
+    }
+  }
+
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     final tasks = <Future<void>>[

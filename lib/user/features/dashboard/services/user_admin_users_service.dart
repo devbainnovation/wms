@@ -213,8 +213,7 @@ class UserAdminUserSummary {
 }
 
 class UserAdminUsersService {
-  UserAdminUsersService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  UserAdminUsersService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

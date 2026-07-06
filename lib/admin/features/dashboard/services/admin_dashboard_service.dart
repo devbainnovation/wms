@@ -63,8 +63,7 @@ class AdminDashboardSummary {
 }
 
 class AdminDashboardService {
-  AdminDashboardService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AdminDashboardService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

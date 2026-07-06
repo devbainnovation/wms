@@ -5,8 +5,7 @@ import 'package:wms/user/features/dashboard/services/customer_devices_models.dar
 export 'customer_devices_models.dart';
 
 class CustomerDevicesService {
-  CustomerDevicesService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  CustomerDevicesService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

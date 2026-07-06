@@ -94,7 +94,7 @@ class TankHistoryItem {
 }
 
 class TankService {
-  TankService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  TankService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

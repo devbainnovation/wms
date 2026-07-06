@@ -5,7 +5,7 @@ import 'package:wms/user/features/dashboard/services/tank_service.dart';
 enum TankFilter { all, low, normal, high }
 
 final tankServiceProvider = Provider<TankService>((ref) {
-  return TankService();
+  return TankService(apiClient: ref.watch(apiClientProvider));
 });
 
 final tankListProvider = FutureProvider.autoDispose<List<TankData>>((ref) async {

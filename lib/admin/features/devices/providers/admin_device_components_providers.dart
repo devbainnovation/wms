@@ -4,7 +4,8 @@ import 'package:wms/core/core.dart';
 
 final adminDeviceComponentServiceProvider =
     Provider<AdminDeviceComponentService>(
-      (ref) => AdminDeviceComponentService(),
+      (ref) =>
+          AdminDeviceComponentService(apiClient: ref.watch(apiClientProvider)),
     );
 
 final adminDeviceComponentsProvider = FutureProvider.autoDispose

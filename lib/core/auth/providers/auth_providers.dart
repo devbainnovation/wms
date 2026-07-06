@@ -5,7 +5,23 @@ import 'package:wms/core/auth/auth.dart';
 import 'package:wms/user/user.dart';
 
 final authApiServiceProvider = Provider<AuthApiService>((ref) {
-  return AuthApiService();
+  return AuthApiService(apiClient: ref.watch(apiClientProvider));
+});
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient(
+    onNewTokenReceived: (token) {
+      final session = ref.read(currentAuthSessionProvider);
+      if (session != null) {
+        final updatedSession = session.copyWith(token: token);
+        ref.read(currentAuthSessionProvider.notifier).setSession(updatedSession);
+        ref.read(authLocalStorageProvider).updateToken(token);
+        if (kDebugMode) {
+          debugPrint('SESSION ROLLING: Token updated automatically');
+        }
+      }
+    },
+  );
 });
 
 final authLocalStorageProvider = Provider<AuthLocalStorage>((ref) {

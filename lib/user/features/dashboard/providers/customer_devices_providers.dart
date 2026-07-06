@@ -3,7 +3,7 @@ import 'package:wms/core/core.dart';
 import 'package:wms/user/features/dashboard/services/customer_devices_service.dart';
 
 final customerDevicesServiceProvider = Provider<CustomerDevicesService>((ref) {
-  return CustomerDevicesService();
+  return CustomerDevicesService(apiClient: ref.watch(apiClientProvider));
 });
 
 final customerDevicesListProvider = FutureProvider<List<CustomerDeviceSummary>>(

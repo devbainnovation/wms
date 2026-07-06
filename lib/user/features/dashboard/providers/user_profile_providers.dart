@@ -3,7 +3,7 @@ import 'package:wms/core/core.dart';
 import 'package:wms/user/features/dashboard/services/user_profile_service.dart';
 
 final userProfileServiceProvider = Provider<UserProfileService>((ref) {
-  return UserProfileService();
+  return UserProfileService(apiClient: ref.watch(apiClientProvider));
 });
 
 final userProfileProvider = FutureProvider<UserProfile>((ref) async {

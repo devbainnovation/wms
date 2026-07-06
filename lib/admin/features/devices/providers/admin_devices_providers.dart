@@ -4,7 +4,7 @@ import 'package:wms/core/core.dart';
 import 'package:wms/routing/routing.dart';
 
 final adminDeviceServiceProvider = Provider<AdminDeviceService>((ref) {
-  return AdminDeviceService();
+  return AdminDeviceService(apiClient: ref.watch(apiClientProvider));
 });
 
 final adminDevicesPageProvider =

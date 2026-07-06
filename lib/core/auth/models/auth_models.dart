@@ -25,6 +25,15 @@ class AuthSession {
       role.isNotEmpty &&
       userId.isNotEmpty &&
       sessionId.isNotEmpty;
+
+  AuthSession copyWith({String? token}) {
+    return AuthSession(
+      token: token ?? this.token,
+      role: role,
+      userId: userId,
+      sessionId: sessionId,
+    );
+  }
 }
 
 class RememberedAuthData {

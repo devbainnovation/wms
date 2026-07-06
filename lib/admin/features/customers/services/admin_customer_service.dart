@@ -4,8 +4,7 @@ import 'package:wms/admin/features/customers/services/admin_customer_models.dart
 export 'admin_customer_models.dart';
 
 class AdminCustomerService {
-  AdminCustomerService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AdminCustomerService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

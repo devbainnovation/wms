@@ -5,8 +5,7 @@ import 'package:wms/core/api/api.dart';
 import 'package:wms/core/auth/models/auth_models.dart';
 
 class AuthApiService {
-  AuthApiService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AuthApiService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

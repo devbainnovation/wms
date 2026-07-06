@@ -154,8 +154,7 @@ class AdminDevicePageResult {
 }
 
 class AdminDeviceService {
-  AdminDeviceService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AdminDeviceService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

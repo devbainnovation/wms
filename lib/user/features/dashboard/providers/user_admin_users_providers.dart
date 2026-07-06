@@ -3,7 +3,7 @@ import 'package:wms/core/core.dart';
 import 'package:wms/user/features/dashboard/services/user_admin_users_service.dart';
 
 final userAdminUsersServiceProvider = Provider<UserAdminUsersService>((ref) {
-  return UserAdminUsersService();
+  return UserAdminUsersService(apiClient: ref.watch(apiClientProvider));
 });
 
 final userAdminUsersListProvider =

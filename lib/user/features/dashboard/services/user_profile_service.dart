@@ -139,8 +139,7 @@ class UserProfilePasswordUpdateRequest {
 }
 
 class UserProfileService {
-  UserProfileService({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  UserProfileService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 

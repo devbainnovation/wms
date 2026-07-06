@@ -34,7 +34,7 @@ class AdminCustomerDevicesQuery {
 }
 
 final adminCustomerServiceProvider = Provider<AdminCustomerService>((ref) {
-  return AdminCustomerService();
+  return AdminCustomerService(apiClient: ref.watch(apiClientProvider));
 });
 
 final adminCustomersQueryProvider =
