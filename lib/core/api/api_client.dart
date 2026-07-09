@@ -193,7 +193,7 @@ class ApiClient {
         _notifyUnauthorized();
       }
 
-      final newToken = response.headers['x-new-token'];
+      final newToken = response.headers['x-new-token'] ?? response.headers['X-New-Token'];
       if (newToken != null && newToken.isNotEmpty) {
         onNewTokenReceived?.call(newToken);
       }
