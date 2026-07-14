@@ -182,9 +182,9 @@ class _ValveActionRow extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Manual',
-                style: TextStyle(
+              Text(
+                valve.manualActionOn ? 'Stop' : 'Manual',
+                style: const TextStyle(
                   color: AppColors.darkText,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
