@@ -226,6 +226,13 @@ class ScheduleCardModel {
   final int alternateInterval;
   final int initialAlternateInterval;
 
+  bool get isExpired {
+    if (!alternateMode || alternateEndDate == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return alternateEndDate!.isBefore(today);
+  }
+
   factory ScheduleCardModel.createDraft() {
     return ScheduleCardModel(
       cardKey: DateTime.now().microsecondsSinceEpoch.toString(),

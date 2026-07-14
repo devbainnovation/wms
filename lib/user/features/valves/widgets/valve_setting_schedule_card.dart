@@ -33,9 +33,9 @@ class ValveSettingScheduleCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Schedule ${scheduleIndex + 1}',
-            style: const TextStyle(
-              color: AppColors.darkText,
+            'Schedule ${scheduleIndex + 1}${schedule.isExpired ? ' (Expired)' : ''}',
+            style: TextStyle(
+              color: schedule.isExpired ? AppColors.error : AppColors.darkText,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
