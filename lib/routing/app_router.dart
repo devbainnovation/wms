@@ -6,7 +6,7 @@ import 'package:wms/core/auth/models/auth_models.dart';
 import 'package:wms/core/auth/providers/auth_providers.dart';
 import 'package:wms/shared/shared.dart';
 
-enum AppRouteSection { dashboard, customers, devices, schedules, profile }
+enum AppRouteSection { dashboard, customers, devices, schedules, profile, triggerLogs }
 
 class AppRouteState {
   const AppRouteState({
@@ -23,6 +23,7 @@ class AppRouteState {
     AppRouteSection.devices => '/devices',
     AppRouteSection.schedules => '/schedules',
     AppRouteSection.profile => '/profile',
+    AppRouteSection.triggerLogs => '/trigger-logs',
   };
 
   Uri get uri => Uri(
@@ -79,6 +80,7 @@ class AppRouteInformationParser extends RouteInformationParser<AppRouteState> {
       '/devices' => AppRouteSection.devices,
       '/schedules' => AppRouteSection.schedules,
       '/profile' => AppRouteSection.profile,
+      '/trigger-logs' => AppRouteSection.triggerLogs,
       '/dashboard' || '/' || '' => AppRouteSection.dashboard,
       _ => AppRouteSection.dashboard,
     };

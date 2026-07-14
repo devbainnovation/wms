@@ -9,6 +9,7 @@ class ApiEndpoints {
   static const String adminCustomers = '/api/admin/customers';
   static const String adminUnassignedDevices = '/api/admin/devices/unassigned';
   static const String adminSystemDashboard = '/api/admin/system/dashboard';
+  static const String adminTriggerLogs = '/api/admin/trigger-logs';
   static const String customerUsers = '/api/customer/users';
   static const String customerDevices = '/api/customer/devices';
   static const String appDashboard = '/api/app/dashboard';

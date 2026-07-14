@@ -4,6 +4,7 @@ import 'package:wms/admin/features/customers/providers/admin_customers_providers
 import 'package:wms/admin/features/dashboard/dashboard.dart';
 import 'package:wms/admin/features/customers/screens/admin_customers_screen.dart';
 import 'package:wms/admin/features/devices/screens/admin_devices_screen.dart';
+import 'package:wms/admin/features/trigger_logs/screens/admin_trigger_logs_screen.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/routing/routing.dart';
 import 'package:wms/shared/shared.dart';
@@ -21,8 +22,9 @@ class AdminSelectedMenuNotifier extends Notifier<int> {
       AppRouteSection.dashboard => 0,
       AppRouteSection.customers => 1,
       AppRouteSection.devices => 2,
-      AppRouteSection.schedules => 3,
-      AppRouteSection.profile => 4,
+      AppRouteSection.triggerLogs => 3,
+      AppRouteSection.schedules => 4,
+      AppRouteSection.profile => 5,
     };
   }
 
@@ -30,8 +32,9 @@ class AdminSelectedMenuNotifier extends Notifier<int> {
     final section = switch (menu) {
       1 => AppRouteSection.customers,
       2 => AppRouteSection.devices,
-      3 => AppRouteSection.schedules,
-      4 => AppRouteSection.profile,
+      3 => AppRouteSection.triggerLogs,
+      4 => AppRouteSection.schedules,
+      5 => AppRouteSection.profile,
       _ => AppRouteSection.dashboard,
     };
     ref.read(appRouteProvider.notifier).goToSection(section);
@@ -45,19 +48,43 @@ class AdminSelectedMenuNotifier extends Notifier<int> {
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
-  static const _menuItems = <({String label, IconData icon})>[
-    (label: 'Dashboard', icon: Icons.dashboard_rounded),
-    (label: 'Customers', icon: Icons.groups_rounded),
-    (label: 'Devices', icon: Icons.memory_rounded),
-    (label: 'Schedules', icon: Icons.calendar_month_rounded),
-    (label: 'Profile', icon: Icons.person_rounded),
+  static const _menuItems = <({String label, IconData icon, String? requiredRole})>[
+    (label: 'Dashboard', icon: Icons.dashboard_rounded, requiredRole: null),
+    (label: 'Customers', icon: Icons.groups_rounded, requiredRole: null),
+    (label: 'Devices', icon: Icons.memory_rounded, requiredRole: null),
+    (
+      label: 'Trigger Logs',
+      icon: Icons.list_alt_rounded,
+      requiredRole: 'SUPER_ADMIN',
+    ),
+    (label: 'Schedules', icon: Icons.calendar_month_rounded, requiredRole: null),
+    (label: 'Profile', icon: Icons.person_rounded, requiredRole: null),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedMenu = ref.watch(adminSelectedMenuProvider);
     final logoutState = ref.watch(authLogoutControllerProvider);
+    final userRole = ref.watch(currentAuthSessionProvider)?.role;
     final isMobile = MediaQuery.sizeOf(context).width < 900;
+
+    final visibleMenuItems =
+        _menuItems.where((item) {
+          if (item.requiredRole == null) return true;
+          if (userRole == null) return false;
+          final normalizedRole = userRole.trim().toUpperCase();
+          final targetRole = item.requiredRole!.toUpperCase();
+
+          // Allow exact match or common variations
+          if (normalizedRole == targetRole) return true;
+          if (targetRole == 'SUPER_ADMIN' &&
+              (normalizedRole == 'ROLE_SUPER_ADMIN' ||
+                  normalizedRole == 'ADMIN' ||
+                  normalizedRole == 'ROLE_ADMIN')) {
+            return true;
+          }
+          return false;
+        }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBFC),
@@ -65,15 +92,17 @@ class AdminDashboardScreen extends ConsumerWidget {
           ? AppBar(
               backgroundColor: AppColors.white,
               elevation: 0.5,
-              title: Text(AdminDashboardScreen._menuItems[selectedMenu].label),
+              title: Text(_menuItems[selectedMenu].label),
             )
           : null,
       drawer: isMobile
           ? Drawer(
               child: _AdminSidebar(
                 selectedMenu: selectedMenu,
+                menuItems: visibleMenuItems,
                 onMenuTap: (index) {
-                  ref.read(adminSelectedMenuProvider.notifier).set(index);
+                  final originalIndex = _menuItems.indexOf(visibleMenuItems[index]);
+                  ref.read(adminSelectedMenuProvider.notifier).set(originalIndex);
                   Navigator.of(context).pop();
                 },
                 onLogout: () => _logout(context, ref),
@@ -99,8 +128,11 @@ class AdminDashboardScreen extends ConsumerWidget {
                   width: 260,
                   child: _AdminSidebar(
                     selectedMenu: selectedMenu,
-                    onMenuTap: (index) =>
-                        ref.read(adminSelectedMenuProvider.notifier).set(index),
+                    menuItems: visibleMenuItems,
+                    onMenuTap: (index) {
+                      final originalIndex = _menuItems.indexOf(visibleMenuItems[index]);
+                      ref.read(adminSelectedMenuProvider.notifier).set(originalIndex);
+                    },
                     onLogout: () => _logout(context, ref),
                     isLogoutLoading: logoutState.isLoading,
                   ),
@@ -165,12 +197,14 @@ class AdminDashboardScreen extends ConsumerWidget {
 class _AdminSidebar extends StatelessWidget {
   const _AdminSidebar({
     required this.selectedMenu,
+    required this.menuItems,
     required this.onMenuTap,
     required this.onLogout,
     required this.isLogoutLoading,
   });
 
   final int selectedMenu;
+  final List<({String label, IconData icon, String? requiredRole})> menuItems;
   final ValueChanged<int> onMenuTap;
   final Future<void> Function() onLogout;
   final bool isLogoutLoading;
@@ -218,12 +252,13 @@ class _AdminSidebar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              for (final indexed
-                  in AdminDashboardScreen._menuItems.indexed) ...[
+              for (final indexed in menuItems.indexed) ...[
                 _SidebarMenuTile(
                   icon: indexed.$2.icon,
                   label: indexed.$2.label,
-                  selected: selectedMenu == indexed.$1,
+                  selected:
+                      AdminDashboardScreen._menuItems[selectedMenu].label ==
+                      indexed.$2.label,
                   onTap: () => onMenuTap(indexed.$1),
                 ),
               ],
@@ -307,6 +342,10 @@ class _AdminContentPanel extends ConsumerWidget {
       return const AdminDevicesScreen();
     }
 
+    if (selectedMenu == 3) {
+      return const AdminTriggerLogsScreen();
+    }
+
     if (selectedMenu == 0) {
       final summaryState = ref.watch(adminDashboardSummaryProvider);
       return summaryState.when(
@@ -339,7 +378,7 @@ class _AdminContentPanel extends ConsumerWidget {
       );
     }
 
-    if (selectedMenu == 4) {
+    if (selectedMenu == 5) {
       return const AdminProfileView();
     }
 
@@ -351,7 +390,7 @@ class _AdminContentPanel extends ConsumerWidget {
                 'Device inventory and assignment module will be integrated here.',
             icon: Icons.memory_rounded,
           ),
-          3: (
+          4: (
             title: 'Schedules',
             subtitle:
                 'Scheduling and automation controls will be integrated here.',
