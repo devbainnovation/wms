@@ -178,7 +178,8 @@ class _LoginHeader extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
         const Text(
-          'Phone Login',
+          'Welcome To Di-WMS',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w800,
