@@ -66,16 +66,27 @@ class _AdminTriggerLogsScreenState extends ConsumerState<AdminTriggerLogsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Trigger Logs',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkText,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Trigger Logs',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkText,
+                ),
+              ),
+              if (!isMobile)
+                _buildPrintButton(),
+            ],
           ),
           const SizedBox(height: 20),
           _buildFilterPanel(isMobile),
+          if (isMobile) ...[
+            const SizedBox(height: 12),
+            SizedBox(width: double.infinity, child: _buildPrintButton()),
+          ],
           const SizedBox(height: 20),
           Expanded(
             child: Container(
@@ -189,6 +200,17 @@ class _AdminTriggerLogsScreenState extends ConsumerState<AdminTriggerLogsScreen>
       labelText: label,
       hintText: 'Search by $label',
       prefixIcon: Icon(icon, size: 20),
+      onFieldSubmitted: (_) => _applyFilters(),
+    );
+  }
+
+  Widget _buildPrintButton() {
+    return AppButton(
+      text: 'Print PDF',
+      onPressed: () => ref.read(triggerLogQueryProvider.notifier).exportToPdf(),
+      icon: Icons.picture_as_pdf_rounded,
+      backgroundColor: AppColors.warning,
+      width: 180,
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:wms/admin/features/trigger_logs/services/trigger_log_service.dar
 import 'package:wms/admin/features/trigger_logs/services/trigger_log_models.dart';
 import 'package:wms/core/core.dart';
 import 'package:wms/routing/routing.dart';
+import 'package:wms/admin/features/trigger_logs/services/trigger_log_pdf_service.dart';
 
 import '../../devices/services/admin_device_component_service.dart';
 
@@ -36,10 +37,11 @@ class TriggerLogQueryNotifier extends Notifier<TriggerLogQuery> {
     );
   }
 
-  static AdminComponentType? _parseComponentType(String? value) {
+  static AdminComponentType? _parseComponentType(dynamic value) {
     if (value == null) return null;
+    final str = value.toString().toUpperCase();
     return AdminComponentType.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.name.toUpperCase() == str || e.apiValue == str,
       orElse: () => AdminComponentType.motor,
     );
   }
@@ -62,6 +64,28 @@ class TriggerLogQueryNotifier extends Notifier<TriggerLogQuery> {
   void resetFilters() {
     state = const TriggerLogQuery();
     _syncRoute();
+  }
+
+  Future<void> exportToPdf() async {
+    final service = ref.read(triggerLogServiceProvider);
+    final session = ref.read(currentAuthSessionProvider);
+    final token = (session?.token ?? '').trim();
+
+    if (token.isEmpty) return;
+
+    try {
+      // Fetch all logs matching the query (large size)
+      final result = await service.getTriggerLogs(
+        bearerToken: token,
+        query: state.copyWith(page: 0, size: 1000), // Fetch up to 1000 records for PDF
+      );
+
+      if (result.items.isNotEmpty) {
+        await TriggerLogPdfService.generateAndPrintPdf(result.items);
+      }
+    } catch (e) {
+      // Handle error if needed, maybe a separate provider for export status
+    }
   }
 
   void _syncRoute() {

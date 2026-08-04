@@ -29,10 +29,10 @@ class TriggerLogService {
       params['actorId'] = query.actorId;
     }
     if (query.startTime != null) {
-      params['startTime'] = query.startTime!.toIso8601String().split('.').first.replaceAll('Z', '');
+      params['startTime'] = query.startTime!.toIso8601String().split('.').first;
     }
     if (query.endTime != null) {
-      params['endTime'] = query.endTime!.toIso8601String().split('.').first.replaceAll('Z', '');
+      params['endTime'] = query.endTime!.toIso8601String().split('.').first;
     }
 
     final response = await _apiClient.get(

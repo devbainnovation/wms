@@ -14,6 +14,7 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.onChanged,
+    this.onFieldSubmitted,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.capitalizeFirstLetter = true,
     super.key,
@@ -29,6 +30,7 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
   final AutovalidateMode autovalidateMode;
   final bool capitalizeFirstLetter;
 
@@ -45,6 +47,7 @@ class AppTextField extends StatelessWidget {
         maxLines: 1,
         validator: validator,
         onChanged: onChanged,
+        onFieldSubmitted: onFieldSubmitted,
         autovalidateMode: autovalidateMode,
         inputFormatters: capitalizeFirstLetter
             ? const [_CapitalizeFirstLetterFormatter()]

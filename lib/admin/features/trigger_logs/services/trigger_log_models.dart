@@ -76,11 +76,12 @@ class TriggerLog {
     );
   }
 
-  static AdminComponentType _parseComponentType(String? type) {
-    if (type == 'MOTOR') return AdminComponentType.motor;
-    if (type == 'VALVE') return AdminComponentType.valve;
-    if (type == 'SENSOR') return AdminComponentType.sensor;
-    return AdminComponentType.motor; // Default
+  static AdminComponentType _parseComponentType(dynamic type) {
+    if (type == null) return AdminComponentType.motor;
+    final value = type.toString().toUpperCase();
+    if (value == 'VALVE') return AdminComponentType.valve;
+    if (value == 'SENSOR') return AdminComponentType.sensor;
+    return AdminComponentType.motor;
   }
 }
 
