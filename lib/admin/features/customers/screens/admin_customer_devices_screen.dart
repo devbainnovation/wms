@@ -396,7 +396,7 @@ class AdminCustomerDevicesScreen extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => AppScheduleEditorDialog(
         title:
-            'Schedules • ${component.name.trim().isEmpty ? component.type : component.name}',
+            'Schedules • ${component.installedArea.trim().isEmpty ? (component.name.trim().isEmpty ? component.type : component.name) : component.installedArea}',
         initialSchedules: saved,
       ),
     );

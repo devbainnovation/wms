@@ -308,12 +308,14 @@ class _EditCustomerComponentDialogState
   final _formKey = GlobalKey<FormState>();
   final _gpioController = TextEditingController();
   final _nameController = TextEditingController();
+  final _areaController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _gpioController.text = widget.component.gpioPin.toString();
     _nameController.text = widget.component.name;
+    _areaController.text = widget.component.installedArea;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -331,6 +333,7 @@ class _EditCustomerComponentDialogState
   void dispose() {
     _gpioController.dispose();
     _nameController.dispose();
+    _areaController.dispose();
     super.dispose();
   }
 
@@ -413,6 +416,13 @@ class _EditCustomerComponentDialogState
                   validator: (value) => _required(value, 'name'),
                 ),
                 const SizedBox(height: 12),
+                AppTextField(
+                  controller: _areaController,
+                  hintText: 'Enter installed area',
+                  labelText: 'installedArea',
+                  validator: (value) => _required(value, 'installedArea'),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     const Text(
@@ -475,7 +485,7 @@ class _EditCustomerComponentDialogState
       type: ref.read(customerComponentTypeProvider),
       gpioPin: int.parse(_gpioController.text.trim()),
       name: _nameController.text.trim(),
-      installedArea: '',
+      installedArea: _areaController.text.trim(),
       active: ref.read(customerComponentActiveProvider),
     );
 

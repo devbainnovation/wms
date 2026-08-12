@@ -228,6 +228,7 @@ class AdminCustomerDeviceComponent {
     required this.type,
     required this.gpioPin,
     required this.name,
+    required this.installedArea,
     required this.currentState,
     required this.active,
     this.stateChangedAt,
@@ -237,6 +238,7 @@ class AdminCustomerDeviceComponent {
   final String type;
   final int gpioPin;
   final String name;
+  final String installedArea;
   final String currentState;
   final bool active;
   final DateTime? stateChangedAt;
@@ -247,6 +249,7 @@ class AdminCustomerDeviceComponent {
       type: (json['type'] ?? '').toString().trim(),
       gpioPin: (json['gpioPin'] as num?)?.toInt() ?? 0,
       name: (json['name'] ?? '').toString().trim(),
+      installedArea: (json['installedArea'] ?? '').toString().trim(),
       currentState: (json['currentState'] ?? '').toString().trim(),
       active: (json['active'] ?? json['isActive'] ?? false) == true,
       stateChangedAt: _tryParseDateTime(json['stateChangedAt']),

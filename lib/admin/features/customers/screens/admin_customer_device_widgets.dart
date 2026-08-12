@@ -383,8 +383,12 @@ class ComponentTile extends StatelessWidget {
             children: [
               InfoChip(
                 icon: Icons.precision_manufacturing_outlined,
-                label: 'Name',
-                value: orDash(component.name),
+                label: 'Installed Area',
+                value: orDash(
+                  component.installedArea.trim().isEmpty
+                      ? component.name
+                      : component.installedArea,
+                ),
               ),
               InfoChip(
                 icon: Icons.category_outlined,
