@@ -86,8 +86,9 @@ class _AssignCustomerDevicesDialogState
                     if (query.isEmpty) {
                       return true;
                     }
-                    final haystack = '${device.displayName} ${device.id}'
-                        .toLowerCase();
+                    final haystack =
+                        '${device.displayName} ${device.id} ${device.macAddress}'
+                            .toLowerCase();
                     return haystack.contains(query);
                   }).toList();
 
@@ -153,7 +154,9 @@ class _AssignCustomerDevicesDialogState
                                     .map(
                                       (device) => Chip(
                                         label: Text(
-                                          '${device.displayName} (${device.id})',
+                                          device.macAddress.isEmpty
+                                              ? '${device.displayName} (${device.id})'
+                                              : '${device.displayName} (${device.id} - ${device.macAddress})',
                                         ),
                                         onDeleted: isLoading
                                             ? null
@@ -214,7 +217,11 @@ class _AssignCustomerDevicesDialogState
                                               ? device.id
                                               : device.displayName,
                                         ),
-                                        subtitle: Text(device.id),
+                                        subtitle: Text(
+                                          device.macAddress.isEmpty
+                                              ? device.id
+                                              : '${device.id} - ${device.macAddress}',
+                                        ),
                                       );
                                     },
                                   ),

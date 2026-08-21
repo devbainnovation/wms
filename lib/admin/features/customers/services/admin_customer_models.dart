@@ -207,18 +207,24 @@ class AdminCustomerSummary {
 }
 
 class AdminUnassignedDevice {
-  const AdminUnassignedDevice({required this.id, required this.displayName});
+  const AdminUnassignedDevice({
+    required this.id,
+    required this.displayName,
+    required this.macAddress,
+  });
 
   final String id;
   final String displayName;
+  final String macAddress;
 
   factory AdminUnassignedDevice.fromJson(Map<String, dynamic> json) {
     final id = (json['id'] ?? json['espId'] ?? json['deviceId'] ?? '')
         .toString();
+    final mac = (json['macAddress'] ?? '').toString();
     final name =
-        (json['displayName'] ?? json['name'] ?? json['macAddress'] ?? id)
+        (json['displayName'] ?? json['name'] ?? (mac.isNotEmpty ? mac : id))
             .toString();
-    return AdminUnassignedDevice(id: id, displayName: name);
+    return AdminUnassignedDevice(id: id, displayName: name, macAddress: mac);
   }
 }
 

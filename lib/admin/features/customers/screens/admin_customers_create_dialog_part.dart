@@ -328,7 +328,11 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                   children: uiState.selectedDevices
                       .map(
                         (d) => Chip(
-                          label: Text('${d.displayName} (${d.id})'),
+                          label: Text(
+                            d.macAddress.isEmpty
+                                ? '${d.displayName} (${d.id})'
+                                : '${d.displayName} (${d.id} - ${d.macAddress})',
+                          ),
                           onDeleted: () => ref
                               .read(_customerFormUiProvider.notifier)
                               .removeDeviceById(d.id),
@@ -452,8 +456,9 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                     valueListenable: query,
                     builder: (context, value, child) {
                       final filtered = devices.where((device) {
-                        final haystack = '${device.displayName} ${device.id}'
-                            .toLowerCase();
+                        final haystack =
+                            '${device.displayName} ${device.id} ${device.macAddress}'
+                                .toLowerCase();
                         return haystack.contains(value);
                       }).toList();
 
@@ -474,7 +479,11 @@ class _CustomerCreateDialogState extends ConsumerState<_CustomerCreateDialog> {
                           final device = filtered[index];
                           return ListTile(
                             title: Text(device.displayName),
-                            subtitle: Text(device.id),
+                            subtitle: Text(
+                              device.macAddress.isEmpty
+                                  ? device.id
+                                  : '${device.id} - ${device.macAddress}',
+                            ),
                             onTap: () =>
                                 Navigator.of(dialogContext).pop(device),
                           );
