@@ -66,7 +66,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
         );
   }
 
-  /*
   Future<void> _onLoginTap() async {
     if (ref.read(authLoginControllerProvider).isLoading) {
       return;
@@ -105,9 +104,7 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       showAppSnackBar(context, message, status: AppSnackBarStatus.error);
     }
   }
-  */
 
-  /*
   Future<String?> _readFcmTokenSafely(
     AppDeviceInfoService appDeviceInfoService,
   ) async {
@@ -122,7 +119,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
       return null;
     }
   }
-  */
 
   Future<void> _onForgotPasswordTap() async {
     final result = await Navigator.of(context).push<bool>(
@@ -144,8 +140,8 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
   Widget build(BuildContext context) {
     final obscurePassword = ref.watch(userObscurePasswordProvider);
     final rememberMe = ref.watch(userRememberMeProvider);
-    // final loginState = ref.watch(authLoginControllerProvider);
-    // final isBusy = loginState.isLoading;
+    final loginState = ref.watch(authLoginControllerProvider);
+    final isBusy = loginState.isLoading;
     final width = MediaQuery.of(context).size.width;
     final cardWidth = width > 900 ? 430.0 : 380.0;
 
@@ -287,7 +283,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    /*
                     AppButton(
                       text: 'Login',
                       isLoading: isBusy,
@@ -318,7 +313,6 @@ class _UserLoginScreenState extends ConsumerState<UserLoginScreen> {
                       icon: const Icon(Icons.phone_android_rounded),
                       label: const Text('Login with Phone'),
                     ),
-                    */
                   ],
                 ),
               ),

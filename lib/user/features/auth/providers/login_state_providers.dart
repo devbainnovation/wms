@@ -73,7 +73,7 @@ class UserPhoneLoginController extends Notifier<UserPhoneLoginState> {
   @override
   UserPhoneLoginState build() => UserPhoneLoginState();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
   void updatePhoneNumber(String phone) {
     state = state.copyWith(completePhoneNumber: phone);
