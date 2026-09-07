@@ -219,7 +219,7 @@ class _AdminTriggerLogsScreenState extends ConsumerState<AdminTriggerLogsScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(
             labelText: label,

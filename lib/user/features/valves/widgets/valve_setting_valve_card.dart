@@ -214,14 +214,13 @@ class _ValveInfoRow extends StatelessWidget {
     required this.text,
     this.iconSize = 16,
     this.fontSize = 13,
-    this.color = AppColors.greyText,
   });
 
   final IconData icon;
   final String text;
   final double iconSize;
   final double fontSize;
-  final Color color;
+  static const Color color = AppColors.greyText;
 
   @override
   Widget build(BuildContext context) {

@@ -124,11 +124,8 @@ class AdminCustomerService {
     int size = 10,
   }) async {
     final normalizedCustomerId = customerId.trim();
-    print('--- getCustomerDevices: START ---');
-    print('Customer ID: "$normalizedCustomerId", Page: $page, Size: $size');
 
     if (normalizedCustomerId.isEmpty) {
-      print('getCustomerDevices: Error - Customer ID is empty');
       throw const ApiException(
         'Customer ID is missing. Please refresh customers and try again.',
       );
@@ -141,11 +138,7 @@ class AdminCustomerService {
       showGlobalLoader: false,
     );
 
-    print('getCustomerDevices: API Status Code: ${response.statusCode}');
-    print('getCustomerDevices: API Success: ${response.isSuccess}');
-
     if (!response.isSuccess) {
-      print('getCustomerDevices: Error Response Data: ${response.data}');
       throw ApiException(
         _extractMessage(response.data) ?? 'Unable to fetch assigned devices.',
         statusCode: response.statusCode,
@@ -153,16 +146,12 @@ class AdminCustomerService {
     }
 
     final data = response.data;
-    print('getCustomerDevices: Data Type: ${data.runtimeType}');
 
     if (data is List) {
-      print('getCustomerDevices: Processing as List...');
       final items = data
           .whereType<Map<String, dynamic>>()
           .map(AdminCustomerAssignedDevice.fromJson)
           .toList();
-      print('getCustomerDevices: Parsed List count: ${items.length}');
-      print('--- getCustomerDevices: END (List) ---');
       return AdminCustomerAssignedDevicePageResult(
         items: items,
         page: page,
@@ -173,7 +162,6 @@ class AdminCustomerService {
     }
 
     if (data is! Map<String, dynamic>) {
-      print('getCustomerDevices: Warning - Data is not a Map or List. Returning empty result.');
       return AdminCustomerAssignedDevicePageResult(
         items: const [],
         page: page,
@@ -183,10 +171,7 @@ class AdminCustomerService {
       );
     }
 
-    print('getCustomerDevices: Processing as Map...');
     final content = data['content'] ?? data['items'] ?? data['data'];
-    print('getCustomerDevices: "content/items/data" field value: $content');
-    
     final items = content is List
         ? content
               .whereType<Map<String, dynamic>>()
@@ -194,16 +179,11 @@ class AdminCustomerService {
               .toList()
         : const <AdminCustomerAssignedDevice>[];
 
-    print('getCustomerDevices: Parsed items count: ${items.length}');
-
     final totalPages = (data['totalPages'] as num?)?.toInt() ?? 1;
     final totalElements =
         (data['totalElements'] as num?)?.toInt() ?? items.length;
     final currentPage = (data['number'] as num?)?.toInt() ?? page;
     final currentSize = (data['size'] as num?)?.toInt() ?? size;
-
-    print('getCustomerDevices: Page: $currentPage, Total Pages: $totalPages, Total Elements: $totalElements');
-    print('--- getCustomerDevices: END (Map) ---');
 
     return AdminCustomerAssignedDevicePageResult(
       items: items,

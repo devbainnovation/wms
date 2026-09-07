@@ -9,7 +9,6 @@ import 'package:wms/user/features/dashboard/dashboard.dart';
 import 'package:wms/user/features/valves/screens/valve_setting_dialogs.dart';
 
 import '../../../valves/screens/valve_setting_screen.dart';
-import '../../screens/motor_setting_screen.dart';
 
 part 'dashboard_tab_alerts.dart';
 part 'dashboard_tab_device_card.dart';

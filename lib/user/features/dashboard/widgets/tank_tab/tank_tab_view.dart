@@ -350,7 +350,6 @@ class _InfoRow extends StatelessWidget {
     this.iconSize = 16,
     this.fontSize,
     this.fontWeight,
-    this.color = AppColors.greyText,
   });
 
   final IconData icon;
@@ -358,7 +357,7 @@ class _InfoRow extends StatelessWidget {
   final double iconSize;
   final double? fontSize;
   final FontWeight? fontWeight;
-  final Color color;
+  static const Color color = AppColors.greyText;
 
   @override
   Widget build(BuildContext context) {
