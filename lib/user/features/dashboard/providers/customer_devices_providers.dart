@@ -10,7 +10,7 @@ final customerDevicesListProvider = FutureProvider<List<CustomerDeviceSummary>>(
   retry: (_, _) => null,
   (ref) async {
     ref.watch(currentAuthSessionProvider);
-    final token = await _resolveToken(ref);
+    final token = await resolveAuthToken(ref);
     if (token.isEmpty) {
       throw const ApiException('Session expired. Please login again.');
     }
@@ -24,7 +24,7 @@ final customerAssignedDevicesProvider =
       retry: (_, _) => null,
       (ref) async {
         ref.watch(currentAuthSessionProvider);
-        final token = await _resolveToken(ref);
+        final token = await resolveAuthToken(ref);
         if (token.isEmpty) {
           throw const ApiException('Session expired. Please login again.');
         }
@@ -88,7 +88,7 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
   }) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (!ref.mounted) {
         throw const ApiException('Manual trigger request was cancelled.');
       }
@@ -116,7 +116,3 @@ class CustomerManualTriggerController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  return (session?.token ?? '').trim();
-}

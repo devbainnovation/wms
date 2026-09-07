@@ -103,7 +103,7 @@ class AdminRegisterDeviceController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminDeviceServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
 
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
@@ -134,7 +134,7 @@ class AdminUpdateDeviceController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminDeviceServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -161,7 +161,7 @@ class AdminDeleteDeviceController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminDeviceServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -188,7 +188,7 @@ class AdminResetDeviceSchedulesController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminDeviceServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -206,14 +206,3 @@ class AdminResetDeviceSchedulesController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  var token = (session?.token ?? '').trim();
-  if (token.isNotEmpty) {
-    return token;
-  }
-
-  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-  token = (remembered?.token ?? '').trim();
-  return token;
-}

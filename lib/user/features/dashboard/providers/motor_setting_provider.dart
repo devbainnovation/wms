@@ -266,10 +266,7 @@ class MotorSettingController extends ChangeNotifier {
     return null;
   }
 
-  Future<String> _resolveToken() async {
-    final session = ref.read(currentAuthSessionProvider);
-    return (session?.token ?? '').trim();
-  }
+  Future<String> _resolveToken() => resolveAuthToken(ref);
 
   void _updateState(MotorSettingState value) {
     _state = value;

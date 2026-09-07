@@ -8,7 +8,7 @@ final userAdminUsersServiceProvider = Provider<UserAdminUsersService>((ref) {
 
 final userAdminUsersListProvider =
     FutureProvider.autoDispose<List<UserAdminUserSummary>>((ref) async {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -18,7 +18,7 @@ final userAdminUsersListProvider =
 
 final userAdminUserDetailsProvider = FutureProvider.autoDispose
     .family<UserAdminUserSummary, String>((ref, userId) async {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -39,7 +39,7 @@ class UserAdminCreateUserController extends Notifier<AsyncValue<void>> {
   Future<void> create(UserAdminUserCreateRequest request) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -66,7 +66,7 @@ class UserAdminDeleteUserController extends Notifier<AsyncValue<void>> {
   Future<void> delete(String userId) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -102,7 +102,7 @@ class UserAdminUpdatePermissionsController extends Notifier<AsyncValue<void>> {
   }) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -130,7 +130,7 @@ class UserAdminUpdateUserController extends Notifier<AsyncValue<void>> {
   }) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -148,7 +148,3 @@ class UserAdminUpdateUserController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  return (session?.token ?? '').trim();
-}

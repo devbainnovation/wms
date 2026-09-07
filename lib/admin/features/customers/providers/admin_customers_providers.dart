@@ -130,7 +130,7 @@ final adminCustomersListProvider =
     FutureProvider.autoDispose<AdminCustomerPageResult>((ref) async {
       final service = ref.read(adminCustomerServiceProvider);
       final query = ref.watch(adminCustomersQueryProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
 
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
@@ -147,7 +147,7 @@ final adminCustomersListProvider =
 final adminUnassignedDevicesProvider =
     FutureProvider.autoDispose<List<AdminUnassignedDevice>>((ref) async {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -157,7 +157,7 @@ final adminUnassignedDevicesProvider =
 final adminCustomerAssignedDevicesProvider = FutureProvider.autoDispose
     .family<AdminCustomerAssignedDevicePageResult, String>((ref, userId) async {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -184,7 +184,7 @@ class AdminCreateCustomerController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -214,7 +214,7 @@ class AdminUpdateCustomerController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -245,7 +245,7 @@ class AdminDeleteCustomerController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -275,7 +275,7 @@ class AdminAssignDevicesCustomerController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -309,7 +309,7 @@ class AdminUnassignCustomerDeviceController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading<void>();
     try {
       final service = ref.read(adminCustomerServiceProvider);
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -326,14 +326,3 @@ class AdminUnassignCustomerDeviceController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  var token = (session?.token ?? '').trim();
-  if (token.isNotEmpty) {
-    return token;
-  }
-
-  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-  token = (remembered?.token ?? '').trim();
-  return token;
-}

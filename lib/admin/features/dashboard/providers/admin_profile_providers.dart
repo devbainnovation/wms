@@ -10,7 +10,7 @@ final adminProfileProvider = FutureProvider.autoDispose<UserProfile>((
   ref,
 ) async {
   ref.watch(currentAuthSessionProvider);
-  final token = await _resolveToken(ref);
+  final token = await resolveAuthToken(ref);
   if (token.isEmpty) {
     throw const ApiException('Session expired. Please login again.');
   }
@@ -32,7 +32,7 @@ class AdminProfileUpdateController extends Notifier<AsyncValue<void>> {
   Future<void> update(UserProfileUpdateRequest request) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -60,7 +60,7 @@ class AdminPasswordUpdateController extends Notifier<AsyncValue<void>> {
   Future<void> update(UserProfilePasswordUpdateRequest request) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -75,14 +75,3 @@ class AdminPasswordUpdateController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  var token = (session?.token ?? '').trim();
-  if (token.isNotEmpty) {
-    return token;
-  }
-
-  final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-  token = (remembered?.token ?? '').trim();
-  return token;
-}

@@ -515,15 +515,7 @@ class ValveSettingController extends ChangeNotifier {
     }
   }
 
-  Future<String> _resolveToken() async {
-    final session = ref.read(currentAuthSessionProvider);
-    var token = (session?.token ?? '').trim();
-    if (token.isEmpty) {
-      final remembered = await ref.read(authLocalStorageProvider).loadLoginData();
-      token = (remembered?.token ?? '').trim();
-    }
-    return token;
-  }
+  Future<String> _resolveToken() => resolveAuthToken(ref);
 
   Future<String?> saveScheduleFromEditor({
     required int valveIndex,

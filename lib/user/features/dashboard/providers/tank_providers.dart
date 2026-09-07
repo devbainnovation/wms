@@ -10,7 +10,7 @@ final tankServiceProvider = Provider<TankService>((ref) {
 
 final tankListProvider = FutureProvider.autoDispose<List<TankData>>((ref) async {
   ref.watch(currentAuthSessionProvider);
-  final token = await _resolveToken(ref);
+  final token = await resolveAuthToken(ref);
   if (token.isEmpty) {
     throw const ApiException('Session expired. Please login again.');
   }
@@ -89,7 +89,7 @@ class TankHistoryDaysNotifier extends Notifier<int> {
 
 final tankHistoryProvider = FutureProvider.autoDispose
     .family<List<TankHistoryItem>, String>((ref, componentId) async {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -102,7 +102,3 @@ final tankHistoryProvider = FutureProvider.autoDispose
       );
     });
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  return (session?.token ?? '').trim();
-}

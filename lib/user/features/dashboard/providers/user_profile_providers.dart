@@ -8,7 +8,7 @@ final userProfileServiceProvider = Provider<UserProfileService>((ref) {
 
 final userProfileProvider = FutureProvider<UserProfile>((ref) async {
   ref.watch(currentAuthSessionProvider);
-  final token = await _resolveToken(ref);
+  final token = await resolveAuthToken(ref);
   if (token.isEmpty) {
     throw const ApiException('Session expired. Please login again.');
   }
@@ -28,7 +28,7 @@ class UserProfileUpdateController extends Notifier<AsyncValue<void>> {
   Future<void> update(UserProfileUpdateRequest request) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -55,7 +55,7 @@ class UserPasswordUpdateController extends Notifier<AsyncValue<void>> {
   Future<void> update(UserProfilePasswordUpdateRequest request) async {
     state = const AsyncLoading<void>();
     try {
-      final token = await _resolveToken(ref);
+      final token = await resolveAuthToken(ref);
       if (token.isEmpty) {
         throw const ApiException('Session expired. Please login again.');
       }
@@ -69,7 +69,3 @@ class UserPasswordUpdateController extends Notifier<AsyncValue<void>> {
   }
 }
 
-Future<String> _resolveToken(Ref ref) async {
-  final session = ref.read(currentAuthSessionProvider);
-  return (session?.token ?? '').trim();
-}
