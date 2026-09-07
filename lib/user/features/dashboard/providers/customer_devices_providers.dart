@@ -37,8 +37,10 @@ final customerDashboardDevicesProvider =
     FutureProvider<List<CustomerDeviceSummary>>(
       retry: (_, _) => null,
       (ref) async {
-        final assignedDevices = await ref.watch(customerAssignedDevicesProvider.future);
-        final liveDevices = await ref.watch(customerDevicesListProvider.future);
+        final (assignedDevices, liveDevices) = await (
+          ref.watch(customerAssignedDevicesProvider.future),
+          ref.watch(customerDevicesListProvider.future),
+        ).wait;
 
         final assignedByEspId = <String, CustomerDeviceSummary>{
           for (final device in assignedDevices)
